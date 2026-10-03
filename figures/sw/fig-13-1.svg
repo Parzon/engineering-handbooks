@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 330" role="img" aria-label="The reference service's test layers as a pyramid. At the base, 181 api unit tests in about 4 seconds and 52 web component tests. Above, 115 api integration tests against a throwaway stack of real Postgres, PgBouncer, Valkey, Keycloak and a mock model, in about 40 seconds. Above that, image checks on the production image, and 12 end-to-end tests in a real browser through the TLS edge. Beside the pyramid, the layers that run on demand: evals against real models, load tests, 22 failure drills, and a smoke test of every published release."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="330" fill="#ffffff"/>
+      <polygon class="n-soft" points="60,300 500,300 440,234 120,234"/>
+      <text class="tb" x="280" y="262" text-anchor="middle">unit: 181 api, 52 web</text><text class="ts" x="280" y="282" text-anchor="middle">pure decisions; seconds, no services</text>
+      <polygon class="n" points="122,230 438,230 386,170 174,170"/>
+      <text class="tb" x="280" y="196" text-anchor="middle">integration: 115</text><text class="ts" x="280" y="216" text-anchor="middle">a throwaway stack of real services</text>
+      <polygon class="n" points="176,166 384,166 346,122 214,122"/>
+      <text class="tb" x="280" y="142" text-anchor="middle">image checks</text><text class="ts" x="280" y="158" text-anchor="middle">the production image</text>
+      <polygon class="n-acc" points="216,118 344,118 280,46"/>
+      <text class="tb" x="280" y="100" text-anchor="middle">e2e: 12</text>
+      <text class="ts" x="380" y="60">a real browser through the edge,</text><text class="ts" x="380" y="76">against the production stack</text>
+      <line class="rule" x1="340" y1="70" x2="374" y2="66"/>
+      <text class="tl" x="560" y="40">ON DEMAND, BEFORE A CHANGE</text>
+      <rect class="n-warn" x="560" y="54" width="244" height="50" rx="4"/><text class="tb" x="572" y="74">evals</text><text class="ts" x="572" y="92">real models, pass rates over runs</text>
+      <rect class="n-warn" x="560" y="112" width="244" height="50" rx="4"/><text class="tb" x="572" y="132">load tests</text><text class="ts" x="572" y="150">capacity and latency under load</text>
+      <rect class="n-warn" x="560" y="170" width="244" height="50" rx="4"/><text class="tb" x="572" y="190">22 failure drills</text><text class="ts" x="572" y="208">each dependency down, then back</text>
+      <rect class="n-warn" x="560" y="228" width="244" height="50" rx="4"/><text class="tb" x="572" y="248">release smoke</text><text class="ts" x="572" y="266">the published images, both CPUs</text>
+      <text class="ts tmu" x="60" y="322">every pull request: unit, integration, image checks, e2e</text>
+    </svg>

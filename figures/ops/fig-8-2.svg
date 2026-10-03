@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 330" role="img" aria-label="The reference VPC 10.20.0.0/16 in two availability zones. Public subnets hold the load balancer and the api and web tasks; isolated subnets hold the database and cache. Security groups form a chain: the internet may reach the load balancer on port 80; only the load balancer's group may reach the tasks; only the api's group may reach the database on 5432 and the cache on 6379."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #146b55; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e2f1eb; stroke: #146b55; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #146b55; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #146b55; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #146b55; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="330" fill="#ffffff"/>
+      <rect class="zone" x="70" y="16" width="734" height="300" rx="8"/>
+      <text class="tl" x="84" y="36">VPC 10.20.0.0/16, TWO AVAILABILITY ZONES</text>
+      <rect class="n-soft" x="16" y="128" width="88" height="56" rx="5"/>
+      <text class="tb" x="60" y="152" text-anchor="middle">Internet</text>
+      <text class="ts" x="60" y="170" text-anchor="middle">users</text>
+
+      <rect class="band" x="130" y="50" width="390" height="250" rx="6"/>
+      <text class="tl" x="144" y="70">PUBLIC SUBNETS: A ROUTE TO THE INTERNET GATEWAY</text>
+      <rect class="band" x="540" y="50" width="250" height="250" rx="6"/>
+      <text class="tl" x="554" y="70">ISOLATED: LOCAL ROUTES ONLY</text>
+
+      <rect class="n-acc" x="146" y="120" width="120" height="72" rx="5"/>
+      <text class="tb" x="206" y="146" text-anchor="middle">Load balancer</text>
+      <text class="ts" x="206" y="164" text-anchor="middle">group: alb</text>
+      <text class="ts" x="206" y="180" text-anchor="middle">allows 80 from anyone</text>
+      <rect class="n" x="330" y="86" width="170" height="60" rx="5"/>
+      <text class="tb" x="415" y="110" text-anchor="middle">api tasks, 2 zones</text>
+      <text class="ts" x="415" y="128" text-anchor="middle">8010 from group alb only</text>
+      <rect class="n" x="330" y="168" width="170" height="60" rx="5"/>
+      <text class="tb" x="415" y="192" text-anchor="middle">web tasks, 2 zones</text>
+      <text class="ts" x="415" y="210" text-anchor="middle">8080 from group alb only</text>
+      <rect class="n" x="556" y="86" width="218" height="60" rx="5"/>
+      <text class="tb" x="665" y="110" text-anchor="middle">Postgres (RDS)</text>
+      <text class="ts" x="665" y="128" text-anchor="middle">5432 from group api only</text>
+      <rect class="n" x="556" y="168" width="218" height="60" rx="5"/>
+      <text class="tb" x="665" y="192" text-anchor="middle">Valkey (ElastiCache)</text>
+      <text class="ts" x="665" y="210" text-anchor="middle">6379 from group api only, TLS</text>
+
+      <line class="e-acc" x1="105" y1="156" x2="144" y2="156" marker-end="url(#a-acc)"/>
+      <path class="e-acc" d="M267,146 C300,146 300,116 328,116" marker-end="url(#a-acc)"/>
+      <path class="e-acc" d="M267,166 C300,166 300,198 328,198" marker-end="url(#a-acc)"/>
+      <line class="e-acc" x1="501" y1="116" x2="554" y2="116" marker-end="url(#a-acc)"/>
+      <path class="e-acc" d="M501,124 C528,124 528,198 554,198" marker-end="url(#a-acc)"/>
+      <text class="ts" x="146" y="262">Tasks have public IPs to pull images (no NAT gateway); their security groups admit only the load balancer.</text>
+      <text class="ts" x="146" y="280">Production variant: tasks in private subnets, a NAT gateway or VPC endpoints for outbound traffic.</text>
+    </svg>

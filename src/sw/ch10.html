@@ -1,0 +1,241 @@
+<section class="chapter" id="ch10">
+  <header class="ch-head">
+    <span class="ch-num">10</span>
+    <p class="eyebrow">Part V · The web tier</p>
+    <h2>Frontend decisions and streaming</h2>
+    <p class="lede">Frontend choices are mostly decisions about what not to add (no meta-framework for an internal tool, no global store for server data), and streaming a model's answer to the browser needs a small, careful protocol: Server-Sent Events over a POST, read with fetch, with heartbeats and a working Stop.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>React is the safe default for its ecosystem and hiring pool; a meta-framework such as Next.js earns its place for public, search-indexed content, not for an internal tool behind sign-in.</li>
+      <li>"State" is two things: server state, owned by the backend and cached with a library such as TanStack Query, and client UI state, which usually needs nothing beyond the framework.</li>
+      <li>Vite and TypeScript are the defaults; Create React App is deprecated.</li>
+      <li>For a model's answer: Server-Sent Events, one way from server to browser over ordinary HTTP. WebSockets only when the client must also stream; polling as a last resort.</li>
+      <li>The browser's built-in <code>EventSource</code> can only make GET requests, so a chat that posts a question reads the stream with <code>fetch</code> and parses it, the way the model vendors' own SDKs do.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Redux for everything, including data from the API</td><td>A server-state cache (TanStack Query, SWR); local state for the rest</td><td>Fetching, caching and invalidation are solved problems; a global store re-solved them by hand.</td></tr>
+      <tr><td data-label="Then">Create React App and webpack</td><td>Vite: native modules in development, a fast production build</td><td>Near-instant dev server start and hot reload; CRA is no longer maintained.</td></tr>
+      <tr><td data-label="Then">JavaScript</td><td>TypeScript, compiled to JavaScript</td><td>A class of bugs caught while typing, at no runtime cost.</td></tr>
+      <tr><td data-label="Then">Request, spinner, full response</td><td>Streamed answers, token by token</td><td>A model takes seconds; users should read as it writes.</td></tr>
+      <tr><td data-label="Then">Selenium end-to-end tests</td><td>Playwright, with auto-waiting and traces</td><td>Fewer flaky waits, and a trace viewer that shows what happened.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch10-choose">Choosing a framework, and what not to add</h3>
+  <figure class="fig wide" id="fig-10-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="A decision path. Is the content public and does search ranking or first paint matter? If yes, a static site generator or a meta-framework such as Next.js, Nuxt or SvelteKit. If no, for an app or internal tool behind sign-in: a single-page app with React and Vite. The framework itself: React for ecosystem and hiring; Vue for a gentler curve; Svelte compiles away; Angular is a full framework common in large enterprises.">
+      <rect class="n-acc" x="16" y="90" width="210" height="64" rx="6"/><text class="tb" x="28" y="114">Public content, where</text><text class="tb" x="28" y="132">search or first paint matters?</text>
+      <rect class="n" x="290" y="20" width="250" height="64" rx="6"/><text class="tb" x="302" y="44">Static site or meta-framework</text><text class="ts" x="302" y="64">Next.js, Nuxt, SvelteKit: server rendering</text>
+      <rect class="n-good" x="290" y="160" width="250" height="64" rx="6"/><text class="tb" x="302" y="184">A single-page app</text><text class="ts" x="302" y="204">React with Vite; the reference service</text>
+      <path class="e" d="M227,110 C260,110 260,52 288,52" marker-end="url(#a)"/><text class="ts" x="262" y="40">yes</text>
+      <path class="e-good" d="M227,134 C260,134 260,192 288,192" marker-end="url(#a-good)"/><text class="ts" x="16" y="176">no: an app or a tool behind sign-in</text>
+      <text class="tl" x="580" y="30">THE FRAMEWORK ITSELF</text>
+      <text class="ts" x="580" y="56"><tspan class="tb">React</tspan>: largest ecosystem and hiring pool</text>
+      <text class="ts" x="580" y="80"><tspan class="tb">Vue</tspan>: gentler curve, more built in</text>
+      <text class="ts" x="580" y="104"><tspan class="tb">Svelte</tspan>: compiles away, small bundles</text>
+      <text class="ts" x="580" y="128"><tspan class="tb">Angular</tspan>: full framework, TypeScript</text>
+      <text class="ts" x="580" y="144">first, common in large enterprises</text>
+      <text class="ts" x="580" y="176">All four are component-based; the real</text>
+      <text class="ts" x="580" y="192">differences are ecosystem size and how</text>
+      <text class="ts" x="580" y="208">much the framework decides for you.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 10.1</span>The two frontend questions that matter most. The reference service is an internal tool behind sign-in, so it is plain React built by Vite, and its first decision record explains why it has no meta-framework.</figcaption>
+  </figure>
+
+  <h4>State is two different things</h4>
+  <figure class="fig wide" id="fig-10-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 220" role="img" aria-label="Server state, owned by the backend, such as the alert list or the user's profile, needs fetching, caching, refetching and invalidation: use TanStack Query or SWR. Client state, such as whether a dialog is open or which tab is selected, usually needs only the framework's own state and context; Zustand or Jotai when shared widely; Redux only for very complex client logic or existing code.">
+      <rect class="n-acc" x="16" y="16" width="384" height="190" rx="6"/>
+      <text class="tb" x="30" y="40">Server state</text>
+      <text class="ts" x="30" y="60">owned by the backend: the alert list, the profile</text>
+      <text class="ts" x="30" y="86">needs: fetching, caching, refetching,</text>
+      <text class="ts" x="30" y="102">invalidation, loading and error states</text>
+      <text class="tb ta" x="30" y="138">TanStack Query or SWR</text>
+      <text class="ts" x="30" y="158">this covers most of what a typical</text>
+      <text class="ts" x="30" y="174">app's "state" actually is</text>
+      <rect class="n" x="420" y="16" width="384" height="190" rx="6"/>
+      <text class="tb" x="434" y="40">Client state</text>
+      <text class="ts" x="434" y="60">the UI's own: is a dialog open, which tab</text>
+      <text class="ts" x="434" y="86">usually local: the framework's own state</text>
+      <text class="ts" x="434" y="102">and context are enough</text>
+      <text class="ts" x="434" y="128">shared widely: Zustand or Jotai</text>
+      <text class="ts" x="434" y="154">Redux (Toolkit): very large apps with complex</text>
+      <text class="ts" x="434" y="170">client logic, or code already built on it</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 10.2</span>The modern answer to "do we need Redux?": usually not. The reference app has no Redux, because nearly all its state is server state, which TanStack Query owns.</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Concern</th><th>Common choices today</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Concern">Build</td><td data-label="Choices">Vite (default); webpack in older projects; Create React App is deprecated</td></tr>
+        <tr><td data-label="Concern">Language</td><td data-label="Choices">TypeScript: types erased at build time, so no runtime cost</td></tr>
+        <tr><td data-label="Concern">Styling</td><td data-label="Choices">CSS Modules; Tailwind utility classes; component libraries (MUI, Chakra); shadcn/ui, whose components you copy into your code and own</td></tr>
+        <tr><td data-label="Concern">Unit and component tests</td><td data-label="Choices">Vitest or Jest, with React Testing Library, which tests by what a user sees, not implementation details</td></tr>
+        <tr><td data-label="Concern">End-to-end tests</td><td data-label="Choices">Playwright or Cypress, driving a real browser through real flows; few of them</td></tr>
+        <tr><td data-label="Concern">Package manager</td><td data-label="Choices">npm (default), pnpm (fast, disk-efficient, common in monorepos), yarn; the lockfile is committed, like <code>uv.lock</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch10-stream">Streaming to the browser</h3>
+  <figure class="fig wide" id="fig-10-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 240" role="img" aria-label="Three ways to push data. Server-Sent Events: one HTTP response that stays open, server to browser, events as lines of text; right for a model's tokens or live status. WebSockets: a persistent two-way connection, needed when the client also streams continuously, such as collaborative editing or multiplayer; heavier to run behind ordinary load balancers. Polling: the browser asks repeatedly; simple, wasteful and laggy; the fallback.">
+      <text class="tb" x="16" y="26">Server-Sent Events</text>
+      <rect class="n" x="16" y="38" width="90" height="40" rx="5"/><text class="ts" x="61" y="62" text-anchor="middle">browser</text>
+      <rect class="n" x="290" y="38" width="90" height="40" rx="5"/><text class="ts" x="335" y="62" text-anchor="middle">server</text>
+      <line class="e" x1="107" y1="48" x2="288" y2="48" marker-end="url(#a)"/><text class="ts" x="197" y="44" text-anchor="middle">one request</text>
+      <line class="e-acc" x1="289" y1="64" x2="109" y2="64" marker-end="url(#a-acc)"/><line class="e-acc" x1="289" y1="72" x2="109" y2="72" marker-end="url(#a-acc)"/>
+      <text class="ts" x="400" y="52">one long HTTP response, events as text lines</text><text class="ts" x="400" y="70">use for: model tokens, live status</text>
+
+      <text class="tb" x="16" y="112">WebSockets</text>
+      <rect class="n" x="16" y="124" width="90" height="40" rx="5"/><text class="ts" x="61" y="148" text-anchor="middle">browser</text>
+      <rect class="n" x="290" y="124" width="90" height="40" rx="5"/><text class="ts" x="335" y="148" text-anchor="middle">server</text>
+      <line class="e" x1="107" y1="136" x2="288" y2="136" marker-end="url(#a)"/><line class="e" x1="289" y1="152" x2="109" y2="152" marker-end="url(#a)"/>
+      <text class="ts" x="400" y="138">persistent and two-way; heavier to run</text><text class="ts" x="400" y="156">use only when the client must stream too</text>
+
+      <text class="tb" x="16" y="198">Polling</text>
+      <text class="ts" x="16" y="216">ask, wait, ask again: simple, wasteful and laggy; the fallback when neither fits</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 10.3</span>Three ways to push data to a browser. One-way streaming over ordinary HTTP passes through proxies and load balancers that already exist; that is why SSE is the default for model output.</figcaption>
+  </figure>
+
+  <p>The reference chat streams its answers as Server-Sent Events, and its wire format was redesigned once a real model replaced the placeholder. Plain-text events broke on the first markdown answer: a blank line inside a token ended the event early. A real model can think for tens of seconds before its first token, while proxies and load balancers cut idle connections at around a minute. And a user who closes the tab must stop the provider from generating tokens that are still being paid for.</p>
+
+  <figure class="fig wide" id="fig-10-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="The event stream: a meta event first, with the request id and how many alerts were in context; token events with JSON deltas; comment heartbeats every 15 seconds of silence; a done event with usage and timings, or an error event. Errors before the stream starts are ordinary JSON errors. Stop: the button aborts the fetch, the connection closes, the server cancels its producer task, which closes the provider's stream, and billing stops.">
+      <rect class="n" x="16" y="16" width="120" height="40" rx="5"/><text class="ts" x="76" y="41" text-anchor="middle">browser</text>
+      <rect class="n-acc" x="350" y="16" width="120" height="40" rx="5"/><text class="ts" x="410" y="41" text-anchor="middle">api</text>
+      <rect class="n" x="684" y="16" width="120" height="40" rx="5"/><text class="ts" x="744" y="41" text-anchor="middle">model</text>
+      <line class="rule dash" x1="76" y1="56" x2="76" y2="204"/><line class="rule dash" x1="410" y1="56" x2="410" y2="204"/><line class="rule dash" x1="744" y1="56" x2="744" y2="204"/>
+      <line class="e" x1="76" y1="78" x2="408" y2="78" marker-end="url(#a)"/><text class="ts" x="242" y="72" text-anchor="middle">POST /chat/stream, the question in JSON</text>
+      <line class="e" x1="410" y1="92" x2="742" y2="92" marker-end="url(#a)"/><text class="ts" x="576" y="86" text-anchor="middle">streamed completion</text>
+      <line class="e-acc" x1="410" y1="112" x2="78" y2="112" marker-end="url(#a-acc)"/><text class="tm" x="242" y="106" text-anchor="middle">event: meta {request_id, alerts}</text>
+      <line class="rule-strong dash" x1="410" y1="132" x2="78" y2="132"/><text class="tm" x="242" y="128" text-anchor="middle">: keep-alive</text>
+      <line class="e-acc" x1="410" y1="152" x2="78" y2="152" marker-end="url(#a-acc)"/><text class="tm" x="242" y="148" text-anchor="middle">event: token {"delta": "Check "}</text>
+      <line class="e-acc" x1="410" y1="170" x2="78" y2="170" marker-end="url(#a-acc)"/><text class="tm" x="242" y="166" text-anchor="middle">event: token {"delta": "the disk"}</text>
+      <line class="e-good" x1="410" y1="194" x2="78" y2="194" marker-end="url(#a-good)"/><text class="tm" x="242" y="190" text-anchor="middle">event: done {usage, ttft_ms} or error</text>
+      <rect class="n-warn" x="430" y="140" width="300" height="56" rx="5"/><text class="ts" x="442" y="160">heartbeat comments every 15 s of silence</text><text class="ts" x="442" y="176">keep proxies from closing the stream while</text><text class="ts" x="442" y="190">a reasoning model thinks</text>
+      <text class="tb tr" x="16" y="232">Stop:</text>
+      <text class="ts" x="60" y="232">the button aborts the fetch → the connection closes → the api cancels its producer</text>
+      <text class="ts" x="60" y="250">task → the provider's stream is closed → generation, and billing, stop</text>
+      <text class="ts" x="16" y="278">Errors before the stream starts (rate limit, validation, database down) are ordinary JSON errors with a status code.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 10.4</span>The reference service's stream. Every event carries JSON on one <code>data:</code> line, so no content can break the framing, and tokens are appended exactly as the model produced them.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/web/src/lib/sse.ts#L7-L33">apps/web/src/lib/sse.ts</a><span class="lines">reading a stream that EventSource cannot</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>A small Server-Sent Events parser, written because <code>EventSource</code> cannot send a POST body. Its comment lists what makes streams hard to read correctly.</p>
+        <ul class="notice">
+          <li>Network chunks do not line up with events: one read can hold half an event, or several.</li>
+          <li>A chunk can end in the middle of a multi-byte UTF-8 character, so bytes are decoded in streaming mode.</li>
+          <li>Breaking out of the loop, or aborting the fetch, cancels the body and closes the connection: that is how the server learns the user left.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/web/src/lib/sse.ts" data-lines="7-33"><code class="language-typescript">/**
+ * Parses a Server-Sent Events byte stream (the parts of the spec the api
+ * uses). Written by hand because the browser's EventSource can only GET,
+ * and the chat request carries a JSON body.
+ *
+ * Network chunks do not line up with events: one read can hold half an
+ * event, several events, or end in the middle of a multi-byte UTF-8
+ * character. So bytes are decoded with `stream: true` (a split character
+ * waits for its other half) and text is buffered until whole lines arrive.
+ * Lines end in \n, \r\n or \r; a blank line dispatches the event; lines
+ * starting with ":" are comments (the api's keep-alive heartbeats).
+ *
+ * Stopping early (break, or an aborted fetch) cancels the body, which
+ * closes the connection - that is how the server learns the user left.
+ */
+export async function* parseSSE(body: ReadableStream&lt;Uint8Array&gt;): AsyncGenerator&lt;SSEEvent&gt; {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let event = 'message'
+  let data: string[] = []
+  let id: string | undefined
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      buffer += done ? decoder.decode() : decoder.decode(value, { stream: true })</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0007</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">Streaming answers: JSON SSE events, heartbeats, and cancellation to the provider</p>
+    <dl>
+      <dt>Problem</dt><dd>Text events broke on blank lines in markdown, idle proxies cut long thinks, production nginx buffered the whole response, and a closed tab kept the model generating.</dd>
+      <dt>Decision</dt><dd>JSON on one data line per event; a heartbeat after 15 seconds of silence; errors after the stream starts as an error event; a producer task the server cancels on disconnect; buffering explicitly off.</dd>
+      <dt>See it in</dt><dd><a href="{{TA}}/apps/api/app/sse.py">sse.py</a> and <a href="{{TA}}/apps/api/app/triage.py">triage.py</a> on the server; <a href="{{TA}}/apps/web/src/lib/sse.ts">sse.ts</a> and <a href="{{TA}}/apps/web/src/components/Chat.tsx">Chat.tsx</a> in the browser.</dd>
+    </dl>
+  </aside>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"It's React with Vite and TanStack Query for server state; no Redux and no meta-framework, because it's an internal tool behind sign-in."</p>
+    <p>"Answers stream as Server-Sent Events over a POST, parsed with fetch, with heartbeats for long thinks, and Stop cancels the provider call so we stop paying for it."</p>
+  </aside>
+
+  <h3 id="ch10-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">The browser's EventSource cannot send the question</td><td data-label="Cause">EventSource supports only GET, with no body</td><td data-label="Fix">Use fetch and parse the stream.</td></tr>
+        <tr><td data-label="Symptom">A streamed answer arrives all at once in production</td><td data-label="Cause">The proxy buffers responses</td><td data-label="Fix">Disable buffering for the stream's location and send <code>X-Accel-Buffering: no</code>.</td></tr>
+        <tr><td data-label="Symptom">Markdown answers are cut off mid-stream</td><td data-label="Cause">Raw text in <code>data:</code> lines cannot carry newlines</td><td data-label="Fix">JSON-encode every event.</td></tr>
+        <tr><td data-label="Symptom">Long thinks end in a dropped connection</td><td data-label="Cause">Proxies and load balancers close silent connections (often at 60 s)</td><td data-label="Fix">Heartbeat comments more often than the smallest idle timeout in the path.</td></tr>
+        <tr><td data-label="Symptom">The spinner never stops</td><td data-label="Cause">The stream ended without a done or error event</td><td data-label="Fix">Treat an incomplete stream as an error of its own.</td></tr>
+        <tr><td data-label="Symptom">Stop resubmitted the question</td><td data-label="Cause">React reused one button element for Ask and Stop, and its type changed mid-click; jsdom could not reproduce it</td><td data-label="Fix">Distinct keys; and a real-browser test, which caught it.</td></tr>
+        <tr><td data-label="Symptom">Model output could run as HTML</td><td data-label="Cause">Rendering untrusted text as markup</td><td data-label="Fix">Render model output as text; a browser test fails if it is ever rendered as HTML.</td></tr>
+        <tr><td data-label="Symptom">Browser tests fail in CI but not locally</td><td data-label="Cause">The Playwright Docker image and the npm package versions differ</td><td data-label="Fix">Pin both to exactly the same version.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch10-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>When does a meta-framework such as Next.js earn its place, and when does it not?</p>
+      <details class="ans"><summary>Answer</summary><p>It earns it for public content where search ranking or first paint matter, through server rendering. For an internal tool or dashboard behind sign-in, it adds complexity without a benefit; a single-page app built by Vite is enough.</p></details>
+    </li>
+    <li>
+      <p>What is the difference between server state and client state, and which tool suits each?</p>
+      <details class="ans"><summary>Answer</summary><p>Server state is owned by the backend and needs fetching, caching and invalidation: a library such as TanStack Query. Client state belongs to the UI, such as an open dialog: usually the framework's own state, with a small store only when it is shared widely.</p></details>
+    </li>
+    <li>
+      <p>Why does the reference chat use Server-Sent Events rather than WebSockets?</p>
+      <details class="ans"><summary>Answer</summary><p>The answer flows one way, from server to browser. SSE is plain HTTP, works through existing proxies and load balancers, and is simpler to run. WebSockets are for when the client must also stream continuously.</p></details>
+    </li>
+    <li>
+      <p>What has to happen, end to end, when a user presses Stop?</p>
+      <details class="ans"><summary>Answer</summary><p>The browser aborts its fetch, which closes the connection; the server notices the disconnect, cancels the task reading from the model, and closes the provider's stream, so generation and billing stop.</p></details>
+    </li>
+  </ol>
+</section>

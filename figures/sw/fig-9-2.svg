@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="Four layers of least privilege. Database: an owner role used only by migrations, an app role that reads and writes rows but cannot create, alter or drop, a monitor role that reads statistics only. Containers: non-root, read-only root filesystem, all capabilities dropped, no new privileges, CPU and memory limits, no development tools. Network: only the edge is published; internal endpoints answer 404 from outside; dashboards on loopback. HTTP: TLS 1.3, HSTS, a strict Content Security Policy, frame denial, nosniff, no server version, a body size limit, rate limits."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="300" fill="#ffffff"/>
+      <rect class="n-soft" x="16" y="16" width="788" height="62" rx="6"/><text class="tb" x="30" y="40">Database roles</text><text class="ts" x="30" y="60">owner: migrations only · app: rows only, cannot DROP, CREATE or ALTER, with its own timeouts · monitor: statistics only</text>
+      <rect class="n-soft" x="16" y="86" width="788" height="62" rx="6"/><text class="tb" x="30" y="110">Containers</text><text class="ts" x="30" y="130">non-root (UID 10001) · read-only root filesystem with a tmpfs /tmp · cap_drop ALL · no-new-privileges · limits, no swap · no dev tools</text>
+      <rect class="n-soft" x="16" y="156" width="788" height="62" rx="6"/><text class="tb" x="30" y="180">Network</text><text class="ts" x="30" y="200">only the edge is published · /metrics and the webhook answer 404 from outside · dashboards and debug ports on loopback only</text>
+      <rect class="n-soft" x="16" y="226" width="788" height="62" rx="6"/><text class="tb" x="30" y="250">HTTP</text><text class="ts" x="30" y="270">TLS 1.3 and HSTS · CSP default-src 'self', no inline scripts · frames denied · nosniff · no server version · 1 MB bodies · rate limits</text>
+    </svg>

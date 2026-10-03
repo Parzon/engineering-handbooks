@@ -1,0 +1,167 @@
+<section class="chapter" id="ch12">
+  <header class="ch-head">
+    <span class="ch-num">12</span>
+    <p class="eyebrow">Part VI · The reference build</p>
+    <h2>Case studies from a real deployment</h2>
+    <p class="lede">The reference service was taken from container images to a load-balanced, autoscaled ECS deployment in nine measured stages, and each stage either proved a property or exposed a failure worth knowing about before it happens to you.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Every stage ended in evidence: a digest compared, requests counted during a deploy, a metric read from the load balancer.</li>
+      <li>Most failures were configuration, and several were invisible until something was measured.</li>
+      <li>A client-side probe reported an outage that never happened: judge availability from server-side metrics.</li>
+      <li>The finished loop: one version tag, and the release is live on ECS 8 minutes 37 seconds later, with no failed requests.</li>
+      <li>The whole reference deployment, VM and ECS stacks included, cost about sixty cents of cloud time, because everything billed by the hour was torn down after each session.</li>
+    </ul>
+  </div>
+
+  <h3 id="ch12-stages">The stages</h3>
+  <figure class="fig wide" id="fig-12-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Nine stages, each with what it proved: 0 account access; 1 images in ECR with immutable tags; 2 keyless CI; 3 a VM with no SSH, upgraded and rolled back with no failed requests; 4 ECS with RDS behind a load balancer; 5 rolling deploys, rollback and an automatic rollback of a bad release; 6 a tag goes live through the pipeline alone; 7 scaling, drift, autoscaling and outage drills; 8 observability.">
+      <line class="rule-strong" x1="40" y1="40" x2="40" y2="290"/>
+      <circle class="fill-acc" cx="40" cy="44" r="6"/><text class="tb" x="60" y="49">0  Account access</text><text class="ts" x="330" y="49">a new account is not usable until verified; check with read-only calls</text>
+      <circle class="fill-acc" cx="40" cy="72" r="6"/><text class="tb" x="60" y="77">1  Images and ECR</text><text class="ts" x="330" y="77">same digest as the source registry; overwriting a tag refused</text>
+      <circle class="fill-acc" cx="40" cy="100" r="6"/><text class="tb" x="60" y="105">2  Keyless CI</text><text class="ts" x="330" y="105">OIDC roles; a trust policy fixed from the real token (Chapter 5)</text>
+      <circle class="fill-acc" cx="40" cy="128" r="6"/><text class="tb" x="60" y="133">3  One VM done properly</text><text class="ts" x="330" y="133">no SSH; rollback across a migration, 139 requests, 0 failed</text>
+      <circle class="fill-acc" cx="40" cy="156" r="6"/><text class="tb" x="60" y="161">4  ECS, RDS, load balancer</text><text class="ts" x="330" y="161">init containers, URL rewrite, a least-privileged database role</text>
+      <circle class="fill-acc" cx="40" cy="184" r="6"/><text class="tb" x="60" y="189">5  Deploys and rollbacks</text><text class="ts" x="330" y="189">352 requests, 0 failed; a bad release rolled itself back</text>
+      <circle class="fill-acc" cx="40" cy="212" r="6"/><text class="tb" x="60" y="217">6  Tag to live, no human step</text><text class="ts" x="330" y="217">8 min 37 s, 967 probes, 0 failed; rollback by the same pipeline</text>
+      <circle class="fill-acc" cx="40" cy="240" r="6"/><text class="tb" x="60" y="245">7  Scale, drift, drills</text><text class="ts" x="330" y="245">a shared-state bug; drift found; autoscaling; outages survived</text>
+      <circle class="fill-acc" cx="40" cy="268" r="6"/><text class="tb" x="60" y="273">8  Observability</text><text class="ts" x="330" y="273">logs per container, load balancer metrics, alarms</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.1</span>The reference build, stage by stage. Each stage built on the last and ended with a measurement. The sections below tell the stories behind the ones that taught the most.</figcaption>
+  </figure>
+
+  <h3 id="ch12-images">Images: the same bytes in a second place</h3>
+  <p>The release images already existed in GitHub's registry, built for two processor types. They were copied into ECR as whole multi-architecture indexes, and the index digest in ECR matched the original exactly. Then a deliberate test: pushing a different image over an existing version tag. ECR refused, because the repositories have immutable tags, and the digest behind the tag was unchanged. A tag in that registry always names the same bytes.</p>
+  <p>One surprise: the registry's scan-on-push never ran on the copied images. It fires for ordinary pushes, and the copy took another path. The lesson is general: scanning belongs in the pipeline, before publishing, not only in the registry (Chapter 4).</p>
+
+  <h3 id="ch12-firstdeploy">The first ECS deploy: two failures, both configuration</h3>
+  <ul>
+    <li><strong><code>No export named … found.</code></strong> The new application stack referenced the image repositories, which needed new exports from the registry stack, and the deploy had been limited to the new stack alone. Cross-stack references are ordered dependencies: deploy the producer first (Chapter 7).</li>
+    <li><strong>"No subnets exist in Availability Zones with sufficient capacity."</strong> The database instance type was listed as available in all three zones, yet two had no capacity at that moment. Capacity is per zone and temporary. An extra isolated subnet in the third zone fixed it without touching anything running (Chapter 8).</li>
+  </ul>
+  <p>After those, the containers started in the designed order (setup, migrations, sidecars, then the api), the readiness endpoint reported the database and cache healthy and the identity provider degraded (there was none in this stage), and internal paths returned 404 at the load balancer as intended.</p>
+
+  <h3 id="ch12-false">An outage that never happened</h3>
+  <p>During the bad-release drill, a probe on a developer's machine sent a request twice a second and reported 15 failures. The timeline did not fit: failures began after the bad task was already gone and continued after the rollback. Splitting curl's timings showed why.</p>
+
+  <figure class="fig wide" id="fig-12-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Left, what the client-side probe saw: 15 failed requests, with DNS lookups taking 5.01 seconds and TCP connects 1.03 seconds because of the local resolver chain and a lost packet. Right, what the load balancer recorded over the same window: 1,478 requests, zero load balancer 5xx, zero target 5xx, zero connection errors, and a maximum response time of 0.475 seconds.">
+      <rect class="n-bad" x="16" y="30" width="380" height="180" rx="6"/>
+      <text class="tl" x="32" y="52">WHAT A PROBE ON A LAPTOP SAW</text>
+      <text class="tb tr" x="32" y="84">15 failed requests</text>
+      <text class="ts" x="32" y="112">DNS lookup: <tspan class="tm">dns=5.01s</tspan></text>
+      <text class="ts" x="32" y="130">the local resolver chain waited out a timeout</text>
+      <text class="ts" x="32" y="158">TCP connect: <tspan class="tm">connect=1.03s</tspan></text>
+      <text class="ts" x="32" y="176">a lost packet, retransmitted after one second,</text>
+      <text class="ts" x="32" y="192">even when connecting to the load balancer's IP</text>
+
+      <rect class="n-good" x="424" y="30" width="380" height="180" rx="6"/>
+      <text class="tl" x="440" y="52">WHAT THE LOAD BALANCER RECORDED</text>
+      <text class="tb" x="440" y="84">1,478 requests in the window</text>
+      <text class="ts" x="440" y="112">load balancer 5xx: <tspan class="tb">0</tspan></text>
+      <text class="ts" x="440" y="134">target 5xx: <tspan class="tb">0</tspan></text>
+      <text class="ts" x="440" y="156">target connection errors: <tspan class="tb">0</tspan></text>
+      <text class="ts" x="440" y="178">slowest response: <tspan class="tb">0.475 s</tspan></text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.2</span>The same window, from two sides. The failures were in the client's own network path, not the service. Availability is judged from server-side metrics; real teams add synthetic checks that run from inside the cloud.</figcaption>
+  </figure>
+
+  <h3 id="ch12-loop">The whole loop, with no human step</h3>
+  <p>With the deploy workflow in place, the only human action was pushing a version tag (the environment has since gained a required reviewer, so a release now also waits for one approval). Everything after it ran on its own: the release built, scanned, published and smoke-tested the images and copied them to ECR; the deploy workflow then ran in the gated environment, applied the infrastructure code with the new version, waited for ECS to be stable, and smoke-tested through the load balancer.</p>
+
+  <figure class="fig wide" id="fig-12-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 180" role="img" aria-label="Release took 4 minutes 20 seconds and the deploy 4 minutes 14 seconds: 8 minutes 37 seconds from tag to live. A later rollback through the same pipeline took 4 minutes 6 seconds.">
+      <text class="tl" x="16" y="18">MINUTES FROM THE VERSION TAG</text>
+      <line class="rule" x1="160" y1="28" x2="160" y2="150"/><text class="ts" x="160" y="166" text-anchor="middle">0</text>
+      <line class="rule" x1="300" y1="28" x2="300" y2="150"/><text class="ts" x="300" y="166" text-anchor="middle">2</text>
+      <line class="rule" x1="440" y1="28" x2="440" y2="150"/><text class="ts" x="440" y="166" text-anchor="middle">4</text>
+      <line class="rule" x1="580" y1="28" x2="580" y2="150"/><text class="ts" x="580" y="166" text-anchor="middle">6</text>
+      <line class="rule" x1="720" y1="28" x2="720" y2="150"/><text class="ts" x="720" y="166" text-anchor="middle">8</text>
+      <text class="ts" x="16" y="58">Tag to live</text>
+      <rect class="n-soft" x="160" y="40" width="303" height="28" rx="3"/><text class="ts tb" x="170" y="59">release 4:20</text>
+      <rect class="n-acc" x="465" y="40" width="296" height="28" rx="3"/><text class="ts tb" x="475" y="59">deploy 4:14</text>
+      <text class="ts tb" x="768" y="59">8:37</text>
+      <text class="ts" x="16" y="108">Rollback</text>
+      <rect class="n-acc" x="160" y="90" width="287" height="28" rx="3"/><text class="ts tb" x="170" y="109">deploy, older version 4:06</text>
+      <text class="ts" x="455" y="109">no rebuild: the older images already exist</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.3</span>Tag to live in 8 minutes 37 seconds, with 967 probe requests during the deploy and none failed. A rollback is only the deploy half, with an older version: 4 minutes 6 seconds. Over both, the load balancer counted 1,311 requests with no errors.</figcaption>
+  </figure>
+
+  <p>Three design choices made this loop safe to leave unattended. The infrastructure code always comes from main while the image comes from the release, so rolling the application back never rolls the infrastructure back. Deploys share a concurrency group without cancellation, so two deploys queue rather than race. And workflow inputs reach shell commands only through environment variables, never interpolated into the script text, which closes a script-injection route.</p>
+
+  <h3 id="ch12-outages">Outage drills</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Drill</th><th>What users saw</th><th>What the platform did</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Drill">Stop one api task, as a lost host would</td><td data-label="Users">182 probes, none failed</td><td data-label="Platform">ECS started a replacement at once; back to full strength in under a minute</td></tr>
+        <tr><td data-label="Drill">Reboot the database (single zone)</td><td data-label="Users">Readiness returned 503 for about 8 seconds; the pages and the liveness endpoint stayed up</td><td data-label="Platform">Nothing replaced: shorter than the load balancer's two failed checks</td></tr>
+        <tr><td data-label="Drill">Stop the database for about 7 minutes</td><td data-label="Users">Readiness 503 throughout; zero non-200 answers from the pages and the liveness endpoint</td><td data-label="Platform">With a shallow health check, nothing; the api reconnected 4 seconds after the database returned</td></tr>
+        <tr><td data-label="Drill">Deploy during the outage</td><td data-label="Users">Nothing: the old tasks kept serving</td><td data-label="Platform">The new task's setup container hit its start timeout; ECS reported "task failed to start" and stopped it</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The first database-stop drill, run with the deep health check, is the one that changed the design: ECS replaced api tasks whose replacements could not start, and one replacement sat in PENDING for 13 minutes. Chapter 9 explains the health-check rule and the dependency fix that came out of it.</p>
+
+  <h3 id="ch12-obs">What the on-call looks at</h3>
+  <p>Every container's output went to CloudWatch Logs, one stream per container, and CloudWatch Logs Insights queries them with a SQL-like language. Over the last four hours of the session:</p>
+  <pre class="code" data-lines="1-2"><code class="language-plaintext">filter @logStream like /^api\// | parse @message "\"level\": \"*\"" as level
+| stats count(*) as n by level | sort n desc</code></pre>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Level</th><th class="num">Lines</th><th>What they were</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Level">info</td><td data-label="Lines" class="num">47,723</td><td data-label="What">ordinary request logs</td></tr>
+        <tr><td data-label="Level">warning</td><td data-label="Lines" class="num">1,501</td><td data-label="What">1,453 of them "identity provider unavailable": expected, because there was none</td></tr>
+        <tr><td data-label="Level">error</td><td data-label="Lines" class="num">15</td><td data-label="What">all from the deliberate bad-release drill</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Those 1,453 expected warnings are how alert fatigue starts. Alert on symptoms users feel (5xx responses, latency, unhealthy targets), not on log warnings. The load balancer is the source of truth for users, and its totals for the session were: 42,434 requests, no load balancer errors, no connection errors to targets, 281 server errors from the api, every one of them during the two deliberate database outages (honest 503s from readiness), and 107 client errors, which were the rate-limit tests' 429s.</p>
+  <p>Not built, but worth knowing: Container Insights for per-task CPU and memory, tracing through X-Ray or any OpenTelemetry backend (the api already exports OTLP), and CloudWatch Synthetics, which runs probes from inside AWS and would have avoided the false outage above.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"We proved each property with traffic flowing: zero failed requests across deploys, an automatic rollback of a bad release, a lost task and a database outage absorbed. And we learned to trust the load balancer's numbers over a laptop's."</p>
+  </aside>
+
+  <h3 id="ch12-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">Most services answer "not signed up" on a brand-new cloud account</td><td data-label="Cause">Activation (payment and phone verification) has not finished propagating</td><td data-label="Fix">Finish verification, then check access with read-only calls before building.</td></tr>
+        <tr><td data-label="Symptom">A monitoring probe reports failures the service never had</td><td data-label="Cause">The probe's own DNS or network path</td><td data-label="Fix">Split the client's timings; compare with load balancer metrics; probe from inside the cloud.</td></tr>
+        <tr><td data-label="Symptom">A probe killed mid-run prints no summary</td><td data-label="Cause">It was stopped with a signal it did not handle</td><td data-label="Fix">Trap the termination signal and print the counts.</td></tr>
+        <tr><td data-label="Symptom">An alert channel full of expected warnings</td><td data-label="Cause">Alerting on log levels rather than user-facing symptoms</td><td data-label="Fix">Alert on 5xx, latency and unhealthy targets.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch12-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>A synthetic check from your laptop reports an outage. What do you look at before declaring an incident?</p>
+      <details class="ans"><summary>Answer</summary><p>The server-side metrics for the same window, starting with the load balancer's request count and error counts, and the client's own timings: a slow DNS lookup or connect points at the client's network, not the service.</p></details>
+    </li>
+    <li>
+      <p>Why does a rollback through the pipeline take about half as long as a release?</p>
+      <details class="ans"><summary>Answer</summary><p>It runs only the deploy half. The older images were built, scanned and published when that version was released, so nothing is rebuilt.</p></details>
+    </li>
+    <li>
+      <p>Why does the deploy workflow take its infrastructure code from main rather than from the release being deployed?</p>
+      <details class="ans"><summary>Answer</summary><p>So that deploying an older application version never rolls the infrastructure back. The application is versioned by its images; the infrastructure moves forward through its own pull requests.</p></details>
+    </li>
+  </ol>
+</section>

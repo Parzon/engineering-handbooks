@@ -1,0 +1,249 @@
+<section class="chapter" id="ch18">
+  <header class="ch-head">
+    <span class="ch-num">18</span>
+    <p class="eyebrow">Part IX · Choosing and starting</p>
+    <h2>The stack catalog</h2>
+    <p class="lede">A useful stack catalog does not list versions; for each technology it says what job it does, whether a new service starts with it, and the named trigger that justifies adding it, because every piece beyond the smallest production-shaped service has a price.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Two marks per technology: how well an engineer should know it, and when a new project adopts it (day one, when a trigger fires, or rarely).</li>
+      <li>Versions live in lockfiles and image lines, moved by a bot; a version table in a document goes stale within weeks.</li>
+      <li>A piece is added for a measurement, a written requirement, or a failure users would see. The reason goes in the pull request or a decision record.</li>
+      <li>Price a piece before adding it: an image to patch, settings and secrets, a failure mode, backups, upgrades, monitoring and reading time.</li>
+      <li>Take a piece away when nobody can say how it fails, a managed service does the job, or it was added "in case".</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">An architecture diagram with every component from the start</td><td>The smallest production-shaped service, then pieces added on named triggers</td><td>Each piece is a failure mode to run; most were never needed.</td></tr>
+      <tr><td data-label="Then">A separate database per concern (search, vectors, cache)</td><td>Postgres first, with extensions, until a measurement says otherwise</td><td>One system to back up, secure and reason about.</td></tr>
+      <tr><td data-label="Then">Self-hosted everything</td><td>Managed equivalents once in the cloud</td><td>The provider runs the failure modes for you.</td></tr>
+      <tr><td data-label="Then">Redis, Docker Desktop and others chosen without a license check</td><td>License, maintenance and architecture checked before adoption</td><td>Several popular tools changed their licenses.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch18-map">The map</h3>
+  <figure class="fig wide" id="fig-18-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 440" role="img" aria-label="The reference stack by layer, each piece marked day one, add when, or rarely. AI: an OpenAI-compatible seam, the eval harness, the mock model, day one; pgvector and full-text search, Ollama, an MCP server, agent mode, when triggered. API: Python with uv, FastAPI, SQLAlchemy, Uvicorn under gunicorn, prometheus-client, day one. Data: Postgres and row-level security day one; PgBouncer and Valkey when triggered; a separate vector database rarely. Web: React, Vite, TanStack Query, fetch streaming, nginx, day one. Sign-in and edge: OIDC with PKCE day one, Keycloak locally only; Caddy when a VM serves HTTPS. Delivery: Docker, Compose, GitHub Actions, Make, a registry, Dependabot day one; cloud-init and ufw when running a VM; Kubernetes rarely. Supply chain: Trivy and gitleaks day one. Quality: pytest, ruff, mypy, Vitest day one; Playwright and k6 when triggered. Monitoring: Prometheus, Grafana, Alertmanager when someone is on call; Jaeger when traces need reading.">
+      <g class="ts">
+      <rect class="n-acc" x="16" y="10" width="110" height="22" rx="3"/><text x="71" y="26" text-anchor="middle">day one</text>
+      <rect class="n-warn" x="136" y="10" width="110" height="22" rx="3"/><text x="191" y="26" text-anchor="middle">add when</text>
+      <rect class="n-soft" x="256" y="10" width="110" height="22" rx="3"/><text x="311" y="26" text-anchor="middle">rarely</text>
+      </g>
+      <line class="rule" x1="16" y1="44" x2="804" y2="44"/>
+      <text class="tb" x="16" y="70">AI</text>
+      <rect class="n-acc" x="150" y="54" width="128" height="24" rx="3"/><text class="ts" x="214" y="71" text-anchor="middle">OpenAI-style seam</text>
+      <rect class="n-acc" x="284" y="54" width="92" height="24" rx="3"/><text class="ts" x="330" y="71" text-anchor="middle">eval harness</text>
+      <rect class="n-acc" x="382" y="54" width="82" height="24" rx="3"/><text class="ts" x="423" y="71" text-anchor="middle">mock model</text>
+      <rect class="n-warn" x="470" y="54" width="104" height="24" rx="3"/><text class="ts" x="522" y="71" text-anchor="middle">pgvector + FTS</text>
+      <rect class="n-warn" x="580" y="54" width="62" height="24" rx="3"/><text class="ts" x="611" y="71" text-anchor="middle">Ollama</text>
+      <rect class="n-warn" x="648" y="54" width="70" height="24" rx="3"/><text class="ts" x="683" y="71" text-anchor="middle">MCP</text>
+      <rect class="n-warn" x="724" y="54" width="80" height="24" rx="3"/><text class="ts" x="764" y="71" text-anchor="middle">agent mode</text>
+
+      <text class="tb" x="16" y="110">API</text>
+      <rect class="n-acc" x="150" y="94" width="100" height="24" rx="3"/><text class="ts" x="200" y="111" text-anchor="middle">Python + uv</text>
+      <rect class="n-acc" x="256" y="94" width="72" height="24" rx="3"/><text class="ts" x="292" y="111" text-anchor="middle">FastAPI</text>
+      <rect class="n-acc" x="334" y="94" width="96" height="24" rx="3"/><text class="ts" x="382" y="111" text-anchor="middle">SQLAlchemy</text>
+      <rect class="n-acc" x="436" y="94" width="148" height="24" rx="3"/><text class="ts" x="510" y="111" text-anchor="middle">Uvicorn in gunicorn</text>
+      <rect class="n-acc" x="590" y="94" width="108" height="24" rx="3"/><text class="ts" x="644" y="111" text-anchor="middle">/metrics, logs</text>
+
+      <text class="tb" x="16" y="150">Data</text>
+      <rect class="n-acc" x="150" y="134" width="80" height="24" rx="3"/><text class="ts" x="190" y="151" text-anchor="middle">Postgres</text>
+      <rect class="n-acc" x="236" y="134" width="138" height="24" rx="3"/><text class="ts" x="305" y="151" text-anchor="middle">row-level security</text>
+      <rect class="n-warn" x="380" y="134" width="88" height="24" rx="3"/><text class="ts" x="424" y="151" text-anchor="middle">PgBouncer</text>
+      <rect class="n-warn" x="474" y="134" width="70" height="24" rx="3"/><text class="ts" x="509" y="151" text-anchor="middle">Valkey</text>
+      <rect class="n-soft" x="550" y="134" width="126" height="24" rx="3"/><text class="ts" x="613" y="151" text-anchor="middle">a vector database</text>
+
+      <text class="tb" x="16" y="190">Web</text>
+      <rect class="n-acc" x="150" y="174" width="128" height="24" rx="3"/><text class="ts" x="214" y="191" text-anchor="middle">React + TypeScript</text>
+      <rect class="n-acc" x="284" y="174" width="52" height="24" rx="3"/><text class="ts" x="310" y="191" text-anchor="middle">Vite</text>
+      <rect class="n-acc" x="342" y="174" width="112" height="24" rx="3"/><text class="ts" x="398" y="191" text-anchor="middle">TanStack Query</text>
+      <rect class="n-acc" x="460" y="174" width="114" height="24" rx="3"/><text class="ts" x="517" y="191" text-anchor="middle">fetch streaming</text>
+      <rect class="n-acc" x="580" y="174" width="56" height="24" rx="3"/><text class="ts" x="608" y="191" text-anchor="middle">nginx</text>
+
+      <text class="tb" x="16" y="230">Sign-in, edge</text>
+      <rect class="n-acc" x="150" y="214" width="114" height="24" rx="3"/><text class="ts" x="207" y="231" text-anchor="middle">OIDC with PKCE</text>
+      <rect class="n-acc" x="270" y="214" width="130" height="24" rx="3"/><text class="ts" x="335" y="231" text-anchor="middle">Keycloak, locally</text>
+      <rect class="n-warn" x="406" y="214" width="62" height="24" rx="3"/><text class="ts" x="437" y="231" text-anchor="middle">Caddy</text>
+
+      <text class="tb" x="16" y="270">Delivery</text>
+      <rect class="n-acc" x="150" y="254" width="122" height="24" rx="3"/><text class="ts" x="211" y="271" text-anchor="middle">Docker, Compose</text>
+      <rect class="n-acc" x="278" y="254" width="112" height="24" rx="3"/><text class="ts" x="334" y="271" text-anchor="middle">GitHub Actions</text>
+      <rect class="n-acc" x="396" y="254" width="50" height="24" rx="3"/><text class="ts" x="421" y="271" text-anchor="middle">Make</text>
+      <rect class="n-acc" x="452" y="254" width="70" height="24" rx="3"/><text class="ts" x="487" y="271" text-anchor="middle">registry</text>
+      <rect class="n-acc" x="528" y="254" width="92" height="24" rx="3"/><text class="ts" x="574" y="271" text-anchor="middle">Dependabot</text>
+      <rect class="n-warn" x="626" y="254" width="88" height="24" rx="3"/><text class="ts" x="670" y="271" text-anchor="middle">cloud-init</text>
+      <rect class="n-soft" x="720" y="254" width="84" height="24" rx="3"/><text class="ts" x="762" y="271" text-anchor="middle">Kubernetes</text>
+
+      <text class="tb" x="16" y="310">Supply chain</text>
+      <rect class="n-acc" x="150" y="294" width="60" height="24" rx="3"/><text class="ts" x="180" y="311" text-anchor="middle">Trivy</text>
+      <rect class="n-acc" x="216" y="294" width="68" height="24" rx="3"/><text class="ts" x="250" y="311" text-anchor="middle">gitleaks</text>
+
+      <text class="tb" x="16" y="350">Quality</text>
+      <rect class="n-acc" x="150" y="334" width="62" height="24" rx="3"/><text class="ts" x="181" y="351" text-anchor="middle">pytest</text>
+      <rect class="n-acc" x="218" y="334" width="104" height="24" rx="3"/><text class="ts" x="270" y="351" text-anchor="middle">ruff and mypy</text>
+      <rect class="n-acc" x="328" y="334" width="62" height="24" rx="3"/><text class="ts" x="359" y="351" text-anchor="middle">Vitest</text>
+      <rect class="n-warn" x="396" y="334" width="84" height="24" rx="3"/><text class="ts" x="438" y="351" text-anchor="middle">Playwright</text>
+      <rect class="n-warn" x="486" y="334" width="40" height="24" rx="3"/><text class="ts" x="506" y="351" text-anchor="middle">k6</text>
+
+      <text class="tb" x="16" y="390">Monitoring</text>
+      <rect class="n-warn" x="150" y="374" width="94" height="24" rx="3"/><text class="ts" x="197" y="391" text-anchor="middle">Prometheus</text>
+      <rect class="n-warn" x="250" y="374" width="72" height="24" rx="3"/><text class="ts" x="286" y="391" text-anchor="middle">Grafana</text>
+      <rect class="n-warn" x="328" y="374" width="108" height="24" rx="3"/><text class="ts" x="382" y="391" text-anchor="middle">Alertmanager</text>
+      <rect class="n-warn" x="442" y="374" width="66" height="24" rx="3"/><text class="ts" x="475" y="391" text-anchor="middle">Jaeger</text>
+      <text class="ts tmu" x="16" y="428">Keycloak runs in development only: in production, the organization's own identity provider replaces it.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 18.1</span>The reference stack by layer. Everything in the first color is what a new service starts with; everything in the second waits for its trigger (Figure 18.2); Kubernetes and a separate vector database need a reason you can name.</figcaption>
+  </figure>
+
+  <h3 id="ch18-triggers">Triggers for adding a piece</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Add</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Add">pgvector and full-text search</td><td data-label="When">The answers must come from your documents</td></tr>
+        <tr><td data-label="Add">Valkey (a shared store)</td><td data-label="When">More than one process shares a limit, a cache or a lock; a counter in each worker's memory gives a user N times the limit</td></tr>
+        <tr><td data-label="Add">PgBouncer, or RDS Proxy</td><td data-label="When">Replicas × workers × pool size nears Postgres's connection limit, or new connections churn</td></tr>
+        <tr><td data-label="Add">An edge proxy for TLS</td><td data-label="When">A VM serves HTTPS itself, with no load balancer in front</td></tr>
+        <tr><td data-label="Add">Tracing and a trace store</td><td data-label="When">Someone asks what one answer saw and where its time went; with retrieval, that is early</td></tr>
+        <tr><td data-label="Add">Prometheus, Alertmanager, Grafana</td><td data-label="When">Someone is on call</td></tr>
+        <tr><td data-label="Add">A local model server</td><td data-label="When">Evals need a real model without a paid key, or data must not leave the machine</td></tr>
+        <tr><td data-label="Add">An MCP server; agent mode</td><td data-label="When">Other AI clients should use the tools; the steps are not known before the model runs</td></tr>
+        <tr><td data-label="Add">Browser tests; load tests</td><td data-label="When">The UI has a flow a unit test cannot prove; a capacity question has a number in it</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure class="fig wide" id="fig-18-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 280" role="img" aria-label="Adding a piece. Three triggers you can name: a measurement with the command that produced it; a written requirement; a failure users would see, shown by a drill. Then price it: an image to patch and scan; settings and secrets; a failure mode to decide and drill; a backup if it holds state; an upgrade path; monitoring with an exporter, alerts and a runbook section; a decision record and reading time. Valkey, used only for rate-limit counters, cost a fail-open decision, a fail-closed exception, three alerts, two drills, an exporter and two sizing fixes. Take a piece away when nobody can say what happens when it fails, a managed service does the same job, two things do one job, or it was added in case and nothing has needed it since.">
+      <text class="tl" x="16" y="22">ADD FOR A TRIGGER YOU CAN NAME</text>
+      <rect class="n" x="16" y="34" width="250" height="52" rx="5"/><text class="tb" x="28" y="56">a measurement</text><text class="ts" x="28" y="74">a number, and the command behind it</text>
+      <rect class="n" x="16" y="94" width="250" height="52" rx="5"/><text class="tb" x="28" y="116">a requirement</text><text class="ts" x="28" y="134">written: sign-in, an SLO, compliance</text>
+      <rect class="n" x="16" y="154" width="250" height="52" rx="5"/><text class="tb" x="28" y="176">a failure users would see</text><text class="ts" x="28" y="194">shown by a drill</text>
+      <path class="e" d="M267,120 L300,120" marker-end="url(#a)"/>
+      <rect class="n-warn" x="302" y="34" width="250" height="172" rx="6"/><text class="tb" x="314" y="56">Then price it</text>
+      <text class="ts" x="314" y="80">an image to patch and scan</text><text class="ts" x="314" y="98">settings and secrets</text><text class="ts" x="314" y="116">a failure mode to decide and drill</text><text class="ts" x="314" y="134">a backup, if it holds state</text><text class="ts" x="314" y="152">an upgrade path</text><text class="ts" x="314" y="170">an exporter, alerts, a runbook</text><text class="ts" x="314" y="188">a decision record, reading time</text>
+      <rect class="n-soft" x="580" y="34" width="224" height="172" rx="6"/><text class="tb" x="592" y="56">Take it away when</text>
+      <text class="ts" x="592" y="80">nobody can say how it fails</text><text class="ts" x="592" y="104">a managed service does the job</text><text class="ts" x="592" y="128">two things do one job</text><text class="ts" x="592" y="152">it was added "in case", and</text><text class="ts" x="592" y="168">nothing has needed it since</text>
+      <text class="ts" x="16" y="238"><tspan class="tb">The price of one small piece:</tspan> Valkey, for rate-limit counters alone, cost a fail-open decision, a fail-closed</text>
+      <text class="ts" x="16" y="256">exception for the chat, three alerts, two drills, an exporter and two sizing fixes under load.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 18.2</span>The rules for adding and removing architecture. On the same rule, the reference repository later removed five load-testing tools, a deep-debugging kit, two host rehearsals and three document types; Git history keeps them.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/TECH_STACK.md#L203-L211">TECH_STACK.md</a><span class="lines">one entry in the catalog</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Each entry gives the two marks, the job, the trigger and what to watch. This one shows the format for a piece that is not day one.</p>
+        <ul class="notice">
+          <li>The heading line: the name, how well to know it (half-filled: explain and review), and the trigger.</li>
+          <li>The classic bug it prevents: a counter in each worker's memory gives a user N times the limit.</li>
+          <li>The failure policy, with its decision records, and the configuration detail that matters (an eviction policy that suits counters, not data you must keep).</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="TECH_STACK.md" data-lines="203-211"><code class="language-markdown">**Valkey** ◐ · when more than one process shares a limit, a cache or a
+lock&lt;br&gt;
+Rate-limit counters shared across workers. A counter kept in each
+worker's memory is a classic bug: with N workers, a user gets N times the
+limit. Valkey is the open-licence fork of Redis and speaks the same
+protocol (ADR-0002). Decide what happens when it is down: here limits
+fail open (ADR-0004), except the chat's, which fails closed in
+production because each question costs money (ADR-0023). Its
+`allkeys-lru` eviction suits counters, not data you must keep.</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch18-sizes">The same service at three sizes</h3>
+  <figure class="fig wide" id="fig-18-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 330" role="img" aria-label="Three sizes. Week one: api and web in Compose; Postgres; no shared state; localhost; Keycloak locally; the mock and one provider; JSON logs and /metrics; CI with tests and scans. One VM, as the reference repository runs: gunicorn workers with rolling deploys; Postgres with PgBouncer and off-host backups; Valkey; Caddy then nginx; the organization's identity provider; the mock, Ollama or a provider; Prometheus, Grafana, Alertmanager and Jaeger; releases to a registry and a deploy script. On AWS: ECS on Fargate behind an ALB; RDS or Aurora, Multi-AZ, with RDS Proxy; ElastiCache for Valkey; an ALB with ACM and CloudFront; the organization's provider; Bedrock or a provider behind the same seam; managed Prometheus and Grafana or CloudWatch with an OpenTelemetry collector; ECR and infrastructure as code.">
+      <text class="tl" x="16" y="22">LAYER</text>
+      <rect class="n-soft" x="130" y="8" width="210" height="24" rx="3"/><text class="tb" x="235" y="25" text-anchor="middle">Week one</text>
+      <rect class="n" x="350" y="8" width="220" height="24" rx="3"/><text class="tb" x="460" y="25" text-anchor="middle">One VM (the repository)</text>
+      <rect class="n-acc" x="580" y="8" width="224" height="24" rx="3"/><text class="tb" x="692" y="25" text-anchor="middle">On AWS</text>
+      <g class="ts">
+      <text x="16" y="58" class="tb">Compute</text><text x="138" y="58">api and web in Compose</text><text x="358" y="58">gunicorn, rolling deploys</text><text x="588" y="58">ECS on Fargate, an ALB</text>
+      <text x="16" y="94" class="tb">Data</text><text x="138" y="94">Postgres (+ pgvector)</text><text x="358" y="94">+ PgBouncer, off-host backups</text><text x="588" y="94">RDS or Aurora; RDS Proxy</text>
+      <text x="16" y="130" class="tb">Shared state</text><text x="138" y="130">none</text><text x="358" y="130">Valkey</text><text x="588" y="130">ElastiCache for Valkey</text>
+      <text x="16" y="166" class="tb">Edge</text><text x="138" y="166">localhost</text><text x="358" y="166">Caddy, then nginx</text><text x="588" y="166">ALB with ACM; CloudFront</text>
+      <text x="16" y="202" class="tb">Sign-in</text><text x="138" y="202">Keycloak locally</text><text x="358" y="202">the organization's provider</text><text x="588" y="202">the organization's provider</text>
+      <text x="16" y="238" class="tb">Model</text><text x="138" y="238">the mock, one provider</text><text x="358" y="238">mock, Ollama, a provider</text><text x="588" y="238">Bedrock or a provider</text>
+      <text x="16" y="274" class="tb">Watching</text><text x="138" y="274">JSON logs, /metrics</text><text x="358" y="274">Prometheus, Grafana, Jaeger</text><text x="588" y="274">managed Prometheus, or</text><text x="588" y="290">CloudWatch; a collector</text>
+      <text x="16" y="318" class="tb">Delivery</text><text x="138" y="318">CI with tests and scans</text><text x="358" y="318">+ releases, a deploy script</text><text x="588" y="318">+ ECR, infrastructure as code</text>
+      </g>
+      <line class="rule" x1="16" y1="40" x2="804" y2="40"/>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 18.3</span>One service, three sizes. The code and the seams stay the same; what changes is who runs each failure mode. Handbook 3 walks through the right-hand column, piece by piece.</figcaption>
+  </figure>
+
+  <h3 id="ch18-adding">Adding a technology</h3>
+  <ol>
+    <li><strong>Justify it</strong> in one line in the pull request: what it does that the stack cannot.</li>
+    <li><strong>Check</strong> its license, that it is maintained, its security record, that it publishes builds for both CPU architectures, and its size.</li>
+    <li><strong>Pin it</strong> in a lockfile, or by image tag and digest, so the update bot and the scanners cover it.</li>
+    <li><strong>Price it</strong>, and write a decision record if a reader would ask "why this?".</li>
+    <li><strong>Add it to the catalog</strong> with its trigger, and add a line to the traps list when it first bites.</li>
+  </ol>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0002</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">Valkey instead of Redis for the rate-limit store</p>
+    <dl>
+      <dt>Problem</dt><dd>A floating image tag had silently moved the service onto a Redis release under a source-available license, the kind enterprise legal reviews routinely block. The choice had been made by accident.</dd>
+      <dt>Decision</dt><dd>Valkey, the Linux Foundation fork with the original permissive license, wire-compatible and the default engine of AWS's managed offering. The client library and the service's name stay the same.</dd>
+      <dt>See it in</dt><dd>The rate limiter, <a href="{{TA}}/apps/api/app/ratelimit.py">ratelimit.py</a>, and the store's service in <a href="{{TA}}/compose.yaml">compose.yaml</a>.</dd>
+    </dl>
+  </aside>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"We start from the smallest production-shaped service and add pieces on named triggers: a measurement, a requirement, or a failure a drill showed. Each one is priced first."</p>
+    <p>"Postgres does retrieval, row-level security and the audit trail; we'd only add a vector database if Postgres were measured short."</p>
+  </aside>
+
+  <h3 id="ch18-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">Each user gets several times their rate limit</td><td data-label="Cause">Counters kept in each worker's memory</td><td data-label="Fix">A shared store once there is more than one process.</td></tr>
+        <tr><td data-label="Symptom">A license change forces an urgent migration</td><td data-label="Cause">The license was never checked or watched</td><td data-label="Fix">Check before adopting; prefer open-license equivalents.</td></tr>
+        <tr><td data-label="Symptom">The team cannot explain how a component fails</td><td data-label="Cause">It was added "in case"</td><td data-label="Fix">Remove it, or decide and drill its failure mode.</td></tr>
+        <tr><td data-label="Symptom">Builds fail on ARM laptops or cloud instances</td><td data-label="Cause">A dependency publishes only x86 builds</td><td data-label="Fix">Check for both architectures before adopting.</td></tr>
+        <tr><td data-label="Symptom">The document says one version, production runs another</td><td data-label="Cause">A version table in prose</td><td data-label="Fix">Lockfiles and image lines are the truth.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch18-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What are the three kinds of trigger that justify adding a component?</p>
+      <details class="ans"><summary>Answer</summary><p>A measurement with the command that produced it, a written requirement, or a failure users would see, shown by a drill.</p></details>
+    </li>
+    <li>
+      <p>Name four costs of adding even a small component.</p>
+      <details class="ans"><summary>Answer</summary><p>Any four of: an image to patch and scan, settings and secrets, a failure mode to decide and drill, a backup if it holds state, an upgrade path, monitoring with alerts and a runbook section, a decision record and every new engineer's reading time.</p></details>
+    </li>
+    <li>
+      <p>When should a component be removed?</p>
+      <details class="ans"><summary>Answer</summary><p>When nobody can say what happens when it fails, when a managed service does the same job, when two things do one job, or when it was added "in case" and nothing has needed it since.</p></details>
+    </li>
+  </ol>
+</section>

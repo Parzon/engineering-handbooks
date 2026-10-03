@@ -1,0 +1,319 @@
+<section class="chapter" id="ch3">
+  <header class="ch-head">
+    <span class="ch-num">3</span>
+    <p class="eyebrow">Part II · Source and build</p>
+    <h2>CI/CD and artifacts</h2>
+    <p class="lede">Continuous integration checks every change before it can merge; continuous delivery turns a tagged commit into immutable, versioned images and deploys exactly those, so what was tested is what runs.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li><strong>CI</strong> is the merge gate: lint, types, unit and integration tests, an image check, scans and browser tests, on every pull request.</li>
+      <li><strong>CD</strong> builds an artifact, pushes it to a registry and deploys it. The artifact is a container image named by version and identified by a digest.</li>
+      <li>Four rules: build once and promote; artifacts are immutable; environments differ only in configuration; rollback is deploying the previous artifact.</li>
+      <li>A tag can move; a digest cannot. Deploy by exact version from a registry with immutable tags, or by digest.</li>
+      <li>One tag can serve several processor types through a multi-architecture index, and each architecture is built natively.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">A build server configured through its web interface, with plugins</td><td>Pipelines as YAML files in the repository, run on fresh hosted machines</td><td>The pipeline is reviewed, versioned and reproducible like the code.</td></tr>
+      <tr><td data-label="Then">Nightly builds that tell you tomorrow what broke today</td><td>Checks on every pull request, before the merge</td><td>A failure is caught on the change that caused it.</td></tr>
+      <tr><td data-label="Then">Build outputs copied to a shared drive or server</td><td>Images in a registry, named by version, verified by content digest</td><td>Every environment fetches the same bytes, and can prove it.</td></tr>
+      <tr><td data-label="Then">One processor type for every server</td><td>One version tag pointing at images for amd64 and arm64</td><td>Arm servers, such as AWS Graviton, cost about a fifth less, and laptops run on Arm too.</td></tr>
+      <tr><td data-label="Then">Trust that the build server built what you think</td><td>Build provenance and a software bill of materials attached to each image</td><td>You can show which commit and workflow produced an image, and what is inside it.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch3-ci">Continuous integration: the merge gate</h3>
+  <p>On every pull request, the reference service runs six jobs in parallel on fresh machines. All six are required by branch protection (Chapter 2), so a pull request cannot merge until they pass. Each job is the same command a developer can run locally, which keeps "it passed on my machine" and "it passed in CI" the same statement.</p>
+
+  <figure class="fig wide" id="fig-3-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 312" role="img" aria-label="A pull request fans out to six parallel jobs: lint, test-api, build, security, web-build and e2e. All six are required checks; when they are green and the review is approved, the merge is allowed.">
+      <rect class="n-acc" x="16" y="118" width="128" height="64" rx="6"/>
+      <text class="tb" x="80" y="146" text-anchor="middle">Pull request</text>
+      <text class="ts" x="80" y="164" text-anchor="middle">every push to it</text>
+
+      <rect class="n" x="214" y="12" width="300" height="38" rx="5"/>
+      <text class="tm tb" x="226" y="36">lint</text><text class="ts" x="276" y="36">ruff, format, mypy, alert-rule tests, shell</text>
+      <rect class="n" x="214" y="58" width="300" height="38" rx="5"/>
+      <text class="tm tb" x="226" y="82">test-api</text><text class="ts" x="296" y="82">real Postgres stack, migrations, pytest</text>
+      <rect class="n" x="214" y="104" width="300" height="38" rx="5"/>
+      <text class="tm tb" x="226" y="128">build</text><text class="ts" x="276" y="128">production image: non-root, no dev tools</text>
+      <rect class="n" x="214" y="150" width="300" height="38" rx="5"/>
+      <text class="tm tb" x="226" y="174">security</text><text class="ts" x="296" y="174">secrets in every commit; image CVEs</text>
+      <rect class="n" x="214" y="196" width="300" height="38" rx="5"/>
+      <text class="tm tb" x="226" y="220">web-build</text><text class="ts" x="306" y="220">lint, unit tests, build, nginx config</text>
+      <rect class="n" x="214" y="242" width="300" height="38" rx="5"/>
+      <text class="tm tb" x="226" y="266">e2e</text><text class="ts" x="266" y="266">production stack, real browser tests</text>
+
+      <path class="e" d="M145,150 C180,150 180,31 212,31" marker-end="url(#a)"/>
+      <path class="e" d="M145,150 C180,150 180,77 212,77" marker-end="url(#a)"/>
+      <path class="e" d="M145,150 C180,150 180,123 212,123" marker-end="url(#a)"/>
+      <path class="e" d="M145,150 C180,150 180,169 212,169" marker-end="url(#a)"/>
+      <path class="e" d="M145,150 C180,150 180,215 212,215" marker-end="url(#a)"/>
+      <path class="e" d="M145,150 C180,150 180,261 212,261" marker-end="url(#a)"/>
+
+      <path class="e-good" d="M515,31 C560,31 560,150 600,150"/>
+      <path class="e-good" d="M515,77 C560,77 560,150 600,150"/>
+      <path class="e-good" d="M515,123 C560,123 560,150 600,150"/>
+      <path class="e-good" d="M515,169 C560,169 560,150 600,150"/>
+      <path class="e-good" d="M515,215 C560,215 560,150 600,150"/>
+      <path class="e-good" d="M515,261 C560,261 560,150 600,150"/>
+      <line class="e-good" x1="600" y1="150" x2="640" y2="150" marker-end="url(#a-good)"/>
+      <rect class="n-good" x="642" y="104" width="164" height="92" rx="6"/>
+      <text class="tb" x="724" y="132" text-anchor="middle">Merge allowed</text>
+      <text class="ts" x="724" y="152" text-anchor="middle">six required checks</text>
+      <text class="ts" x="724" y="168" text-anchor="middle">green, plus a code</text>
+      <text class="ts" x="724" y="184" text-anchor="middle">owner's approval</text>
+      <text class="ts" x="514" y="304" text-anchor="end">the security scan runs again at release, for vulnerabilities published since the merge</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 3.1</span>The merge gate of the reference service. A newer push to the same branch cancels the run still in progress, so the team pays only for checking the latest version of a change.</figcaption>
+  </figure>
+
+  <p>Two kinds of test sit in this gate, and they catch different bugs. A <strong>unit test</strong> checks one function in isolation, in milliseconds. An <strong>integration test</strong> runs real parts together, such as the api against a real Postgres, connection pooler and cache, and catches wiring bugs a unit test cannot see. The <code>test-api</code> job builds a throwaway stack for the integration tests and deletes it afterwards. The <code>e2e</code> job goes one step further and drives a real browser through the production-shaped stack, which once caught a bug no unit test could reproduce. Handbook 2 covers testing in depth.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/.github/workflows/ci.yml#L1-L21">.github/workflows/ci.yml</a></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The top of the CI workflow sets three rules that apply to every job.</p>
+        <ul class="notice">
+          <li><code>concurrency</code> with <code>cancel-in-progress</code>: a newer push cancels the run of an older one on the same branch.</li>
+          <li><code>permissions: contents: read</code>: the workflow's built-in token can only read. A compromised step cannot push code or packages.</li>
+          <li>Every third-party action is pinned to a full commit SHA, not a version tag, because a tag can be moved to malicious code. Chapter 4 explains why.</li>
+        </ul>
+        <p>The <code>test-api</code> job runs the exact command a developer runs, so a local run and CI cannot disagree about what "tested" means.</p>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path=".github/workflows/ci.yml" data-lines="1-21"><code class="language-yaml">name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A newer push to the same branch cancels the run still in progress.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege for the GITHUB_TOKEN: these jobs only read the repo.
+permissions:
+  contents: read
+
+# Actions are pinned to full commit SHAs (tags can be moved to malicious
+# code, as in the 2025 tj-actions/changed-files compromise). Dependabot
+# keeps the SHAs and the version comments current.
+</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path=".github/workflows/ci.yml" data-lines="49-57"><code class="language-yaml">test-api:
+  runs-on: ubuntu-24.04
+  steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    # The exact command developers run: a throwaway compose stack with real
+    # Postgres, PgBouncer and Valkey, migrations + `alembic check`, then
+    # pytest with the coverage gate from pyproject.toml.
+    - run: make .env
+    - run: make test-api</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h4>Where CI runs, and what it costs</h4>
+  <p>GitHub Actions runs each job on a fresh, GitHub-hosted virtual machine, billed by the minute. Three habits keep the bill and the wait down: cache dependency downloads keyed on the lockfile, run expensive workflows only when their inputs change (path filters), and cancel superseded runs. A <strong>self-hosted runner</strong> executes whatever a workflow tells it to. Never attach one to a public repository that accepts pull requests from outside: a stranger's pull request would run code on your machine.</p>
+
+  <h3 id="ch3-cd">Continuous delivery: a tag becomes a release</h3>
+  <p>A release starts when someone pushes a version tag, such as <code>v0.8.2</code>, to a commit on main. Versions follow <strong>semantic versioning</strong>: <code>MAJOR.MINOR.PATCH</code>, where the major number changes for a breaking change, the minor for a compatible feature, and the patch for a fix. Teams choose between deploying every merge to main (continuous deployment) and deploying on a tag (continuous delivery). The reference service deploys on a tag.</p>
+
+  <figure class="fig wide" id="fig-3-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="The release workflow: verify the tag is on main and scan; build three images on two architectures natively, each pushed by digest with provenance and an SBOM; merge the digests under one set of tags per image; smoke-test the published images on both architectures; copy to ECR; then deploy.">
+      <rect class="n-acc" x="16" y="116" width="110" height="64" rx="6"/>
+      <text class="tb" x="71" y="144" text-anchor="middle">Tag pushed</text>
+      <text class="tm" x="71" y="164" text-anchor="middle">v0.8.2</text>
+
+      <rect class="n" x="150" y="100" width="128" height="96" rx="6"/>
+      <text class="tb" x="214" y="124" text-anchor="middle">Verify</text>
+      <text class="ts" x="214" y="144" text-anchor="middle">tag is on main</text>
+      <text class="ts" x="214" y="160" text-anchor="middle">image check</text>
+      <text class="ts" x="214" y="176" text-anchor="middle">scan again</text>
+
+      <text class="tl" x="378" y="22" text-anchor="middle">SIX NATIVE BUILDS</text>
+      <rect class="n" x="302" y="34" width="72" height="34" rx="4"/><text class="tm" x="338" y="56" text-anchor="middle">api</text>
+      <rect class="n" x="382" y="34" width="72" height="34" rx="4"/><text class="tm" x="418" y="56" text-anchor="middle">api</text>
+      <rect class="n" x="302" y="76" width="72" height="34" rx="4"/><text class="tm" x="338" y="98" text-anchor="middle">web</text>
+      <rect class="n" x="382" y="76" width="72" height="34" rx="4"/><text class="tm" x="418" y="98" text-anchor="middle">web</text>
+      <rect class="n" x="302" y="118" width="72" height="34" rx="4"/><text class="tm" x="338" y="140" text-anchor="middle">edge</text>
+      <rect class="n" x="382" y="118" width="72" height="34" rx="4"/><text class="tm" x="418" y="140" text-anchor="middle">edge</text>
+      <text class="ts" x="338" y="170" text-anchor="middle">amd64</text>
+      <text class="ts" x="418" y="170" text-anchor="middle">arm64</text>
+      <text class="ts" x="378" y="196" text-anchor="middle">each pushed by digest,</text>
+      <text class="ts" x="378" y="212" text-anchor="middle">with provenance and SBOM</text>
+
+      <rect class="n" x="478" y="100" width="118" height="96" rx="6"/>
+      <text class="tb" x="537" y="124" text-anchor="middle">Merge</text>
+      <text class="ts" x="537" y="144" text-anchor="middle">one tag, both</text>
+      <text class="ts" x="537" y="160" text-anchor="middle">architectures:</text>
+      <text class="ts" x="537" y="176" text-anchor="middle">0.8.2, 0.8, sha-…</text>
+
+      <rect class="n-good" x="620" y="40" width="186" height="70" rx="6"/>
+      <text class="tb" x="713" y="64" text-anchor="middle">Smoke test</text>
+      <text class="ts" x="713" y="82" text-anchor="middle">pull what was published,</text>
+      <text class="ts" x="713" y="98" text-anchor="middle">run it on amd64 and arm64</text>
+      <rect class="n" x="620" y="186" width="186" height="70" rx="6"/>
+      <text class="tb" x="713" y="210" text-anchor="middle">Copy to ECR</text>
+      <text class="ts" x="713" y="228" text-anchor="middle">keyless (Chapter 5), the</text>
+      <text class="ts" x="713" y="244" text-anchor="middle">whole index, same digest</text>
+
+      <line class="e" x1="127" y1="148" x2="148" y2="148" marker-end="url(#a)"/>
+      <line class="e" x1="279" y1="148" x2="300" y2="135" marker-end="url(#a)"/>
+      <line class="e" x1="455" y1="135" x2="476" y2="148" marker-end="url(#a)"/>
+      <path class="e" d="M597,135 C610,135 605,75 618,75" marker-end="url(#a)"/>
+      <path class="e" d="M597,160 C610,160 605,221 618,221" marker-end="url(#a)"/>
+      <text class="ts" x="600" y="286" text-anchor="middle">then the deploy workflow starts (Chapter 13)</text>
+      <line class="e-acc" x1="713" y1="257" x2="713" y2="270" marker-end="url(#a-acc)"/>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 3.2</span>The release workflow. It builds each image once per processor type, joins them under the release tags, and then tests what it published, not what it built. Only after that are the images copied onward and deployed.</figcaption>
+  </figure>
+
+  <p>Each step guards against a specific failure. Checking that the tag points at a commit on main stops anyone releasing code that never passed review. Scanning again at release catches vulnerabilities published after the merge. Testing the published images, rather than the build outputs, proves the registry holds what the team thinks it holds.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/.github/workflows/release.yml#L57-L66">.github/workflows/release.yml</a><span class="lines">the release's guards and its build outputs</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Two parts of the release workflow carry most of its guarantees.</p>
+        <ul class="notice">
+          <li><code>git merge-base --is-ancestor</code> fails unless the tagged commit is already on main.</li>
+          <li>The image check and the vulnerability scan run again at release time.</li>
+          <li>A tag push publishes each build by digest; a pull request only builds, to a cache.</li>
+          <li><code>provenance</code> and <code>sbom</code> store, next to the image in the registry, which commit and workflow built it and what it contains.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path=".github/workflows/release.yml" data-lines="57-66"><code class="language-yaml"># Tags can be pushed from any commit; only code that went through a
+# reviewed, green PR into main gets released.
+- name: The tag points at a commit on main
+  run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+- name: Production api image - non-root, no dev tools, every module imports
+  run: make image-check
+# Again at release, not only at merge: vulnerabilities published since
+# the PR merged block the release too (ADR-0022).
+- name: No fixable HIGH or CRITICAL vulnerability in what ships (Trivy)
+  run: make scan</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path=".github/workflows/release.yml" data-lines="124-129"><code class="language-yaml"># A tag push publishes by digest; a PR only builds.
+outputs: ${{ github.event_name == 'push' &amp;&amp; format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true', env.IMAGE) || 'type=cacheonly' }}
+# What went into the image, stored next to it in the registry:
+# the build's provenance and a software bill of materials.
+provenance: ${{ github.event_name == 'push' &amp;&amp; 'mode=max' || 'false' }}
+sbom: ${{ github.event_name == 'push' }}</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch3-artifacts">Tags, digests and multi-architecture images</h3>
+  <p>An image is the immutable build output, identified by a <strong>digest</strong>: a hash of its content, such as <code>sha256:fcbc59d1…</code>. A <strong>tag</strong> is a movable label, like a Git branch. The release workflow moves <code>0.8</code> on every 0.8.x release on purpose; a re-push can move any tag unless the registry forbids it. So deploy an exact version from a registry with immutable tags, or deploy by digest, and never deploy <code>latest</code> or a moving tag such as <code>0.8</code>.</p>
+
+  <figure class="fig wide" id="fig-3-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 280" role="img" aria-label="The tag 0.8.2 points at an index digest. The index lists one image per architecture, amd64 and arm64, plus attestation entries. A client pulls the image matching its own processor; the wrong architecture fails with exec format error.">
+      <rect class="n-soft" x="16" y="96" width="120" height="56" rx="5"/>
+      <text class="tl" x="76" y="116" text-anchor="middle">TAG (MOVABLE)</text>
+      <text class="tm tb" x="76" y="138" text-anchor="middle">api:0.8.2</text>
+      <line class="e" x1="137" y1="124" x2="178" y2="124" marker-end="url(#a)"/>
+
+      <rect class="n-acc" x="180" y="78" width="210" height="92" rx="6"/>
+      <text class="tl" x="196" y="100">INDEX (A DIGEST)</text>
+      <text class="tm" x="196" y="122">sha256:fcbc59d1…</text>
+      <text class="ts" x="196" y="142">lists one image per</text>
+      <text class="ts" x="196" y="158">processor type</text>
+
+      <rect class="n" x="450" y="20" width="200" height="56" rx="5"/>
+      <text class="tb" x="466" y="44">linux/amd64</text>
+      <text class="ts" x="466" y="62">most cloud servers</text>
+      <rect class="n" x="450" y="96" width="200" height="56" rx="5"/>
+      <text class="tb" x="466" y="120">linux/arm64</text>
+      <text class="ts" x="466" y="138">Graviton, Apple silicon</text>
+      <rect class="n-soft" x="450" y="172" width="200" height="56" rx="5"/>
+      <text class="tm" x="466" y="196">unknown/unknown</text>
+      <text class="ts" x="466" y="214">attestations, not images</text>
+      <path class="e" d="M391,110 C420,110 420,48 448,48" marker-end="url(#a)"/>
+      <line class="e" x1="391" y1="124" x2="448" y2="124" marker-end="url(#a)"/>
+      <path class="e dash" d="M391,138 C420,138 420,200 448,200" marker-end="url(#a)"/>
+
+      <text class="tb" x="676" y="44">An amd64 host</text>
+      <text class="ts" x="676" y="62">pulls this one</text>
+      <text class="tb" x="676" y="120">An arm64 host</text>
+      <text class="ts" x="676" y="138">pulls this one</text>
+      <text class="ts tr" x="450" y="252">An image for the wrong processor fails to start with</text>
+      <text class="tm tr" x="450" y="270">exec format error</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 3.3</span>One version tag, several images. The client picks the image for its own processor. A plain pull followed by a push copies only that one image, which is why copying a release to another registry uses a tool that copies the whole index.</figcaption>
+  </figure>
+
+  <p>The reference release builds each architecture on a native runner (an Arm machine for arm64) rather than emulating one on the other. Emulated builds are slow and occasionally behave differently. Each build pushes its image by digest, and a final job joins the digests under the version tags.</p>
+  <p>When the release was copied from GitHub's registry to Amazon ECR, the index digest in ECR was identical to the one on GitHub: the same bytes in a second place. Pushing a different image over an existing tag in ECR was then refused, because the repositories have immutable tags. A tag in that registry always names the same bytes.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"CI is our merge gate: the same commands developers run locally, on a clean machine, and the pull request can't merge until they pass."</p>
+    <p>"A release is a tag. It builds once for both processor types, tests what it published, and we deploy that exact version everywhere."</p>
+  </aside>
+
+  <h3 id="ch3-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A copied release runs on one processor type and fails on the other</td><td data-label="Cause">Pull then push copies only the image for the machine doing the copy</td><td data-label="Fix">Copy the whole index with <code>docker buildx imagetools create</code> or <code>skopeo copy --all</code>.</td></tr>
+        <tr><td data-label="Symptom"><code>exec format error</code> when a container starts</td><td data-label="Cause">The image was built for another architecture, often arm64 from a laptop</td><td data-label="Fix">Build in CI for both, or pass <code>--platform linux/amd64</code> when building locally.</td></tr>
+        <tr><td data-label="Symptom">The registry's scan never ran on a copied image</td><td data-label="Cause">Scan-on-push fires for ordinary pushes; a copy can take another path</td><td data-label="Fix">Scan in the pipeline, before publishing, and do not rely on the registry alone.</td></tr>
+        <tr><td data-label="Symptom">An old vulnerability blocks an unrelated pull request</td><td data-label="Cause">A new advisory was published for the base image; main already has the fix</td><td data-label="Fix">Read the failing step before changing anything; update the branch from main.</td></tr>
+        <tr><td data-label="Symptom">A release has to be cut again just to retry one failed job</td><td data-label="Cause">Treating a failed run as a failed release</td><td data-label="Fix">Re-run only the failed jobs of the same run.</td></tr>
+        <tr><td data-label="Symptom">A timing-sensitive test fails once on main and passes on retry</td><td data-label="Cause">The test depends on where a time window boundary falls</td><td data-label="Fix">Treat it as a real flake: make time controllable in the test, or assert on behavior that does not depend on the clock.</td></tr>
+        <tr><td data-label="Symptom">A self-hosted runner ran an outsider's code</td><td data-label="Cause">The runner was attached to a public repository that accepts external pull requests</td><td data-label="Fix">Use hosted runners for public repositories; isolate self-hosted ones.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch3-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What is the difference between a unit test and an integration test, and why does CI run both?</p>
+      <details class="ans"><summary>Answer</summary><p>A unit test checks one function in isolation and is fast. An integration test runs real components together and catches wiring bugs, such as a wrong connection setting or a missing migration. Each catches failures the other cannot.</p></details>
+    </li>
+    <li>
+      <p>Why does the release workflow test the images it published rather than the ones it built?</p>
+      <details class="ans"><summary>Answer</summary><p>Because what matters is what hosts will pull. Testing the published images, on each architecture, proves the registry holds working images under the release tags.</p></details>
+    </li>
+    <li>
+      <p>What is the difference between a tag and a digest, and which should a deploy use?</p>
+      <details class="ans"><summary>Answer</summary><p>A tag is a movable label; a digest is a hash of the content and never changes. Deploy by digest, or by an exact version tag in a registry that makes tags immutable. Never by <code>latest</code> or a tag that is moved on purpose, such as a minor line.</p></details>
+    </li>
+    <li>
+      <p>Why might a team build arm64 images at all?</p>
+      <details class="ans"><summary>Answer</summary><p>Arm servers such as AWS Graviton cost less for the same work, and many developer laptops are Arm. One tag with both images lets every host pull the right one.</p></details>
+    </li>
+    <li>
+      <p>What does build provenance answer that a version number does not?</p>
+      <details class="ans"><summary>Answer</summary><p>Which commit and which workflow run produced this exact image. A version number is only a label someone chose; provenance is a signed record stored with the image.</p></details>
+    </li>
+  </ol>
+</section>

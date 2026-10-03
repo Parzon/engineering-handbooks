@@ -1,0 +1,209 @@
+<section class="chapter" id="ch3">
+  <header class="ch-head">
+    <span class="ch-num">3</span>
+    <p class="eyebrow">Part II · How models run</p>
+    <h2>Serving models</h2>
+    <p class="lede">Serving a model is a trade between throughput, which is the cost, and per-stream speed, which is the user's experience; and an application stays free to change the model or the provider only if it reaches every model through one small seam.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Batching runs several sequences per forward pass: total throughput rises a lot, and each stream slows a little.</li>
+      <li>GPU memory holds the weights (parameters × bytes each) plus the KV cache, which grows with concurrency and context.</li>
+      <li>Quantization saves memory and speeds decode, and costs quality unevenly: evaluate the quantized model itself.</li>
+      <li>Replicas when the model fits on one GPU; tensor parallelism within a node when it does not; pipeline parallelism across nodes only when you must.</li>
+      <li>One OpenAI-compatible seam, a mock behind it for tests, and a gateway when several services share models and quotas.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">A model served one request at a time</td><td>Continuous batching in an inference server (vLLM, TGI, TensorRT-LLM)</td><td>Decode leaves compute idle while waiting on memory; batching fills it.</td></tr>
+      <tr><td data-label="Then">16- or 32-bit weights only</td><td>8- and 4-bit quantized weights as a common choice</td><td>Memory and bandwidth are the bottleneck, not arithmetic.</td></tr>
+      <tr><td data-label="Then">A vendor SDK in application code</td><td>An OpenAI-compatible API in front of every backend</td><td>Changing the model or provider becomes configuration.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch3-batching">Throughput and latency: batching</h3>
+  <figure class="fig wide" id="fig-3-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 270" role="img" aria-label="Measured with a 20-billion-parameter model on one 48 GB GPU. One slot: 176 output tokens per second in total, and 176 per stream. Four slots with four requests: 365 tokens per second in total, about 91 per stream. Eight slots with eight requests: 401; with sixteen requests: 478. More requests than slots only queue: one slot with eight requests still gave 176.">
+      <text class="tl" x="16" y="22">OUTPUT TOKENS PER SECOND</text>
+      <line class="rule" x1="140" y1="34" x2="140" y2="210"/>
+      <text class="ts" x="16" y="56">1 slot</text><rect class="fill-acc" x="140" y="44" width="141" height="18"/><text class="ts" x="290" y="58">176 total · 176 per stream</text>
+      <text class="ts" x="16" y="96">4 slots</text><rect class="fill-acc" x="140" y="84" width="292" height="18"/><text class="ts" x="440" y="98">365 total · about 91 per stream</text>
+      <text class="ts" x="16" y="136">8 slots</text><rect class="fill-acc" x="140" y="124" width="321" height="18"/><text class="ts" x="470" y="138">401 total, 8 at a time</text>
+      <text class="ts" x="16" y="176">8 slots</text><rect class="fill-acc" x="140" y="164" width="382" height="18"/><text class="ts" x="530" y="178">478 total, 16 at a time</text>
+      <text class="ts" x="140" y="234">More requests than slots only queue: 1 slot with 8 at a time still gave 176. Eight slots used 38 GB, most of it KV cache.</text>
+      <text class="ts" x="140" y="254">Throughput is the cost; per-stream speed and time to first token are the user's experience.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 3.1</span>Batching on one GPU, measured. Continuous batching adds and removes sequences at every step, so a finished answer's place is reused at once; engines also split long prefills into chunks so one long prompt does not stall everyone's decode.</figcaption>
+  </figure>
+
+  <h3 id="ch3-memory">GPU memory, precision and loading</h3>
+  <figure class="fig wide" id="fig-3-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="A 48 GB GPU. A 20-billion-parameter model's weights take about 40 GB at 16 bits per parameter and about 10 GB at 4 bits, before the KV cache, activations and runtime overhead. The rest of memory holds KV cache for concurrent sequences. Precision: FP32 4 bytes, FP16 and BF16 2 bytes, the serving default; INT8 and FP8 1 byte; 4-bit formats such as GGUF Q4, AWQ and GPTQ. Fewer bytes mean less memory and usually faster decode, because decode is memory-bound; the price is quality, often fine for chat and worse for maths, code and long reasoning.">
+      <text class="tl" x="16" y="22">ONE 48 GB GPU, A 20B MODEL</text>
+      <text class="ts" x="16" y="52">16-bit</text><rect class="n-acc" x="80" y="38" width="600" height="22" rx="3"/><text class="ts" x="380" y="54" text-anchor="middle">weights ≈ 40 GB</text><rect class="n-warn" x="680" y="38" width="120" height="22" rx="3"/><text class="ts" x="740" y="54" text-anchor="middle">8 GB left</text>
+      <text class="ts" x="16" y="90">4-bit</text><rect class="n-acc" x="80" y="76" width="150" height="22" rx="3"/><text class="ts" x="155" y="92" text-anchor="middle">≈ 10 GB</text><rect class="n-good" x="230" y="76" width="570" height="22" rx="3"/><text class="ts" x="515" y="92" text-anchor="middle">room for KV cache: more sequences, longer contexts</text>
+      <rect class="n" x="16" y="126" width="384" height="118" rx="6"/><text class="tb" x="28" y="148">Precision</text>
+      <g class="ts"><text x="28" y="170">FP32: 4 bytes per number</text><text x="28" y="190">FP16, BF16: 2 bytes, the serving default</text><text x="28" y="210">INT8, FP8: 1 byte</text><text x="28" y="230">4-bit: GGUF Q4, AWQ, GPTQ</text></g>
+      <rect class="n-warn" x="420" y="126" width="384" height="118" rx="6"/><text class="tb" x="432" y="148">The price is quality, unevenly</text>
+      <g class="ts"><text x="432" y="170">often fine for chat; worse for maths,</text><text x="432" y="190">code and long reasoning</text><text x="432" y="214">run your own evals on the quantized</text><text x="432" y="230">model; never assume</text></g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 3.2</span>Weights take parameters × bytes per parameter; the KV cache takes what is left, and caps concurrency. BF16 keeps FP32's range with less precision, so it overflows less than FP16.</figcaption>
+  </figure>
+
+  <p>Loading copies the weights from disk to the GPU, which takes tens of seconds for a large model, so a cold start is a latency spike. Keep models resident and warm them before traffic: Ollama, for example, unloads a model after five idle minutes by default, so the first call after a pause pays the load. A model that does not fit spills to the CPU, very slowly, or must be split across GPUs. One failure is worth knowing about: in the reference build, a GPU container silently lost access to its GPU after a day of use and loaded models on the CPU instead, with no error anywhere. The only sign was that judge calls taking about a minute had not finished after ten; checking which processor a model is loaded on, and recreating the container, fixed it.</p>
+
+  <h3 id="ch3-parallel">Parallelism across GPUs</h3>
+  <figure class="fig wide" id="fig-3-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Data parallelism: a whole model on each GPU, requests spread across replicas; scales throughput and needs the model to fit on one GPU. Tensor parallelism: each layer's matrices split across the GPUs of one node over a fast interconnect; for a model too big for one GPU, and to cut per-token latency. Pipeline parallelism: different layers on different GPUs or nodes; fits huge models at the price of idle bubbles and added latency.">
+      <rect class="n" x="16" y="16" width="250" height="140" rx="6"/><text class="tb" x="28" y="40">Replicas (data parallel)</text>
+      <rect class="n-acc" x="30" y="56" width="60" height="44" rx="3"/><text class="ts" x="60" y="82" text-anchor="middle">model</text><rect class="n-acc" x="104" y="56" width="60" height="44" rx="3"/><text class="ts" x="134" y="82" text-anchor="middle">model</text><rect class="n-acc" x="178" y="56" width="60" height="44" rx="3"/><text class="ts" x="208" y="82" text-anchor="middle">model</text>
+      <text class="ts" x="28" y="124">scales throughput; the model</text><text class="ts" x="28" y="140">must fit on one GPU</text>
+      <rect class="n" x="285" y="16" width="250" height="140" rx="6"/><text class="tb" x="297" y="40">Tensor parallel</text>
+      <rect class="n-acc" x="299" y="56" width="222" height="44" rx="3"/><line class="rule-strong" x1="373" y1="56" x2="373" y2="100"/><line class="rule-strong" x1="447" y1="56" x2="447" y2="100"/><text class="ts" x="336" y="82" text-anchor="middle">slice 1</text><text class="ts" x="410" y="82" text-anchor="middle">slice 2</text><text class="ts" x="484" y="82" text-anchor="middle">slice 3</text>
+      <text class="ts" x="297" y="124">every layer split; one node, fast links;</text><text class="ts" x="297" y="140">too big for one GPU, lower latency</text>
+      <rect class="n" x="554" y="16" width="250" height="140" rx="6"/><text class="tb" x="566" y="40">Pipeline parallel</text>
+      <rect class="n-acc" x="568" y="56" width="66" height="44" rx="3"/><text class="ts" x="601" y="82" text-anchor="middle">layers 1</text><rect class="n-acc" x="646" y="56" width="66" height="44" rx="3"/><text class="ts" x="679" y="82" text-anchor="middle">layers 2</text><rect class="n-acc" x="724" y="56" width="66" height="44" rx="3"/><text class="ts" x="757" y="82" text-anchor="middle">layers 3</text>
+      <text class="ts" x="566" y="124">fits huge models; idle bubbles</text><text class="ts" x="566" y="140">and added latency</text>
+      <text class="ts" x="16" y="190"><tspan class="tb">The rule:</tspan> replicas when the model fits; tensor parallelism inside a node when it does not;</text>
+      <text class="ts" x="16" y="208">pipeline parallelism across nodes only when you must.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 3.3</span>Three ways to spread a model across GPUs. Most application teams only ever need the first, and many only consume a managed API where the provider makes these choices.</figcaption>
+  </figure>
+
+  <h3 id="ch3-arch">The serving architecture, and the seam</h3>
+  <figure class="fig wide" id="fig-3-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 290" role="img" aria-label="Inside the application, every model call goes through one seam that speaks the OpenAI-compatible API and maps failures to a small set of typed errors; a mock server sits behind the same seam in tests. When several services share models, a gateway sits between applications and backends: authentication, request and token limits per user or tenant, routing to the cheapest model that handles each request, fallback on errors or 429s, logging and cost tracking. Behind it: managed APIs, or inference servers such as vLLM, TGI or Ollama doing batching, KV cache management and streaming on GPUs.">
+      <rect class="zone" x="16" y="16" width="230" height="258" rx="8"/><text class="tl" x="30" y="36">THE APPLICATION</text>
+      <rect class="n" x="30" y="50" width="200" height="44" rx="5"/><text class="ts" x="130" y="76" text-anchor="middle">the prompt, the context</text>
+      <rect class="n-acc" x="30" y="110" width="200" height="64" rx="5"/><text class="tb" x="130" y="134" text-anchor="middle">the seam</text><text class="ts" x="130" y="152" text-anchor="middle">one API, typed errors,</text><text class="ts" x="130" y="166" text-anchor="middle">explicit timeouts</text>
+      <rect class="n-soft" x="30" y="196" width="200" height="56" rx="5"/><text class="ts" x="130" y="220" text-anchor="middle">in tests: a mock server</text><text class="ts" x="130" y="238" text-anchor="middle">speaking the same API</text>
+      <line class="e" x1="130" y1="95" x2="130" y2="108" marker-end="url(#a)"/>
+      <rect class="n-warn" x="290" y="70" width="230" height="160" rx="6"/><text class="tb" x="302" y="94">Gateway (when shared)</text>
+      <g class="ts"><text x="302" y="118">authentication</text><text x="302" y="138">request and token limits per tenant</text><text x="302" y="158">routing to the cheapest model</text><text x="302" y="178">fallback on errors and 429s</text><text x="302" y="198">logging, cost tracking</text></g>
+      <line class="e" x1="231" y1="142" x2="288" y2="142" marker-end="url(#a)"/>
+      <rect class="n" x="566" y="40" width="238" height="80" rx="6"/><text class="tb" x="578" y="64">Managed APIs</text><text class="ts" x="578" y="84">strongest models, priced per token;</text><text class="ts" x="578" y="100">their terms and rate limits</text>
+      <rect class="n" x="566" y="150" width="238" height="100" rx="6"/><text class="tb" x="578" y="174">Inference servers</text><text class="ts" x="578" y="194">vLLM, TGI, Ollama: batching,</text><text class="ts" x="578" y="210">KV cache, streaming, on GPUs</text><text class="ts" x="578" y="230">you run them, busy or idle</text>
+      <path class="e" d="M521,120 C545,120 545,80 564,80" marker-end="url(#a)"/><path class="e" d="M521,170 C545,170 545,200 564,200" marker-end="url(#a)"/>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 3.4</span>The serving path. Because the reference service's seam already speaks the OpenAI API, adding a gateway later changes one setting, the base URL. Every route a gateway can choose needs its own eval results.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/llm.py#L133-L150">apps/api/app/llm.py</a><span class="lines">provider failures, mapped to the service's own</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The seam's error mapping. Routes and the prompt module see only these few typed errors, whichever provider answers.</p>
+        <ul class="notice">
+          <li>Each error has a stable code that metrics, alerts and the browser key on: a timeout, rate limiting, unavailability, a rejected request.</li>
+          <li>A 400-class rejection is the service's own mistake (key, model name, parameters); retrying will not help, so it is not retried.</li>
+          <li>Failures can arrive mid-stream, after the response has started, which is why the stream carries its own error event (Handbook 2, Chapter 10).</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/llm.py" data-lines="133-150"><code class="language-python">def _provider_errors(what: str) -&gt; Iterator[None]:
+    """The SDK maps transport failures to its own exceptions, both before
+    and during a stream; these become ours. Order matters: APITimeoutError
+    is a subclass of APIConnectionError."""
+    try:
+        yield
+    except openai.APITimeoutError as exc:
+        raise LLMTimeout(f"{what} took too long to respond") from exc
+    except openai.RateLimitError as exc:
+        raise LLMRateLimited("the model provider is rate limiting us") from exc
+    except (openai.APIConnectionError, openai.InternalServerError) as exc:
+        raise LLMUnavailable("the model provider is unavailable") from exc
+    except openai.APIStatusError as exc:
+        # 400/401/403/404: our request or configuration is wrong (key,
+        # model name, parameters) - retrying will not help.
+        raise LLMError(f"the model provider rejected the request ({exc.status_code})") from exc
+    except openai.APIError as exc:  # e.g. an error event inside the stream
+        raise LLMUnavailable("the model provider failed mid-answer") from exc</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0006</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">One OpenAI-compatible model client behind a small seam, with a mock provider</p>
+    <dl>
+      <dt>Problem</dt><dd>Every project would otherwise wire a vendor SDK into its routes, with the SDK's defaults: a ten-minute read timeout and two retries.</dd>
+      <dt>Decision</dt><dd>One client for any OpenAI-compatible endpoint, with explicit timeouts (5 s to connect, 60 s of silence, 120 s per answer) and one retry; a mock server with switchable failures, rather than an in-process fake, so tests exercise the real HTTP and streaming path. Native SDKs and orchestration frameworks were rejected as the default seam.</dd>
+      <dt>See it in</dt><dd><a href="{{TA}}/apps/api/app/llm.py">llm.py</a> and <a href="{{TA}}/tools/mock-llm">tools/mock-llm</a>.</dd>
+    </dl>
+  </aside>
+
+  <h3 id="ch3-build">Managed API or self-hosted?</h3>
+  <figure class="fig wide" id="fig-3-5">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Cost per 1,000 questions for the reference service at list prices: GPT-5 mini 0.67 dollars; Claude Haiku 4.5 2.16; Claude Sonnet 5 4.33; one rented GPU running a 20-billion-parameter model around the clock at 33,000 questions a month, about 41 dollars per 1,000, roughly 60 times GPT-5 mini. Break-even against GPT-5 mini is about 2 million questions a month. Self-hosting pays when the GPU stays busy, or when data may not leave.">
+      <text class="tl" x="16" y="22">PER 1,000 QUESTIONS, LIST PRICES (LOG SCALE)</text>
+      <line class="rule" x1="200" y1="34" x2="200" y2="186"/>
+      <text class="ts" x="16" y="56">GPT-5 mini</text><rect class="fill-good" x="200" y="44" width="124" height="18"/><text class="ts" x="332" y="58">$0.67</text>
+      <text class="ts" x="16" y="92">Claude Haiku 4.5</text><rect class="fill-acc" x="200" y="80" width="200" height="18"/><text class="ts" x="408" y="94">$2.16</text>
+      <text class="ts" x="16" y="128">Claude Sonnet 5</text><rect class="fill-acc" x="200" y="116" width="245" height="18"/><text class="ts" x="453" y="130">$4.33</text>
+      <text class="ts" x="16" y="164">self-hosted, 33k/month</text><rect class="n-bad" x="200" y="152" width="392" height="18"/><text class="ts" x="600" y="166">≈ $41: idle time is paid for</text>
+      <text class="ts" x="16" y="212"><tspan class="tb">Break-even</tspan> against GPT-5 mini: about 2 million questions a month, near 40% of what eight batched slots can serve.</text>
+      <text class="ts" x="16" y="232">It leaves out the people who run it, and assumes the smaller model answers as well, which the evals must show first.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 3.5</span>What the reference service's typical question costs, measured in tokens and priced at list prices. Self-hosting wins when the GPU is kept busy, or when data may not leave; batching is what makes it affordable (Chapter 10).</figcaption>
+  </figure>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Batching trades per-stream speed for throughput; we set concurrency against a latency target, and the KV cache caps it."</p>
+    <p>"Every model call goes through one OpenAI-compatible seam with typed errors and explicit timeouts, so a new provider or a gateway is a configuration change, plus an eval run."</p>
+  </aside>
+
+  <h3 id="ch3-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">The first request after a quiet period is very slow</td><td data-label="Cause">The model was unloaded and is loading again</td><td data-label="Fix">Keep it resident; warm it before traffic.</td></tr>
+        <tr><td data-label="Symptom">A local model is suddenly many times slower, with no error</td><td data-label="Cause">The container lost its GPU and fell back to the CPU</td><td data-label="Fix">Check which processor the model runs on; recreate the container.</td></tr>
+        <tr><td data-label="Symptom">Requests hang for minutes when the provider stalls</td><td data-label="Cause">The SDK's default timeouts</td><td data-label="Fix">Explicit connect, silence and total timeouts at the seam.</td></tr>
+        <tr><td data-label="Symptom">Quality dropped after a cheaper deployment</td><td data-label="Cause">A quantized or smaller model was assumed to be equivalent</td><td data-label="Fix">Run the evals on the exact model, with its own baseline.</td></tr>
+        <tr><td data-label="Symptom">Adding concurrency did not raise throughput</td><td data-label="Cause">Requests beyond the configured slots only queue</td><td data-label="Fix">Raise the slots, within memory and the latency target.</td></tr>
+        <tr><td data-label="Symptom">Tests pass; production streaming breaks</td><td data-label="Cause">An in-process fake skipped HTTP, streaming and cancellation</td><td data-label="Fix">A mock server speaking the real API.</td></tr>
+        <tr><td data-label="Symptom">Local eval numbers do not hold in production</td><td data-label="Cause">The production model is a different model</td><td data-label="Fix">Run the suite against the production model and give it its own baseline.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch3-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Why does batching raise throughput but slow each stream?</p>
+      <details class="ans"><summary>Answer</summary><p>Decode is memory-bound: each forward pass reads all the weights. Batching reads them once for several sequences, so total tokens per second rises; each sequence now shares the pass with others, so its own rate drops.</p></details>
+    </li>
+    <li>
+      <p>How much memory do a 20-billion-parameter model's weights take at 16 and at 4 bits, and what uses the rest?</p>
+      <details class="ans"><summary>Answer</summary><p>About 40 GB and about 10 GB. The rest holds the KV cache for concurrent sequences, plus activations and runtime overhead.</p></details>
+    </li>
+    <li>
+      <p>When is self-hosting cheaper than a managed API?</p>
+      <details class="ans"><summary>Answer</summary><p>Only when the GPU is kept busy: an idle GPU is still paid for. For the reference service, break-even against a small managed model was about two million questions a month. Data residency or sustained high load can justify it for other reasons.</p></details>
+    </li>
+    <li>
+      <p>What does a gateway add once several services call models?</p>
+      <details class="ans"><summary>Answer</summary><p>Shared authentication and keys, request and token limits per tenant, routing to the cheapest suitable model, fallback on errors or rate limits, and central logging and cost tracking.</p></details>
+    </li>
+  </ol>
+</section>

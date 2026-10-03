@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 250" role="img" aria-label="Turning the assistant off. Triggers: harmful advice, a provider breach or changed terms, a runaway bill. An org admin switches it off in the app with a reason, or an operator does it from the host if the identity provider is down. It takes effect in seconds on every server, without a deploy. Questions get a 503 with the reason; alerts and runbooks keep working; refusals are counted but excluded from the error-rate alert, so nobody is paged. While off: the audit trail shows what the model was given for each question. Back on only after the cause is fixed and the evals pass."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="250" fill="#ffffff"/>
+      <rect class="n-warn" x="16" y="16" width="200" height="110" rx="6"/><text class="tb" x="28" y="40">When</text><text class="ts" x="28" y="62">harmful advice</text><text class="ts" x="28" y="80">a provider breach or</text><text class="ts" x="28" y="96">changed terms</text><text class="ts" x="28" y="114">a runaway bill</text>
+      <rect class="n-acc" x="256" y="16" width="250" height="110" rx="6"/><text class="tb" x="268" y="40">Switch off, with a reason</text><text class="ts" x="268" y="62">an org admin, in the app; or an</text><text class="ts" x="268" y="78">operator on the host when sign-in</text><text class="ts" x="268" y="94">itself is down</text><text class="ts tb" x="268" y="116">seconds, every server, no deploy</text>
+      <rect class="n" x="546" y="16" width="258" height="110" rx="6"/><text class="tb" x="558" y="40">What users see</text><text class="ts" x="558" y="62">questions: 503 with the reason</text><text class="ts" x="558" y="80">alerts and runbooks: working</text><text class="ts" x="558" y="98">refusals counted, not paged:</text><text class="ts" x="558" y="114">left out of the error-rate alert</text>
+      <line class="e" x1="217" y1="71" x2="254" y2="71" marker-end="url(#a)"/><line class="e" x1="507" y1="71" x2="544" y2="71" marker-end="url(#a)"/>
+      <rect class="n" x="16" y="156" width="490" height="76" rx="6"/><text class="tb" x="28" y="180">While it is off</text><text class="ts" x="28" y="200">the audit trail shows what the model was given for each question,</text><text class="ts" x="28" y="216">by hash, and who wrote each runbook section it saw</text>
+      <rect class="n-good" x="546" y="156" width="258" height="76" rx="6"/><text class="tb" x="558" y="180">Back on</text><text class="ts" x="558" y="200">after the cause is fixed and</text><text class="ts" x="558" y="216">the evals pass; both flips audited</text>
+    </svg>

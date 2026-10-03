@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 260" role="img" aria-label="A drill: reasoning effort raised from low to high. Requests did not move. Prompt tokens per request did not move. Answer tokens per request rose from 168 to 694, 4.1 times. Empty-answer failures went from none to 13 of 22. Cost per 1,000 on Claude Haiku 4.5 rose from 2.16 to 4.79 dollars. A cost alert on request volume stays silent. Method: which factor moved, what changed in it, then the lowest-risk fix: revert, cap, then optimize with evals."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="260" fill="#ffffff"/>
+      <text class="tl" x="16" y="22">THE BILL DOUBLED: REASONING EFFORT RAISED FROM LOW TO HIGH</text>
+      <g class="ts">
+      <text x="16" y="52">requests</text><text x="250" y="52" class="tg">unchanged</text>
+      <text x="16" y="78">prompt tokens per request</text><text x="250" y="78" class="tg">unchanged</text>
+      <text x="16" y="104">answer tokens per request</text><text x="250" y="104" class="tb tr">168 → 694 (4.1×)</text>
+      <text x="16" y="130">empty answers</text><text x="250" y="130" class="tb tr">0 → 13 of 22</text>
+      <text x="16" y="156">per 1,000 questions</text><text x="250" y="156" class="tb tr">$2.16 → $4.79</text>
+      </g>
+      <rect class="n-warn" x="470" y="36" width="334" height="128" rx="6"/><text class="tb" x="482" y="60">A volume alert stays silent</text><text class="ts" x="482" y="82">requests and prompt tokens did not move;</text><text class="ts" x="482" y="98">only tokens per answer and empty answers</text><text class="ts" x="482" y="114">did. Alert on each factor, against last week.</text><text class="ts" x="482" y="146">The empty answers were billed too.</text>
+      <text class="tl" x="16" y="196">THE METHOD</text>
+      <rect class="n" x="16" y="206" width="250" height="40" rx="5"/><text class="ts" x="28" y="230"><tspan class="tb">1</tspan> which factor moved?</text>
+      <rect class="n" x="285" y="206" width="250" height="40" rx="5"/><text class="ts" x="297" y="230"><tspan class="tb">2</tspan> what changed in it? (versions)</text>
+      <rect class="n-good" x="554" y="206" width="250" height="40" rx="5"/><text class="ts" x="566" y="230"><tspan class="tb">3</tspan> revert, cap, then optimize</text>
+      <line class="e" x1="267" y1="226" x2="283" y2="226" marker-end="url(#a)"/><line class="e" x1="536" y1="226" x2="552" y2="226" marker-end="url(#a)"/>
+    </svg>

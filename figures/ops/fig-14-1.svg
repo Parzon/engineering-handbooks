@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 270" role="img" aria-label="Hourly cost of the reference ECS stack, about 17 cents: two api tasks 5.2 cents; six public IPv4 addresses 3.0 cents; two web tasks 2.6 cents; the load balancer 2.4 cents; the database 2.2 cents; the cache 1.6 cents; four secrets 0.2 cents."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #146b55; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e2f1eb; stroke: #146b55; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #146b55; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #146b55; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #146b55; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="270" fill="#ffffff"/>
+      <text class="tl" x="16" y="18">US CENTS PER HOUR, TOTAL ABOUT 17</text>
+      <line class="rule" x1="260" y1="28" x2="260" y2="240"/><text class="ts" x="260" y="258" text-anchor="middle">0</text>
+      <line class="rule" x1="410" y1="28" x2="410" y2="240"/><text class="ts" x="410" y="258" text-anchor="middle">2</text>
+      <line class="rule" x1="560" y1="28" x2="560" y2="240"/><text class="ts" x="560" y="258" text-anchor="middle">4</text>
+      <line class="rule" x1="710" y1="28" x2="710" y2="240"/><text class="ts" x="710" y="258" text-anchor="middle">6</text>
+      <text class="ts" x="16" y="48">2 api tasks (0.5 vCPU, 1 GB)</text><rect class="f1" x="260" y="34" width="390" height="20" rx="3"/><text class="ts tb" x="658" y="49">5.2</text>
+      <text class="ts" x="16" y="78">6 public IPv4 addresses</text><rect class="f1" x="260" y="64" width="225" height="20" rx="3"/><text class="ts tb" x="493" y="79">3.0</text>
+      <text class="ts" x="16" y="108">2 web tasks (0.25 vCPU, 0.5 GB)</text><rect class="f1" x="260" y="94" width="195" height="20" rx="3"/><text class="ts tb" x="463" y="109">2.6</text>
+      <text class="ts" x="16" y="138">Load balancer</text><rect class="f1" x="260" y="124" width="180" height="20" rx="3"/><text class="ts tb" x="448" y="139">2.4</text>
+      <text class="ts" x="16" y="168">Postgres, smallest RDS size</text><rect class="f1" x="260" y="154" width="165" height="20" rx="3"/><text class="ts tb" x="433" y="169">2.2</text>
+      <text class="ts" x="16" y="198">Valkey, smallest cache size</text><rect class="f1" x="260" y="184" width="120" height="20" rx="3"/><text class="ts tb" x="388" y="199">1.6</text>
+      <text class="ts" x="16" y="228">4 secrets</text><rect class="f1" x="260" y="214" width="15" height="20" rx="3"/><text class="ts tb" x="283" y="229">0.2</text>
+    </svg>

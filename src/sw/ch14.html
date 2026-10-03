@@ -1,0 +1,244 @@
+<section class="chapter" id="ch14">
+  <header class="ch-head">
+    <span class="ch-num">14</span>
+    <p class="eyebrow">Part VIII · Running it</p>
+    <h2>Observability and debugging</h2>
+    <p class="lede">Metrics say whether the system is healthy over time, logs say what happened in one request, traces say where one request's time went, and a request id ties all three to the error message a user reports.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>The four golden signals: latency, traffic, errors and saturation. Saturation is the one teams forget, and for async services CPU is a poor measure of it.</li>
+      <li>Percentiles, not averages: p50 is the typical request, p95 and p99 are what the unluckiest users feel.</li>
+      <li>Metric labels must come from small, fixed sets. A raw path or a user id as a label creates a new time series per value.</li>
+      <li>Dashboards and alert rules are code: generated, reviewed, and unit-tested.</li>
+      <li>Alerts describe what users experience, wait out blips, and catch things that vanish entirely, not only things that report zero.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Log files on each server, read with grep</td><td>Structured JSON logs on standard output, collected centrally</td><td>Containers come and go; queries need fields, not regular expressions.</td></tr>
+      <tr><td data-label="Then">Host checks: is the box up, is the disk full</td><td>Service-level signals: error rate and latency users feel</td><td>A healthy box can serve a broken service.</td></tr>
+      <tr><td data-label="Then">Dashboards built by hand in a UI</td><td>Dashboards generated from code and provisioned at start</td><td>Reviewable, reproducible, and never lost with a server.</td></tr>
+      <tr><td data-label="Then">No view across services</td><td>Distributed tracing with OpenTelemetry</td><td>One request now crosses many processes and a model provider.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch14-signals">Three signals, one id</h3>
+  <figure class="fig wide" id="fig-14-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Metrics are numbers aggregated over time, scraped every 15 seconds: is the system healthy? Logs are one JSON line per event: what happened in this request? Traces are a tree of timed spans per request: where did this request's time go? A request id, stamped by the first proxy and carried in a context variable, appears on every log line, in the response header and error body, and on the trace, so a user's error message leads to all three.">
+      <rect class="n" x="16" y="16" width="250" height="132" rx="6"/><text class="tb" x="28" y="40">Metrics</text><text class="ts" x="28" y="62">numbers aggregated over time,</text><text class="ts" x="28" y="78">scraped every 15 seconds</text><text class="ts ta" x="28" y="106">"Is the system healthy?"</text><text class="ts tmu" x="28" y="132">Prometheus, Grafana</text>
+      <rect class="n" x="285" y="16" width="250" height="132" rx="6"/><text class="tb" x="297" y="40">Logs</text><text class="ts" x="297" y="62">one JSON object per line,</text><text class="ts" x="297" y="78">on standard output</text><text class="ts ta" x="297" y="106">"What happened in this one?"</text><text class="ts tmu" x="297" y="132">docker logs, jq, a log store</text>
+      <rect class="n" x="554" y="16" width="250" height="132" rx="6"/><text class="tb" x="566" y="40">Traces</text><text class="ts" x="566" y="62">a tree of timed spans per</text><text class="ts" x="566" y="78">request, across processes</text><text class="ts ta" x="566" y="106">"Where did its time go?"</text><text class="ts tmu" x="566" y="132">OpenTelemetry, Jaeger</text>
+      <rect class="n-acc" x="16" y="186" width="788" height="56" rx="6"/>
+      <text class="tb" x="28" y="208">The request id</text><text class="ts" x="140" y="208">stamped by the first proxy, kept in a context variable, on every log line,</text>
+      <text class="ts" x="140" y="228">in the response header and every error body, and on the request's span</text>
+      <line class="e-acc" x1="141" y1="184" x2="141" y2="150" marker-end="url(#a-acc)"/>
+      <line class="e-acc" x1="410" y1="184" x2="410" y2="150" marker-end="url(#a-acc)"/>
+      <line class="e-acc" x1="679" y1="184" x2="679" y2="150" marker-end="url(#a-acc)"/>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 14.1</span>The three signals and what each answers. The support workflow follows from the id: a user pastes it from an error message, and the traceback is found in seconds, across the proxy, the api and the model call.</figcaption>
+  </figure>
+
+  <figure class="fig wide" id="fig-14-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="The reference observability stack. The api's workers, exporters for Postgres, PgBouncer and Valkey, node-exporter for the host, cAdvisor for containers, and the mock model are scraped by Prometheus every 15 seconds. Prometheus evaluates rules and sends firing alerts to Alertmanager, which delivers them by webhook to the app itself; Grafana draws the dashboard. The api sends traces over OTLP to Jaeger. All listen on loopback; on a server, reach them through an SSH tunnel.">
+      <rect class="n" x="16" y="16" width="200" height="214" rx="6"/>
+      <text class="tl" x="28" y="36">SCRAPED</text>
+      <text class="ts" x="28" y="60">api workers (/metrics)</text><text class="ts" x="28" y="82">postgres-exporter</text><text class="ts" x="28" y="104">pgbouncer-exporter</text><text class="ts" x="28" y="126">redis-exporter</text><text class="ts" x="28" y="148">node-exporter (host)</text><text class="ts" x="28" y="170">cAdvisor (containers)</text><text class="ts" x="28" y="192">the mock model</text>
+      <rect class="n-acc" x="270" y="84" width="150" height="70" rx="6"/><text class="tb" x="345" y="112" text-anchor="middle">Prometheus</text><text class="ts" x="345" y="132" text-anchor="middle">rules, every 15 s</text>
+      <line class="e-acc" x1="217" y1="119" x2="268" y2="119" marker-end="url(#a-acc)"/>
+      <rect class="n" x="474" y="20" width="150" height="56" rx="5"/><text class="tb" x="549" y="44" text-anchor="middle">Grafana</text><text class="ts" x="549" y="62" text-anchor="middle">dashboard as code</text>
+      <rect class="n" x="474" y="150" width="150" height="56" rx="5"/><text class="tb" x="549" y="174" text-anchor="middle">Alertmanager</text><text class="ts" x="549" y="192" text-anchor="middle">groups, routes</text>
+      <rect class="n-good" x="666" y="150" width="138" height="56" rx="5"/><text class="tb" x="735" y="174" text-anchor="middle">the app</text><text class="ts" x="735" y="192" text-anchor="middle">a webhook</text>
+      <path class="e" d="M421,105 C450,105 450,48 472,48" marker-end="url(#a)"/>
+      <path class="e" d="M421,133 C450,133 450,178 472,178" marker-end="url(#a)"/>
+      <line class="e-good" x1="625" y1="178" x2="664" y2="178" marker-end="url(#a-good)"/>
+      <rect class="n" x="666" y="20" width="138" height="56" rx="5"/><text class="tb" x="735" y="44" text-anchor="middle">Jaeger</text><text class="ts" x="735" y="62" text-anchor="middle">api pushes traces</text>
+      <text class="ts tmu" x="270" y="232">all on loopback; reached through an SSH tunnel on a server</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 14.2</span>The reference service's monitoring stack, started beside the application with one command. Alerts are delivered to the application itself, so a demonstration shows its own alerts; a real team adds email, chat or a pager as receivers.</figcaption>
+  </figure>
+
+  <h3 id="ch14-measure">What to measure</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Signal</th><th>Reference metric</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Signal">Traffic and errors</td><td data-label="Metric"><code>http_requests_total{method, route, status}</code></td><td data-label="Why">The route is the template (<code>/alerts/{alert_id}</code>), never the raw path</td></tr>
+        <tr><td data-label="Signal">Latency</td><td data-label="Metric"><code>http_request_duration_seconds</code>, a histogram</td><td data-label="Why">Percentiles are computed from buckets; for a stream, the whole stream</td></tr>
+        <tr><td data-label="Signal">Saturation</td><td data-label="Metric"><code>event_loop_lag_seconds</code>, pool gauges</td><td data-label="Why">How late the loop runs a timer: timeouts appeared at 46% CPU</td></tr>
+        <tr><td data-label="Signal">The model</td><td data-label="Metric">calls by outcome, time to first token, tokens by kind</td><td data-label="Why">Tokens times price is cost; outcomes include truncated and cancelled</td></tr>
+        <tr><td data-label="Signal">What runs</td><td data-label="Metric"><code>app_info{version, prompt, model}</code></td><td data-label="Why">When answers change, line the change up with this first</td></tr>
+        <tr><td data-label="Signal">Dependencies, host, containers</td><td data-label="Metric">exporters, node-exporter, cAdvisor</td><td data-label="Why">Database health, disk, memory and out-of-memory kills</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Two details of Python servers matter. With several worker <em>processes</em>, a normal metrics client answers each scrape from whichever worker received it: six scrapes after 40 requests returned 15, 15, 5, 6, 14 and 5. In multiprocess mode, each worker writes its samples to files and the endpoint sums them: 40 every time. And every distinct combination of label values is a separate series in Prometheus's memory, so values come only from fixed sets: route templates, outcomes and error codes, never messages, user ids, addresses or a tool name chosen by a model.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/middleware.py#L28-L37">apps/api/app/middleware.py</a><span class="lines">ids that cannot be injected, labels that cannot grow</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The middleware that gives every request its id and its route label.</p>
+        <ul class="notice">
+          <li>An id from upstream is adopted only if it looks like one; anything else is replaced, so a client cannot write into the logs.</li>
+          <li>Metrics and logs use the route's template, so <code>/alerts/424242</code> is recorded as <code>/alerts/{alert_id}</code>; a test asserts exactly that.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/middleware.py" data-lines="28-37"><code class="language-python"># Accept an upstream id (nginx sets one per request) only if it looks like
+# one; anything else is replaced, so clients cannot inject log content.
+_VALID_REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{8,128}$")
+
+
+def route_template(scope: Scope) -&gt; str:
+    """ "/alerts/{alert_id}", never "/alerts/123": raw paths as log or metric
+    labels grow without bound (one series per id)."""
+    route = scope.get("route")
+    return getattr(route, "path", None) or "__unmatched__"</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch14-dash">Dashboards and alerts as code</h3>
+  <figure class="fig wide" id="fig-14-3">
+    <img src="assets/img/grafana-service-dashboard.jpg" width="1600" height="1432" loading="lazy" alt="The reference service's Grafana dashboard during a short load: rows for traffic and errors (requests per second, 5xx percentage, rate-limited requests, answers streaming now, requests by route and status, latency percentiles of non-streaming routes, p95 latency by route) and for the model (time to first token, answer duration, model calls by outcome, output tokens per second, an estimated model cost per hour of four cents, cancelled answers per minute).">
+    <figcaption><span class="fig-n">Figure 14.3</span>The top two rows of the reference service's dashboard, during a short burst of traffic. Rows below these cover the dependencies (limiter, pools, PgBouncer, Postgres) and the containers and host; the current dashboard adds one for sign-in and access. Model prices are dashboard variables, so the cost panel follows the provider's price list.</figcaption>
+  </figure>
+
+  <p>The dashboard is generated by a Python script and committed as JSON, which Grafana loads at start; a check fails if the committed JSON is not what the generator produces, and an edit made in the UI lasts only until the next reload. The first version of the dashboard showed "No data" in four of its thirty panels on a healthy system, for reasons worth knowing: a ratio whose numerator does not exist yet (no 5xx has happened) is "no data", not zero, unless written with <code>or vector(0)</code>; <code>rate()</code> needs two samples, so panels blank briefly after a restart, and the very first increment of a new series is invisible to it; and one long-lived streaming route flattened a latency panel until it got its own row.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/observability/prometheus/alerts.yml#L63-L73">infra/observability/prometheus/alerts.yml</a><span class="lines">an alert on what users feel</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Each alert says what users experience and links to its section in the alert runbook.</p>
+        <ul class="notice">
+          <li>Deliberate refusals by the assistant's off switch are subtracted, so turning it off does not page anyone; <code>or vector(0)</code> keeps the expression valid before the first refusal.</li>
+          <li><code>for: 5m</code>: the condition must hold that long, so a blip pages nobody.</li>
+          <li>Another rule uses <code>absent()</code>: a removed service has no series that could be zero.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/observability/prometheus/alerts.yml" data-lines="63-73"><code class="language-yaml">      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            - (sum(rate(chat_refusals_total{reason="assistant_disabled"}[5m])) or vector(0))
+          ) / sum(rate(http_requests_total[5m])) &gt; 0.05
+        for: 5m
+        labels: {severity: high}
+        annotations:
+          summary: "more than 5% of api requests fail with 5xx"
+          runbook_url: "https://github.com/Parzon/triage-assistant/blob/main/docs/runbooks/alerts.md#higherrorrate"</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <figure class="fig wide" id="fig-14-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 190" role="img" aria-label="Detection is never instant. Measured with Valkey stopped: up to 15 seconds until the next scrape sees it, one minute of the for clause, then evaluation: the alert fired at 90 seconds. Alertmanager's group wait added 30 seconds: notification at about 2 minutes. A fault shorter than a scrape interval can leave no trace at all; two 4-second outages never appeared in the metric.">
+      <line class="rule-strong" x1="40" y1="70" x2="790" y2="70"/>
+      <circle class="fill-bad" cx="40" cy="70" r="7"/><text class="ts" x="40" y="46" text-anchor="middle">fault</text>
+      <rect class="n-soft" x="40" y="80" width="94" height="28" rx="3"/><text class="ts" x="87" y="99" text-anchor="middle">scrape ≤15 s</text>
+      <rect class="n-soft" x="134" y="80" width="375" height="28" rx="3"/><text class="ts" x="321" y="99" text-anchor="middle">for: 1 min, plus evaluation</text>
+      <circle class="fill-acc" cx="602" cy="70" r="7"/><text class="ts" x="602" y="46" text-anchor="middle">fired: 90 s</text>
+      <rect class="n-soft" x="602" y="80" width="188" height="28" rx="3"/><text class="ts" x="696" y="99" text-anchor="middle">group wait 30 s</text>
+      <circle class="fill-good" cx="790" cy="70" r="7"/><text class="ts" x="778" y="46" text-anchor="end">notified: about 2 min</text>
+      <text class="ts" x="40" y="146">A fault shorter than a scrape interval can leave no trace at all: two 4-second outages never</text>
+      <text class="ts" x="40" y="164">appeared in the metric. Short failures are found in logs and request errors, not dashboards.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 14.4</span>How long the reference stack takes to notice a failure, measured end to end with the rate limiter's store stopped. Every alert rule also has unit tests that feed it synthetic series and assert when it must and must not fire.</figcaption>
+  </figure>
+
+  <h3 id="ch14-debug">Debugging: which tool for which question</h3>
+  <figure class="fig wide" id="fig-14-5">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 330" role="img" aria-label="Tools by layer. One request: the request id and JSON logs, then its trace. A live Python process: py-spy samples every thread's stack from outside, safe in production. Stepping through code: debugpy with the IDE attached, never in production. A hard crash: faulthandler prints the Python stack instead of a silent exit 139. The event loop: asyncio debug mode in development, the lag metric in production. Profiling: py-spy flame graphs, cProfile, tracemalloc for memory growth, -X importtime for startup. The kernel boundary: strace, and journalctl -k for out-of-memory kills. The network: a sidecar container in the app's network namespace with dig, ss, curl and tcpdump. The database: pg_stat_activity, pg_blocking_pids, pg_stat_statements and EXPLAIN ANALYZE.">
+      <text class="tl" x="16" y="22">QUESTION</text><text class="tl" x="300" y="22">TOOL</text>
+      <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
+      <text class="tb" x="16" y="52">What happened to this request?</text><text class="ts" x="300" y="52">the request id in JSON logs, across proxy and api; then its trace</text>
+      <text class="tb" x="16" y="84">What is each worker doing now?</text><text class="ts" x="300" y="84">py-spy: samples every thread's stack from outside; safe in production</text>
+      <text class="tb" x="16" y="116">Why does this line misbehave?</text><text class="ts" x="300" y="116">debugpy, the IDE attached over a loopback port; development only</text>
+      <text class="tb" x="16" y="148">It died with exit 139</text><text class="ts" x="300" y="148">faulthandler: the Python stack of every thread instead of silence</text>
+      <text class="tb" x="16" y="180">Is something blocking the loop?</text><text class="ts" x="300" y="180">asyncio debug mode in development; the loop-lag metric in production</text>
+      <text class="tb" x="16" y="212">Where does the time or memory go?</text><text class="ts" x="300" y="212">py-spy flame graphs, cProfile, tracemalloc, -X importtime for startup</text>
+      <text class="tb" x="16" y="244">What did the kernel do?</text><text class="ts" x="300" y="244">strace (slow); journalctl -k for out-of-memory kills</text>
+      <text class="tb" x="16" y="276">What does the app see on the network?</text><text class="ts" x="300" y="276">a sidecar in its network namespace: dig, ss, curl, tcpdump</text>
+      <text class="tb" x="16" y="308">What is the database doing?</text><text class="ts" x="300" y="308">pg_stat_activity, pg_blocking_pids, pg_stat_statements, EXPLAIN ANALYZE</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 14.5</span>Debugging tools by layer, from one request down to the kernel. The reference repository's operations guide shows most of them used on the running stack, with their output.</figcaption>
+  </figure>
+
+  <p data-adr="ADR-0018">A request that a user complains about is followed from the outside in. The request id finds its lines in the proxy's log and the api's log; if the proxy's total time is much larger than the time it waited for the api, the time went into the client connection, not the service. The trace then shows each step: retrieval, each SQL statement, the model call with its tokens and time to first token. Traces carry ids, counts and timings, never the question or the answer, unless content capture is explicitly turned on in development.</p>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0008</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">Metrics with Prometheus, dashboards and alerts as code, alerts delivered to the app</p>
+    <dl>
+      <dt>Problem</dt><dd>A service with streaming answers, pools and a model provider fails in ways that logs alone do not show.</dd>
+      <dt>Decision</dt><dd>Prometheus with exporters for every dependency; a dashboard generated from Python; alert rules with unit tests; Alertmanager posting to the application itself, with a bearer token.</dd>
+      <dt>See it in</dt><dd><a href="{{TA}}/infra/observability">infra/observability</a> and the watching section of <a href="{{TA}}/docs/handbook/operations.md">operations.md</a>.</dd>
+    </dl>
+  </aside>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Golden signals with saturation as event-loop lag, not CPU; labels only from fixed sets; dashboards and alert rules in code with tests."</p>
+    <p>"Every error carries a request id, so a user's screenshot leads straight to the logs and the trace."</p>
+  </aside>
+
+  <h3 id="ch14-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">Each scrape shows a different, smaller count</td><td data-label="Cause">Several worker processes, each answering for itself</td><td data-label="Fix">The client's multiprocess mode.</td></tr>
+        <tr><td data-label="Symptom">Prometheus memory grows without bound</td><td data-label="Cause">An unbounded label: raw paths, user ids, free text</td><td data-label="Fix">Templates and fixed sets only, with a test.</td></tr>
+        <tr><td data-label="Symptom">A panel says "No data" on a healthy system</td><td data-label="Cause">A ratio whose numerator has no series yet</td><td data-label="Fix"><code>(… or vector(0))</code>.</td></tr>
+        <tr><td data-label="Symptom">An alert on "service down" never fires when the service is removed</td><td data-label="Cause">Its series disappeared, so it can never equal zero</td><td data-label="Fix">An <code>absent()</code> rule.</td></tr>
+        <tr><td data-label="Symptom">Timeouts while CPU looks half idle</td><td data-label="Cause">Work queues on the event loop</td><td data-label="Fix">Watch event-loop lag as saturation.</td></tr>
+        <tr><td data-label="Symptom">"Trace not found" for most request ids</td><td data-label="Cause">Unsampled requests were handed a trace id</td><td data-label="Fix">Only return a trace id for a kept trace.</td></tr>
+        <tr><td data-label="Symptom">Restarts are slow when the trace backend is down</td><td data-label="Cause">Each worker's shutdown waits for the exporter</td><td data-label="Fix">A short export timeout.</td></tr>
+        <tr><td data-label="Symptom">A log query at a given time finds nothing</td><td data-label="Cause">A timestamp without a zone is read as local time</td><td data-label="Fix">Relative times, or an explicit zone.</td></tr>
+        <tr><td data-label="Symptom">An out-of-memory kill is not in Docker's state</td><td data-label="Cause">The flag can read false after the main process was killed</td><td data-label="Fix">The kernel log and the container-level counter.</td></tr>
+        <tr><td data-label="Symptom">A breakpoint left in code freezes a worker in production</td><td data-label="Cause">The default debugger waits for keyboard input</td><td data-label="Fix">Disable breakpoints in the production image.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch14-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Which question does each of metrics, logs and traces answer?</p>
+      <details class="ans"><summary>Answer</summary><p>Metrics: is the system healthy over time. Logs: what happened in one request or event. Traces: where one request's time went across steps and processes.</p></details>
+    </li>
+    <li>
+      <p>Why is CPU a poor saturation signal for an async Python service, and what is better?</p>
+      <details class="ans"><summary>Answer</summary><p>Work queues on the event loop, so wall-clock timeouts start firing while CPU is around half used. Event-loop lag, how late a timer fires, measures the queueing directly.</p></details>
+    </li>
+    <li>
+      <p>Why can a metric label never be a user id or a raw URL path?</p>
+      <details class="ans"><summary>Answer</summary><p>Each distinct combination of label values is a separate time series held in memory. Unbounded values create unbounded series; labels must come from small, fixed sets such as route templates and error codes.</p></details>
+    </li>
+    <li>
+      <p>Roughly how long does the reference stack take from a failure to a notification, and why?</p>
+      <details class="ans"><summary>Answer</summary><p>About two minutes: up to a scrape interval, the rule's one-minute <code>for</code>, evaluation, and Alertmanager's grouping wait. A fault shorter than a scrape can leave no trace in metrics at all.</p></details>
+    </li>
+  </ol>
+</section>

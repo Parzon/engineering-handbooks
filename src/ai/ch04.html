@@ -1,0 +1,251 @@
+<section class="chapter" id="ch4">
+  <header class="ch-head">
+    <span class="ch-num">4</span>
+    <p class="eyebrow">Part III · Building with models</p>
+    <h2>Retrieval-augmented generation</h2>
+    <p class="lede">Retrieval-augmented generation is a pipeline of a dozen stages that each fail differently: debug it backwards from the answer, measure retrieval apart from generation, and enforce who may see what inside the retrieval query itself.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>"Use a vector database" names one stage out of twelve. Most failures are in chunking, filtering, fusion and context, not the index.</li>
+      <li>The chunk is both the unit you find and the unit the model reads; split at document structure by default.</li>
+      <li>Hybrid search: keywords find exact identifiers, embeddings find paraphrases, rank fusion merges them without calibrating scores.</li>
+      <li>A tenant filter applied after an approximate index can return nothing, silently. Filter in a form the planner can use first.</li>
+      <li>Measure retrieval with recall@k and MRR on labeled questions; a chunk never retrieved cannot be used, whatever the prompt says.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Enterprise search: keywords and a results page</td><td>Retrieval feeding a model that writes the answer, with citations</td><td>Users want the answer, not ten links; the model needs the source to be right.</td></tr>
+      <tr><td data-label="Then">Fine-tuning a model on the documents</td><td>Retrieving at question time</td><td>Documents change daily, access differs per user, and citations need a source.</td></tr>
+      <tr><td data-label="Then">A dedicated vector database from day one</td><td>Vectors in Postgres first (pgvector), with the data and its access rules</td><td>One system to secure and back up; a separate store only when measured short.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch4-pipeline">The pipeline, and how to debug it</h3>
+  <figure class="fig wide" id="fig-4-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="The RAG pipeline: documents, ingestion, parsing, chunking, embedding, indexing, retrieval with filtering, fusion and reranking, context construction, prompt, generation, answer, evaluation. Diagnose by walking backwards from the answer and stopping at the first stage that is wrong: is the check right; did the model misuse the right chunk; does a prompt rule misfire; was the right chunk retrieved then cut or buried; did one retriever find it and fusion rank it down; which retriever finds it at all; is the answer split across chunks; did the splitter cut in the wrong place; is the document stored, current and embedded with today's settings.">
+      <g class="ts">
+      <rect class="n" x="16" y="20" width="118" height="34" rx="4"/><text x="75" y="42" text-anchor="middle">ingestion</text>
+      <rect class="n" x="148" y="20" width="100" height="34" rx="4"/><text x="198" y="42" text-anchor="middle">parsing</text>
+      <rect class="n" x="262" y="20" width="100" height="34" rx="4"/><text x="312" y="42" text-anchor="middle">chunking</text>
+      <rect class="n" x="376" y="20" width="110" height="34" rx="4"/><text x="431" y="42" text-anchor="middle">embedding</text>
+      <rect class="n" x="500" y="20" width="96" height="34" rx="4"/><text x="548" y="42" text-anchor="middle">indexing</text>
+      <rect class="n-acc" x="610" y="20" width="194" height="34" rx="4"/><text x="707" y="42" text-anchor="middle">retrieval + filtering</text>
+      <rect class="n-acc" x="610" y="76" width="194" height="34" rx="4"/><text x="707" y="98" text-anchor="middle">fusion, reranking</text>
+      <rect class="n" x="456" y="76" width="140" height="34" rx="4"/><text x="526" y="98" text-anchor="middle">context</text>
+      <rect class="n" x="352" y="76" width="90" height="34" rx="4"/><text x="397" y="98" text-anchor="middle">prompt</text>
+      <rect class="n" x="226" y="76" width="112" height="34" rx="4"/><text x="282" y="98" text-anchor="middle">generation</text>
+      <rect class="n" x="120" y="76" width="92" height="34" rx="4"/><text x="166" y="98" text-anchor="middle">answer</text>
+      <rect class="n-warn" x="16" y="76" width="90" height="34" rx="4"/><text x="61" y="98" text-anchor="middle">evaluation</text>
+      </g>
+      <g class="e"><line x1="135" y1="37" x2="146" y2="37" marker-end="url(#a)"/><line x1="249" y1="37" x2="260" y2="37" marker-end="url(#a)"/><line x1="363" y1="37" x2="374" y2="37" marker-end="url(#a)"/><line x1="487" y1="37" x2="498" y2="37" marker-end="url(#a)"/><line x1="597" y1="37" x2="608" y2="37" marker-end="url(#a)"/><line x1="707" y1="55" x2="707" y2="74" marker-end="url(#a)"/><line x1="609" y1="93" x2="598" y2="93" marker-end="url(#a)"/><line x1="455" y1="93" x2="444" y2="93" marker-end="url(#a)"/><line x1="351" y1="93" x2="340" y2="93" marker-end="url(#a)"/><line x1="225" y1="93" x2="214" y2="93" marker-end="url(#a)"/><line x1="119" y1="93" x2="108" y2="93" marker-end="url(#a)"/></g>
+      <text class="tl" x="16" y="144">DIAGNOSE BACKWARDS; STOP AT THE FIRST STAGE THAT IS WRONG</text>
+      <g class="ts">
+      <text x="16" y="168">1 Is the check right? Read the answer, not just the score.</text>
+      <text x="16" y="186">2 Did the model have the right chunk and misuse it? (generation)</text>
+      <text x="16" y="204">3 Does a prompt rule misfire? (prompt)</text>
+      <text x="16" y="222">4 Was the right chunk retrieved, then cut or buried? (context)</text>
+      <text x="16" y="240">5 Did one retriever find it, and fusion rank it down? (fusion)</text>
+      <text x="440" y="168">6 Which retriever finds it at all, at what distance?</text>
+      <text x="440" y="186">7 Is the answer split across chunks, or diluted?</text>
+      <text x="440" y="204">8 Did the splitter cut in the wrong place?</text>
+      <text x="440" y="222">9 Is the document stored, current, and embedded</text>
+      <text x="440" y="240">   the way today's settings embed?</text>
+      </g>
+      <text class="ts tmu" x="16" y="280">Everything after the first wrong stage only looks wrong.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 4.1</span>The pipeline, and the order in which to question it. The reference project's retrieval lab puts one fault in each stage, so each can be recognized from the outside.</figcaption>
+  </figure>
+
+  <h3 id="ch4-chunking">Chunking</h3>
+  <figure class="fig wide" id="fig-4-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 240" role="img" aria-label="Too small: a step loses its condition; 'Never delete files in the data directory' was cut into '...Never' and 'the data directory by hand'. Too large: one match is diluted, and the prompt pays for the rest. Structure-aware chunking at headings is the default for documentation, with a word cap. Small-to-big: find by small chunk, hand the model its neighbors or the whole document.">
+      <rect class="n-bad" x="16" y="16" width="250" height="110" rx="6"/><text class="tb" x="28" y="40">Too small</text><text class="ts" x="28" y="62">a step loses its condition:</text><text class="tm" x="28" y="84">"...Never" |</text><text class="tm" x="28" y="102">"the data directory</text><text class="tm" x="28" y="118"> by hand."</text>
+      <rect class="n-warn" x="285" y="16" width="250" height="110" rx="6"/><text class="tb" x="297" y="40">Too large</text><text class="ts" x="297" y="62">one relevant sentence is</text><text class="ts" x="297" y="78">diluted in a long chunk;</text><text class="ts" x="297" y="94">the prompt pays for the rest</text>
+      <rect class="n-good" x="554" y="16" width="250" height="110" rx="6"/><text class="tb" x="566" y="40">At the document's structure</text><text class="ts" x="566" y="62">split at headings, with a cap;</text><text class="ts" x="566" y="78">the default for documentation;</text><text class="ts" x="566" y="94">the reference service: sections</text><text class="ts" x="566" y="110">of a runbook</text>
+      <text class="tl" x="16" y="160">OTHER STRATEGIES</text>
+      <text class="ts" x="16" y="184"><tspan class="tb">fixed size with overlap:</tspan> simple, blind to structure · <tspan class="tb">recursive:</tspan> by separators · <tspan class="tb">semantic:</tspan> where meaning shifts</text>
+      <text class="ts" x="16" y="208"><tspan class="tb">small-to-big:</tspan> find by small chunk, give the model its neighbors or the whole section: precise search, complete context</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 4.2</span>The chunk is both what the search matches and what the model reads, so a bad cut fails twice. The quoted example is real: the splitter once also read a <code>#</code> comment inside a code block as a heading.</figcaption>
+  </figure>
+
+  <h3 id="ch4-embed">Embeddings, similarity and indexes</h3>
+  <p>An embedding model maps a text to a vector so that similar meanings point in similar directions. Query and document are embedded separately, so documents are embedded once, ahead of time. Three facts cause most embedding bugs. Asymmetric models want task prefixes (<code>search_query: </code>, <code>search_document: </code>), which are part of the model. Vectors from different models, dimensions or prefixes are incomparable, and nothing errors: similarity search keeps returning rows, now meaningless, so the reference service stores an <em>embedding key</em> with every vector and searches only today's. And a vector is as sensitive as its text: research has recovered much of the original text from embeddings.</p>
+  <p>On vectors normalized to length one, cosine, dot product and Euclidean distance rank identically; cosine is the safe default when normalization is not guaranteed. Exact search compares every row and is fine up to many thousands. Approximate indexes trade recall for speed by design: <strong>HNSW</strong> is a layered graph, fast and memory-hungry, with build-time parameters (<code>m</code>, <code>ef_construction</code>) and a query-time candidate width (<code>ef_search</code>, 40 by default in pgvector); <strong>IVFFlat</strong> clusters the vectors and needs data to train on. In Postgres, HNSW comes from the pgvector extension, the operator class must match the query's operator, and the query must be shaped <code>ORDER BY embedding &lt;=&gt; $q LIMIT n</code>, or Postgres quietly scans every row.</p>
+
+  <h3 id="ch4-hybrid">Hybrid search and fusion</h3>
+  <figure class="fig wide" id="fig-4-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 270" role="img" aria-label="Keyword search over Postgres full text finds exact rare tokens: error codes, flags, hostnames. Semantic search over embeddings finds paraphrases that share no word with the answer. Each contributes its 20 best candidates. Reciprocal rank fusion scores each candidate by the sum of 1 over 60 plus its rank in each list, so the two lists' scores need no calibration. Both lists weigh the same: a confident wrong keyword match can outrank the semantic winner; a cross-encoder reranker over the top 20 to 50 is the standard fix. If the question cannot be embedded in time, keyword search answers alone, and the result says so.">
+      <rect class="n" x="16" y="20" width="260" height="96" rx="6"/><text class="tb" x="28" y="44">Keyword (full-text)</text><text class="ts" x="28" y="66">exact rare tokens: error codes,</text><text class="ts" x="28" y="82">flags, hostnames</text><text class="ts tmu" x="28" y="104">blind to paraphrase</text>
+      <rect class="n" x="16" y="140" width="260" height="96" rx="6"/><text class="tb" x="28" y="164">Semantic (embeddings)</text><text class="ts" x="28" y="186">paraphrases that share no word</text><text class="ts" x="28" y="202">with the answer</text><text class="ts tmu" x="28" y="224">blurs strings it has never seen</text>
+      <rect class="n-acc" x="330" y="74" width="230" height="110" rx="6"/><text class="tb" x="342" y="98">Reciprocal rank fusion</text><text class="ts" x="342" y="122">score = Σ 1 ÷ (60 + rank)</text><text class="ts" x="342" y="142">ranks only: no score calibration</text><text class="ts" x="342" y="162">20 candidates from each list</text>
+      <path class="e" d="M277,68 C305,68 305,110 328,110" marker-end="url(#a)"/><path class="e" d="M277,188 C305,188 305,150 328,150" marker-end="url(#a)"/>
+      <rect class="n-warn" x="600" y="20" width="204" height="110" rx="6"/><text class="tb" x="612" y="44">Equal weights</text><text class="ts" x="612" y="66">a confident wrong keyword</text><text class="ts" x="612" y="82">match ("back" matching</text><text class="ts" x="612" y="98">"Roll back") outranked the</text><text class="ts" x="612" y="114">semantic winner</text>
+      <rect class="n" x="600" y="146" width="204" height="90" rx="6"/><text class="tb" x="612" y="170">The known fix</text><text class="ts" x="612" y="192">a cross-encoder reranks</text><text class="ts" x="612" y="208">the top 20 to 50, reading</text><text class="ts" x="612" y="224">question and chunk together</text>
+      <line class="e" x1="561" y1="128" x2="598" y2="128" marker-end="url(#a)"/>
+      <text class="ts" x="16" y="262"><tspan class="tb">Degrade, never fail:</tspan> if the question cannot be embedded in 5 s, keyword search answers alone, and is reported as keyword-only.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 4.3</span>Hybrid retrieval in the reference service. Postgres's own ranking has no inverse document frequency (a rare word counts no more than a common one); for true BM25 inside Postgres, use an extension or a search engine.</figcaption>
+  </figure>
+
+  <h3 id="ch4-tenants">Retrieval that respects who is asking</h3>
+  <figure class="fig wide" id="fig-4-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="The overfiltering trap, measured on 50,000 sections in 100 teams, as a viewer of one team. The HNSW index returns its nearest 40 candidates and the team filter runs after: all 40 belonged to other teams, so 0 of 20 results, in 5 milliseconds. With iterative scans on, 20 of 20 in 32 to 71 milliseconds, after discarding 3,032 rows. Comparing every row with no index: 20 in 6.5 milliseconds. The service's query, a plain team_id = ANY filter the planner can use first: 20 in 0.8 to 1.6 milliseconds.">
+      <text class="tl" x="16" y="22">50,000 SECTIONS IN 100 TEAMS; ONE TEAM'S VIEWER ASKS FOR 20</text>
+      <text class="ts" x="16" y="58">index, filter after</text><rect class="n-bad" x="230" y="44" width="20" height="20" rx="2"/><text class="ts" x="258" y="59">0 of 20 found, 5 ms: all 40 candidates were other teams'</text>
+      <text class="ts" x="16" y="98">index, iterative scans</text><rect class="fill-acc" x="230" y="84" width="400" height="20"/><text class="ts" x="638" y="99">20, 32-71 ms</text>
+      <text class="ts" x="16" y="138">every row, no index</text><rect class="fill-acc" x="230" y="124" width="400" height="20"/><text class="ts" x="638" y="139">20, 6.5 ms</text>
+      <text class="ts tb" x="16" y="178">plain team filter</text><rect class="fill-good" x="230" y="164" width="400" height="20"/><text class="ts" x="638" y="179">20, 0.8-1.6 ms</text>
+      <text class="ts" x="16" y="218">Hidden behind an OR, "(all teams OR team in ...)", the filter could not be used first; row-level security's own policy is such</text>
+      <text class="ts" x="16" y="236">an OR, so it is a second barrier, not the plan. Never retrieve a global top k and filter in the application.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 4.4</span>The overfiltering trap, measured in the reference service. Nothing failed: the search returned nothing, and the assistant answered with no runbooks for that team. Bar length shows results found; times are per search.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/runbooks.py#L318-L350">apps/api/app/runbooks.py</a><span class="lines">the team filter and the two retrievers</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The SQL fragments that hybrid search is assembled from, with the measurement that decided the filter's form in the comment.</p>
+        <ul class="notice">
+          <li>The team filter is a plain <code>team_id = ANY(...)</code>, never hidden behind an OR, so the planner can read the team's rows by their index.</li>
+          <li>Each retriever returns its best <code>:candidates</code>; ranks are numbered outside the inner query, so the vector index serves the <code>ORDER BY distance LIMIT</code>.</li>
+          <li>Only vectors with today's embedding key are searched: vectors from another model or prefix would be meaningless.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/runbooks.py" data-lines="318-350"><code class="language-python"># The team filter comes in two forms, not one "(:team_ids IS NULL OR ...)":
+# measured on 50,000 sections in 100 teams, a one-team caller's semantic
+# search behind that OR (and row-level security's own) got the HNSW index:
+# 0 results without iterative scans (all 40 candidates were other teams'),
+# 20 in 32-71 ms with them. The plain "team_id = ANY(...)" lets the planner
+# read the team's rows by its index and sort them exactly: 20 in 0.8-1.6 ms
+# (three runs of make bench-rag-filter).
+_ALL_TEAMS = "TRUE"
+_SOME_TEAMS = "c.team_id = ANY(CAST(:team_ids AS bigint[]))"
+_KEYWORD = """
+keyword AS (
+    SELECT id, row_number() OVER (ORDER BY rank DESC, id) AS rank_no
+    FROM (
+        SELECT c.id, ts_rank_cd(c.search, q.query) AS rank
+        FROM runbook_chunks c, (SELECT {terms} AS query) q
+        WHERE c.search @@ q.query AND {teams}
+        ORDER BY rank DESC, c.id
+        LIMIT :candidates
+    ) k
+)"""
+# The inner ORDER BY distance ... LIMIT is what the HNSW index serves; the
+# ranks are numbered outside it, so no window sorts the whole table.
+_SEMANTIC = """
+semantic AS (
+    SELECT id, distance, row_number() OVER (ORDER BY distance, id) AS rank_no
+    FROM (
+        SELECT c.id, c.embedding &lt;=&gt; CAST(CAST(:embedding AS text) AS vector) AS distance
+        FROM runbook_chunks c
+        WHERE c.embedding_key = :embedding_key AND {teams}
+        ORDER BY c.embedding &lt;=&gt; CAST(CAST(:embedding AS text) AS vector)
+        LIMIT :candidates
+    ) s
+)"""</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0017</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">Runbook retrieval in Postgres, hybrid, under row-level security</p>
+    <dl>
+      <dt>Problem</dt><dd>Answers had to come from each team's runbooks, with the same access rules as the rest of the team's data.</dd>
+      <dt>Decision</dt><dd>pgvector in the existing Postgres; runbooks as team data under row-level security plus an explicit team filter; hybrid search with rank fusion (k = 60); no distance cutoff, because relevant and irrelevant distances overlapped; an embedding key on every vector; keyword-only fallback with an alert; credentials redacted before any model call.</dd>
+      <dt>See it in</dt><dd><a href="{{TA}}/apps/api/app/runbooks.py">runbooks.py</a> and the retrieval guide, <a href="{{TA}}/docs/handbook/rag.md">rag.md</a>.</dd>
+    </dl>
+  </aside>
+
+  <h3 id="ch4-measure">Measuring retrieval</h3>
+  <figure class="fig wide" id="fig-4-5">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Measured on 8 runbooks, 31 sections, 19 answerable labeled questions and 3 that nothing answers. Hybrid search with nomic-embed-text: recall at 1 is 0.79, at 3 is 0.95, at 5 is 1.00; MRR 0.87. Keyword search alone: recall at 1 is 0.68, at 5 is 0.95; MRR 0.77. All three embedding models tried found every answer in the first five; differences at rank 1 were two questions of nineteen, noise at this size.">
+      <text class="tl" x="16" y="22">RECALL@K AND MRR, 19 LABELLED QUESTIONS</text>
+      <line class="rule" x1="150" y1="34" x2="150" y2="176"/><line class="rule dash" x1="550" y1="34" x2="550" y2="176"/><text class="ts tmu" x="550" y="190" text-anchor="middle">1.00</text>
+      <text class="ts" x="16" y="54">recall@1</text><rect class="fill-acc" x="150" y="42" width="316" height="14"/><text class="ts" x="474" y="54">0.79 hybrid</text><rect class="n-soft" x="150" y="58" width="272" height="10"/><text class="ts tmu" x="430" y="68">0.68 keyword</text>
+      <text class="ts" x="16" y="96">recall@3</text><rect class="fill-acc" x="150" y="84" width="380" height="14"/><text class="ts" x="538" y="96">0.95</text>
+      <text class="ts" x="16" y="128">recall@5</text><rect class="fill-acc" x="150" y="116" width="400" height="14"/><text class="ts" x="558" y="128">1.00</text><rect class="n-soft" x="150" y="132" width="380" height="10"/><text class="ts tmu" x="538" y="142">0.95 keyword</text>
+      <text class="ts" x="16" y="166">MRR</text><rect class="fill-acc" x="150" y="154" width="348" height="14"/><text class="ts" x="506" y="166">0.87</text><rect class="n-soft" x="150" y="170" width="308" height="10"/><text class="ts tmu" x="466" y="180">0.77</text>
+      <text class="ts" x="16" y="216"><tspan class="tb">recall@k:</tspan> a relevant chunk is in the top k; it bounds the answer. <tspan class="tb">MRR:</tspan> the mean of 1 ÷ rank of the first relevant chunk.</text>
+      <text class="ts" x="16" y="236"><tspan class="tb">Read the benchmark's size:</tspan> 19 questions show that each model works; they cannot rank models two questions apart.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 4.5</span>Retrieval measured on its own, through the service, before any prompt work. Recall on the whole corpus says nothing about recall under a tenant filter: that needs its own benchmark, large enough that a tenant's share is smaller than the candidate list.</figcaption>
+  </figure>
+
+  <h3 id="ch4-context">Context, citations and freshness</h3>
+  <ul>
+    <li><strong>Too few chunks, and the model invents.</strong> Given one of the four sections it needed, it wrote a step the runbook never had, without its safety conditions, and cited it with full authority. The reference service now puts four sections in context.</li>
+    <li><strong>Too many</strong>, and cost, latency and dilution grow; models use the start and end of a long context best, so the best chunks go first, deduplicated.</li>
+    <li><strong>Citations are numbered and verified.</strong> A number outside the list is an invented citation, counted as a hallucination signal. Parse tolerantly: asked for <code>[R1]</code>, the model also wrote <code>(R1)</code>, <code>【R1】</code> and a bare R1. A valid citation proves a chunk was referenced, not that it supports the claim; that needs a judge.</li>
+    <li><strong>Freshness and deletion.</strong> Show each chunk's date; ingest idempotently by document identity and content hash, re-embedding only what changed; and make deletion reach the chunks, or deleted text keeps being retrieved.</li>
+    <li><strong>No distance cutoff by default.</strong> With one model, relevant sections reached distance 0.43 while unanswerable questions began at 0.41. A cutoff is per model, and only after measuring; otherwise the prompt and evals handle irrelevant chunks.</li>
+  </ul>
+  <p>Documents are untrusted input too: an instruction planted in a document is indirect prompt injection, and anyone who can edit a document can attempt it. The same architectural bounds apply as for any injected text, and secrets in documents reach the embedding provider on every save, so redaction must come before any model call, not only before the chat prompt (Chapter 9).</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"We measure retrieval separately with recall@k and MRR on labeled questions, then generation with evals; a chunk that's never retrieved can't be fixed in the prompt."</p>
+    <p>"The tenant filter is inside the retrieval query, in a form the planner uses before the vector index; filtered after an approximate index, a small tenant gets nothing back, silently."</p>
+  </aside>
+
+  <h3 id="ch4-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A team's search returns nothing, with no error</td><td data-label="Cause">The tenant filter ran after the approximate index's candidate list</td><td data-label="Fix">A plain filter the planner uses first; iterative scans; per-tenant partitions.</td></tr>
+        <tr><td data-label="Symptom">Retrieval quality collapses after a settings change</td><td data-label="Cause">Old and new vectors are incomparable (model, dimension or prefix)</td><td data-label="Fix">Store an embedding key; search only the current key; re-embed.</td></tr>
+        <tr><td data-label="Symptom">Keyword search misses a word the section plainly contains</td><td data-label="Cause">The query stemmed words that were already stemmed: "database" is stored as <code>databas</code> and was searched as <code>databa</code></td><td data-label="Fix">Stem once. Read already-stemmed terms with the <code>simple</code> configuration; test a few words whose stems stem again.</td></tr>
+        <tr><td data-label="Symptom">"Hybrid" results are really keyword-only</td><td data-label="Cause">The semantic half failed or had no current vectors</td><td data-label="Fix">Report the actual mode; alert when most searches fall back.</td></tr>
+        <tr><td data-label="Symptom">The vector index is not used</td><td data-label="Cause">Wrong operator class, or a query not shaped as ORDER BY distance LIMIT</td><td data-label="Fix">Match the operator; check with EXPLAIN.</td></tr>
+        <tr><td data-label="Symptom">Keyword search misses most questions</td><td data-label="Cause">The query parser ANDs every word, and a question rarely contains all of them</td><td data-label="Fix">OR the question's terms and let ranking decide.</td></tr>
+        <tr><td data-label="Symptom">Correct answers fail the citation check</td><td data-label="Cause">The model formats citations in many ways</td><td data-label="Fix">Parse tolerantly; count invented numbers separately.</td></tr>
+        <tr><td data-label="Symptom">Deleted documents are still quoted</td><td data-label="Cause">Deletion did not reach the chunks</td><td data-label="Fix">Cascade deletes; carry tombstones in syncs.</td></tr>
+        <tr><td data-label="Symptom">Secrets in documents reach a provider</td><td data-label="Cause">Redaction only before the chat prompt, not before embedding</td><td data-label="Fix">Redact before every model call.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch4-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>An answer is wrong. In what order do you examine the pipeline, and why?</p>
+      <details class="ans"><summary>Answer</summary><p>Backwards from the answer: the check, generation, the prompt, the context, fusion, each retriever, chunking, parsing, ingestion. Stop at the first stage that is wrong; everything after it only looks wrong.</p></details>
+    </li>
+    <li>
+      <p>Why combine keyword and semantic search, and how are their results merged?</p>
+      <details class="ans"><summary>Answer</summary><p>Keywords find exact rare tokens such as error codes; embeddings find paraphrases. Reciprocal rank fusion merges them by rank alone, so their scores need no calibration; a reranker fixes its equal weighting.</p></details>
+    </li>
+    <li>
+      <p>What is the overfiltering trap, and how is it avoided?</p>
+      <details class="ans"><summary>Answer</summary><p>An approximate index returns its nearest candidates and the tenant filter runs after; for a small tenant all candidates may belong to others, so nothing is returned. Use a filter the planner can apply first, iterative scans, or per-tenant indexes or partitions.</p></details>
+    </li>
+    <li>
+      <p>What do recall@k and MRR measure, and what can a 19-question benchmark not tell you?</p>
+      <details class="ans"><summary>Answer</summary><p>Recall@k: whether a relevant chunk is in the top k. MRR: how high the first relevant chunk ranks on average. A small benchmark shows each model works; it cannot rank models whose difference is a couple of questions.</p></details>
+    </li>
+  </ol>
+</section>

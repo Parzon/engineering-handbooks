@@ -1,0 +1,261 @@
+<section class="chapter" id="ch5">
+  <header class="ch-head">
+    <span class="ch-num">5</span>
+    <p class="eyebrow">Part II · Foundations, refreshed</p>
+    <h2>Concurrency and the Python backend</h2>
+    <p class="lede">A modern Python service is an async application on an event loop, run by a server that forks one worker per CPU, with every dependency locked by hash, and its performance depends far more on never blocking that loop than on any choice of framework.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Four different things: an HTTP client (requests, httpx), a web framework (FastAPI), the toolkit under it (Starlette), and the ASGI server that runs it (uvicorn).</li>
+      <li>One async worker holds thousands of waiting connections on one thread. Add workers for CPU, about one per core, not for waiting.</li>
+      <li>One synchronous call inside async code stalls every request on that worker. The reference service measured a health check taking 4.8 seconds because of one.</li>
+      <li>Workers share one listening socket inherited from a master process; each has its own memory, so shared state goes to a shared store.</li>
+      <li><code>pyproject.toml</code> lists what you chose; <code>uv.lock</code> pins everything with hashes; images install exactly the lock.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">WSGI frameworks (Flask, classic Django), one request per thread</td><td>ASGI frameworks (FastAPI, Starlette, Django 3+) on an event loop</td><td>Services now wait on databases, models and other services far more than they compute.</td></tr>
+      <tr><td data-label="Then"><code>pip freeze</code> into a flat requirements file</td><td>A manifest of direct dependencies plus a lockfile of the whole graph with hashes (uv, Poetry)</td><td>Reviewable choices, and byte-identical installs.</td></tr>
+      <tr><td data-label="Then">"2 × cores + 1" workers</td><td>One async worker per usable CPU</td><td>The old rule was for synchronous workers that block while waiting.</td></tr>
+      <tr><td data-label="Then">Hand-written validation and settings parsing</td><td>Typed models (Pydantic) for requests, responses and settings</td><td>Invalid input and invalid configuration fail early and clearly.</td></tr>
+      <tr><td data-label="Then">Virtual environments activated on servers</td><td>The virtual environment lives inside the image, used by path</td><td>The image is the environment; activation is just a shell convenience.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch5-layers">Four things that are easy to confuse</h3>
+  <figure class="fig wide" id="fig-5-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 270" role="img" aria-label="Layers of a Python web service. gunicorn manages processes: one master, N workers. Each worker runs uvicorn, the ASGI server that owns the socket and the event loop. uvicorn calls your FastAPI app, built on Starlette, which provides Request and Response. Inside your code, an HTTP client such as requests or httpx calls other services. The ASGI contract is the line between the server and the app.">
+      <rect class="n-soft" x="16" y="16" width="520" height="238" rx="8"/>
+      <text class="tm tb" x="30" y="40">gunicorn</text><text class="ts" x="110" y="40">process manager: a master and N workers, restarts, drains</text>
+      <rect class="n" x="36" y="54" width="480" height="186" rx="7"/>
+      <text class="tm tb" x="50" y="78">uvicorn</text><text class="ts" x="122" y="78">the ASGI server: the socket and the event loop</text>
+      <line class="rule-strong dash" x1="50" y1="94" x2="500" y2="94"/>
+      <text class="tl" x="50" y="112">THE ASGI CONTRACT: async def app(scope, receive, send)</text>
+      <rect class="n-acc" x="56" y="122" width="440" height="106" rx="6"/>
+      <text class="tm tb" x="70" y="146">FastAPI</text><text class="ts" x="140" y="146">your routes, validation, dependencies</text>
+      <text class="tm" x="70" y="168">Starlette</text><text class="ts" x="150" y="168">Request, Response, middleware, streaming</text>
+      <rect class="n" x="70" y="180" width="412" height="36" rx="4"/>
+      <text class="tm" x="82" y="203">httpx / requests</text><text class="ts" x="214" y="203">a client, inside your code, calling others</text>
+      <text class="tb" x="560" y="40">You give the server your app,</text>
+      <text class="tb" x="560" y="58">not the other way round.</text>
+      <text class="ts" x="560" y="86">Any ASGI server runs any ASGI</text>
+      <text class="ts" x="560" y="102">framework. WSGI is the older,</text>
+      <text class="ts" x="560" y="118">synchronous contract; the two</text>
+      <text class="ts" x="560" y="134">do not mix.</text>
+      <text class="ts" x="560" y="166">uvicorn alone is production-ready</text>
+      <text class="ts" x="560" y="182">now; gunicorn adds one process</text>
+      <text class="ts" x="560" y="198">manager across WSGI and ASGI</text>
+      <text class="ts" x="560" y="214">services, and a long track record.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.1</span>The stack of a Python web service. The reference api runs FastAPI under uvicorn workers managed by gunicorn in production, and plain uvicorn with auto-reload in development.</figcaption>
+  </figure>
+
+  <h3 id="ch5-loop">How the event loop actually waits</h3>
+  <p>A suspended coroutine is not a paused thread. Calling an <code>async def</code> function runs nothing; it returns a coroutine object. The event loop runs one coroutine at a time on one thread, and when a coroutine awaits I/O, the loop parks it and blocks in a single kernel call, <code>epoll_wait()</code>, until any registered socket is ready or the nearest timer is due. Three concurrent two-second sleeps make one two-second wait, and finish in two seconds, not six.</p>
+
+  <figure class="fig wide" id="fig-5-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 270" role="img" aria-label="Two timelines on one worker. Top: three requests each await the database; the loop interleaves them, and all finish in about the time of one wait. Bottom: one request makes a synchronous call; the loop cannot run anything else until it returns, so the other two requests, and the health check, wait behind it.">
+      <text class="tb" x="16" y="24">Every wait is an await</text>
+      <text class="ts" x="16" y="42">the loop runs other requests while one waits</text>
+      <rect class="n-acc" x="160" y="56" width="24" height="22" rx="2"/><rect class="n-soft" x="184" y="56" width="240" height="22" rx="2"/><rect class="n-acc" x="424" y="56" width="24" height="22" rx="2"/>
+      <rect class="n-acc" x="186" y="84" width="24" height="22" rx="2"/><rect class="n-soft" x="210" y="84" width="240" height="22" rx="2"/><rect class="n-acc" x="450" y="84" width="24" height="22" rx="2"/>
+      <rect class="n-acc" x="212" y="112" width="24" height="22" rx="2"/><rect class="n-soft" x="236" y="112" width="240" height="22" rx="2"/><rect class="n-acc" x="476" y="112" width="24" height="22" rx="2"/>
+      <text class="ts" x="16" y="72">request 1</text><text class="ts" x="16" y="100">request 2</text><text class="ts" x="16" y="128">request 3</text>
+      <text class="ts" x="520" y="100">all three done in about one wait;</text>
+      <text class="ts" x="520" y="116">the waiting costs no CPU</text>
+
+      <line class="rule" x1="16" y1="150" x2="804" y2="150"/>
+      <text class="tb tr" x="16" y="176">One synchronous call</text>
+      <text class="ts" x="16" y="194">the loop is stuck until it returns</text>
+      <rect class="n-bad" x="160" y="206" width="264" height="22" rx="2"/><text class="ts" x="292" y="222" text-anchor="middle">blocking call: nothing else runs</text>
+      <rect class="n-warn" x="160" y="234" width="264" height="22" rx="2"/><text class="ts" x="292" y="250" text-anchor="middle">requests 2, 3 and /health wait</text>
+      <rect class="n-acc" x="424" y="234" width="24" height="22" rx="2"/><rect class="n-acc" x="448" y="234" width="24" height="22" rx="2"/>
+      <text class="ts" x="520" y="222">measured: /health took 4.8 s;</text>
+      <text class="ts" x="520" y="238">the linter's async rules did not</text>
+      <text class="ts" x="520" y="254">flag the SDK's synchronous client</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.2</span>The event loop's contract: never block it. Async does not bypass Python's global interpreter lock; it is one thread that never wastes time waiting. A blocking call breaks the contract for every request on that worker at once.</figcaption>
+  </figure>
+
+  <p>Two consequences show up in production. On a busy loop, every wall-clock timeout fires early, because callbacks run late: the reference service saw its rate limiter failing open and pool timeouts firing at about 46% CPU. So CPU percentage is a poor saturation signal for async Python; <strong>event-loop lag</strong>, how late a timer fires, measures it directly, and the service exports it as a metric. And <strong>cancellation is normal</strong>: a user closing the tab cancels the stream, and <code>finally</code> blocks must close the model connection, which stops the billing.</p>
+
+  <h3 id="ch5-workers">Workers: processes for CPU</h3>
+  <p>One async process already holds thousands of waiting connections, so extra workers are for CPU: roughly one per core. They are processes, not threads, because each process has its own interpreter lock, so N workers really use N cores.</p>
+
+  <figure class="fig wide" id="fig-5-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="The pre-fork model. The master process creates the socket, binds and listens once, then forks N workers that inherit it. Each worker calls accept, and the kernel hands each new connection to one of them. Each worker has its own event loop, its own memory and its own database connection pool, so connections multiply by the number of workers, and in-memory state differs per worker.">
+      <rect class="n-acc" x="16" y="100" width="170" height="70" rx="6"/>
+      <text class="tb" x="101" y="126" text-anchor="middle">Master process</text>
+      <text class="ts" x="101" y="144" text-anchor="middle">bind and listen once,</text>
+      <text class="ts" x="101" y="160" text-anchor="middle">then fork N workers</text>
+      <rect class="n-soft" x="230" y="112" width="110" height="46" rx="5"/><text class="tb" x="285" y="132" text-anchor="middle">one socket</text><text class="ts" x="285" y="148" text-anchor="middle">:8010</text>
+      <line class="e" x1="187" y1="135" x2="228" y2="135" marker-end="url(#a)"/>
+      <rect class="n" x="400" y="20" width="200" height="66" rx="5"/><text class="tb" x="412" y="42">Worker 1</text><text class="ts" x="412" y="60">event loop, own memory,</text><text class="ts" x="412" y="76">own pool: 20 connections</text>
+      <rect class="n" x="400" y="102" width="200" height="66" rx="5"/><text class="tb" x="412" y="124">Worker 2</text><text class="ts" x="412" y="142">event loop, own memory,</text><text class="ts" x="412" y="158">own pool: 20 connections</text>
+      <rect class="n" x="400" y="184" width="200" height="66" rx="5"/><text class="tb" x="412" y="206">Worker N</text><text class="ts" x="412" y="224">one per usable CPU</text><text class="ts" x="412" y="240">read from the cgroup</text>
+      <path class="e" d="M341,128 C370,128 370,53 398,53" marker-end="url(#a)"/>
+      <line class="e" x1="341" y1="135" x2="398" y2="135" marker-end="url(#a)"/>
+      <path class="e" d="M341,142 C370,142 370,217 398,217" marker-end="url(#a)"/>
+      <text class="ts" x="370" y="96" text-anchor="middle">accept</text>
+      <rect class="n-warn" x="630" y="40" width="174" height="96" rx="5"/>
+      <text class="tb" x="642" y="62">State is per worker</text>
+      <text class="ts" x="642" y="82">a dict cache differs in</text>
+      <text class="ts" x="642" y="98">each; counters too. Shared</text>
+      <text class="ts" x="642" y="114">state goes to a shared store</text>
+      <rect class="n-warn" x="630" y="148" width="174" height="96" rx="5"/>
+      <text class="tb" x="642" y="170">Connections multiply</text>
+      <text class="ts" x="642" y="190">workers × pool × replicas</text>
+      <text class="ts" x="642" y="206">must stay under the</text>
+      <text class="ts" x="642" y="222">database's limit</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.3</span>The pre-fork model. <code>ss -ltnp</code> shows one listening socket with N process IDs. The kernel distributes connections; the costs are per-worker memory and per-worker connection pools.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/gunicorn.conf.py#L34-L55">apps/api/gunicorn.conf.py</a><span class="lines">worker count, heartbeat, drain, keep-alive</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Four production settings, each with the reason it has the value it has. Every one can be overridden from the environment, so the same image fits a laptop, a VM or a one-process-per-task platform.</p>
+        <ul class="notice">
+          <li>Workers: one per usable CPU. On ECS or Kubernetes, one worker per task and more replicas.</li>
+          <li>The timeout is a heartbeat, not a request deadline: a worker is killed only when its loop is blocked that long, so long streams are unaffected.</li>
+          <li>The graceful timeout must cover the longest stream and stay below the platform's stop grace period (Chapter 3).</li>
+          <li>Idle keep-alive must outlive the proxy's, or the proxy reuses a connection the worker just closed: sporadic 502s.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/gunicorn.conf.py" data-lines="34-55"><code class="language-python"># Async workers: one per usable CPU. Each worker's event loop already
+# serves many concurrent connections; the classic "2 x cores + 1" rule is
+# for sync workers that block while waiting on I/O. On ECS/Kubernetes set
+# WEB_CONCURRENCY=1 and scale with replicas instead.
+workers = int(os.environ.get("WEB_CONCURRENCY") or available_cpus())
+worker_class = "uvicorn_worker.UvicornWorker"
+
+# A heartbeat, not a request deadline: an async worker is killed only when
+# its event loop is blocked this long (a stuck synchronous call). Long SSE
+# streams are unaffected.
+timeout = int(os.environ.get("GUNICORN_TIMEOUT", "30"))
+
+# On SIGTERM, in-flight requests get this long to finish. It must cover the
+# longest LLM stream (LLM_STREAM_TIMEOUT_S) and stay below the container
+# stop grace period (compose stop_grace_period, ECS stopTimeout, k8s
+# terminationGracePeriodSeconds), which otherwise SIGKILLs first.
+graceful_timeout = int(os.environ.get("GUNICORN_GRACEFUL_TIMEOUT", "120"))
+
+# Idle keep-alive must outlive the proxy's upstream keep-alive (nginx
+# keepalive_timeout 60s; an AWS ALB idle timeout likewise). Otherwise the
+# proxy reuses a connection the worker has just closed: sporadic 502s.
+keepalive = int(os.environ.get("GUNICORN_KEEPALIVE", "75"))</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch5-deps">Dependencies and environments</h3>
+  <p>A <strong>virtual environment</strong> is just a directory: <code>bin/python</code> is a link to the real interpreter, and only third-party packages are installed in it. Activating it merely puts its <code>bin</code> first on the shell's path, which is why <code>venv/bin/python app.py</code> works without activation, and why services and images run it by path. Modern Linux distributions refuse a global <code>pip install</code> because their own tools are Python programs pinned to specific package versions.</p>
+
+  <figure class="fig wide" id="fig-5-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 220" role="img" aria-label="pyproject.toml lists the direct dependencies you chose; uv lock resolves the whole graph into uv.lock with hashes, committed; uv sync --frozen installs exactly the lock into the virtual environment, failing rather than re-resolving; the image is built from that. Below: three tiers of Python dependencies: pure Python runs anywhere; wrappers around C libraries come as wheels per operating system and processor; wrappers that call external programs need the operating system's package manager.">
+      <rect class="n" x="16" y="20" width="170" height="64" rx="5"/><text class="tm tb" x="28" y="44">pyproject.toml</text><text class="ts" x="28" y="64">direct dependencies:</text><text class="ts" x="28" y="78">what you chose</text>
+      <rect class="n-acc" x="230" y="20" width="170" height="64" rx="5"/><text class="tm tb" x="242" y="44">uv.lock</text><text class="ts" x="242" y="64">the whole graph, with</text><text class="ts" x="242" y="78">hashes; committed</text>
+      <rect class="n" x="444" y="20" width="170" height="64" rx="5"/><text class="tm tb" x="456" y="44">uv sync --frozen</text><text class="ts" x="456" y="64">installs exactly the lock;</text><text class="ts" x="456" y="78">fails rather than resolve</text>
+      <rect class="n-good" x="658" y="20" width="146" height="64" rx="5"/><text class="tb" x="670" y="44">The image</text><text class="ts" x="670" y="64">what was reviewed,</text><text class="ts" x="670" y="78">byte for byte</text>
+      <line class="e" x1="187" y1="52" x2="228" y2="52" marker-end="url(#a)"/><text class="ts" x="207" y="44" text-anchor="middle">uv lock</text>
+      <line class="e" x1="401" y1="52" x2="442" y2="52" marker-end="url(#a)"/>
+      <line class="e" x1="615" y1="52" x2="656" y2="52" marker-end="url(#a)"/>
+      <text class="tl" x="16" y="136">THREE TIERS OF PYTHON DEPENDENCY</text>
+      <rect class="n-soft" x="16" y="146" width="250" height="58" rx="5"/><text class="tb" x="28" y="168">Pure Python</text><text class="ts" x="28" y="188">runs anywhere</text>
+      <rect class="n-soft" x="284" y="146" width="250" height="58" rx="5"/><text class="tb" x="296" y="168">Wraps a C library</text><text class="ts" x="296" y="188">wheels per OS and processor</text>
+      <rect class="n-soft" x="552" y="146" width="252" height="58" rx="5"/><text class="tb" x="564" y="168">Calls a separate program</text><text class="ts" x="564" y="188">ffmpeg, pandoc: OS packages</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.4</span>A manifest, a lock, a frozen install. The lockfile is the fix for <code>pip freeze</code>'s flat list of everything: you review the choices in the manifest, and the lock makes every install identical. The tiers below explain why something that works on a laptop can fail in an image.</figcaption>
+  </figure>
+  <p>Compiled wheels are built per operating system and per processor: an Apple Silicon laptop builds arm64 images unless told otherwise, GPU builds of some libraries exist only for Linux on NVIDIA, and browser-automation tools need browser binaries and a dozen system libraries. The structural fix is to put system dependencies in the Dockerfile and develop inside the image that ships. The reliable check is to build and run the image.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/Dockerfile#L17-L23">apps/api/Dockerfile</a><span class="lines">the dependency layer</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The dependency layer of the api image. Only the two manifests are mounted into this step, so it is rebuilt only when dependencies change, not on every code edit.</p>
+        <ul class="notice">
+          <li><code>--frozen</code> installs exactly what <code>uv.lock</code> pins and fails rather than resolve anything new.</li>
+          <li><code>--no-dev</code> keeps test and lint tools out of production.</li>
+          <li>A cache mount keeps downloaded wheels between builds without baking them into a layer.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/Dockerfile" data-lines="17-23"><code class="language-dockerfile"># Only the manifests are mounted, so this layer is rebuilt only when
+# dependencies change. The cache mount keeps downloaded wheels between
+# builds without baking them into a layer.
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    uv sync --frozen --no-dev --no-install-project</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"It's async FastAPI on uvicorn workers, one per CPU from the cgroup quota. The rule is never block the event loop, and we watch loop lag, not CPU, for saturation."</p>
+    <p>"Dependencies are locked with hashes and installed frozen, so the image has exactly what was reviewed."</p>
+  </aside>
+
+  <h3 id="ch5-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">Every request on a worker slows down at once, health checks included</td><td data-label="Cause">A synchronous call inside async code blocks the event loop</td><td data-label="Fix">Use async clients, or move blocking work to a thread; watch event-loop lag.</td></tr>
+        <tr><td data-label="Symptom">Timeouts and fail-opens fire at moderate CPU</td><td data-label="Cause">On a busy loop, wall-clock timers fire late</td><td data-label="Fix">Treat loop lag as the saturation signal; scale before it rises.</td></tr>
+        <tr><td data-label="Symptom">A probe with a 2-second timeout took over 10 seconds</td><td data-label="Cause"><code>asyncio.timeout()</code> cancels once, and the cleanup after it can block again</td><td data-label="Fix">Run the check as a task, wait with a deadline, and abandon it rather than cancel.</td></tr>
+        <tr><td data-label="Symptom">A cancelled stream kept the model call running and billing</td><td data-label="Cause">The response never closed the async generator</td><td data-label="Fix">Close generators explicitly (<code>contextlib.aclosing</code>) and stop the upstream call in <code>finally</code>.</td></tr>
+        <tr><td data-label="Symptom">A request-scoped database session held its connection for a whole streamed answer</td><td data-label="Cause">FastAPI's yield dependencies close after a streamed response has been sent</td><td data-label="Fix">Scope the session to the function, and load data before streaming.</td></tr>
+        <tr><td data-label="Symptom">The request id is missing from error responses</td><td data-label="Cause">Starlette's exception handler runs outside your middleware</td><td data-label="Fix">Handle errors inside the middleware that sets the id.</td></tr>
+        <tr><td data-label="Symptom">A runtime check vanished in production</td><td data-label="Cause"><code>assert</code> is removed under <code>python -O</code></td><td data-label="Fix">Use an explicit check and <code>raise</code>.</td></tr>
+        <tr><td data-label="Symptom">A worker hangs until it is killed</td><td data-label="Cause">A forgotten <code>breakpoint()</code> waits for keyboard input</td><td data-label="Fix">Set <code>PYTHONBREAKPOINT=0</code> in production images.</td></tr>
+        <tr><td data-label="Symptom">Bursts of 502 under load</td><td data-label="Cause">Worker recycling after N requests closed keep-alive connections the proxy was reusing</td><td data-label="Fix">Leave recycling off unless memory growth is measured.</td></tr>
+        <tr><td data-label="Symptom">The production image crashed on <code>import httpx</code></td><td data-label="Cause">It was only a development dependency; the SDK depends on a differently named package</td><td data-label="Fix">Run the production image in CI and import every module.</td></tr>
+        <tr><td data-label="Symptom">A hung dependency stalls every synchronous endpoint</td><td data-label="Cause">The thread pool for sync code has 40 slots, and they all wait</td><td data-label="Fix">Bound every wait; prefer async endpoints.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch5-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Why do three concurrent two-second sleeps on an event loop finish in two seconds?</p>
+      <details class="ans"><summary>Answer</summary><p>Each await parks its coroutine, and the loop blocks once in the kernel until the nearest timer is due. All three timers expire together, so the waits overlap instead of adding up.</p></details>
+    </li>
+    <li>
+      <p>How many async workers should a service run, and why not more?</p>
+      <details class="ans"><summary>Answer</summary><p>About one per usable CPU, read from the container's limit. Each worker already handles thousands of waiting connections; extra workers only add memory and database connections without adding CPU.</p></details>
+    </li>
+    <li>
+      <p>Why is CPU percentage a poor saturation signal for async Python?</p>
+      <details class="ans"><summary>Answer</summary><p>Work queues on the event loop long before CPU reaches 100%, and timers start firing late. Event-loop lag measures that queueing directly.</p></details>
+    </li>
+    <li>
+      <p>What does <code>uv.lock</code> give you that <code>pyproject.toml</code> does not?</p>
+      <details class="ans"><summary>Answer</summary><p>The full resolved dependency graph with exact versions and hashes. The manifest lists only the direct dependencies you chose; the lock makes every install identical.</p></details>
+    </li>
+  </ol>
+</section>

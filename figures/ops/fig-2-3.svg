@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 230" role="img" aria-label="Three histories. Merge: a new commit M with two parents joins the branch. Rebase: the branch's commits D and E are replayed after C as new commits D-prime and E-prime. Squash: one new commit S on main holds all the branch's changes."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #146b55; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e2f1eb; stroke: #146b55; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #146b55; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #146b55; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #146b55; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="230" fill="#ffffff"/>
+      <text class="tb" x="16" y="24">Merge</text>
+      <text class="ts" x="16" y="42">history as it happened</text>
+      <line class="e" x1="40" y1="120" x2="206" y2="120"/>
+      <path class="e" d="M80,120 C90,80 105,72 120,72 H170 C190,72 205,95 212,112"/>
+      <circle class="n" cx="40" cy="120" r="14"/><text class="ts" x="40" y="124" text-anchor="middle">A</text>
+      <circle class="n" cx="80" cy="120" r="14"/><text class="ts" x="80" y="124" text-anchor="middle">B</text>
+      <circle class="n" cx="140" cy="120" r="14"/><text class="ts" x="140" y="124" text-anchor="middle">C</text>
+      <circle class="n-acc" cx="120" cy="72" r="14"/><text class="ts" x="120" y="76" text-anchor="middle">D</text>
+      <circle class="n-acc" cx="170" cy="72" r="14"/><text class="ts" x="170" y="76" text-anchor="middle">E</text>
+      <circle class="n-good" cx="216" cy="120" r="14"/><text class="ts tb" x="216" y="124" text-anchor="middle">M</text>
+      <text class="ts" x="16" y="170">M has two parents. Nothing is</text>
+      <text class="ts" x="16" y="186">rewritten; history can get busy.</text>
+
+      <line class="rule" x1="268" y1="12" x2="268" y2="200"/>
+      <text class="tb" x="288" y="24">Rebase</text>
+      <text class="ts" x="288" y="42">replay on the new base</text>
+      <line class="e" x1="306" y1="120" x2="520" y2="120"/>
+      <circle class="n" cx="306" cy="120" r="14"/><text class="ts" x="306" y="124" text-anchor="middle">A</text>
+      <circle class="n" cx="350" cy="120" r="14"/><text class="ts" x="350" y="124" text-anchor="middle">B</text>
+      <circle class="n" cx="400" cy="120" r="14"/><text class="ts" x="400" y="124" text-anchor="middle">C</text>
+      <circle class="n-acc" cx="450" cy="120" r="14"/><text class="ts" x="450" y="124" text-anchor="middle">D′</text>
+      <circle class="n-acc" cx="500" cy="120" r="14"/><text class="ts" x="500" y="124" text-anchor="middle">E′</text>
+      <circle class="n-soft" cx="400" cy="72" r="14"/><text class="ts tmu" x="400" y="76" text-anchor="middle">D</text>
+      <circle class="n-soft" cx="450" cy="72" r="14"/><text class="ts tmu" x="450" y="76" text-anchor="middle">E</text>
+      <text class="ts" x="288" y="170">Same changes, new IDs: never rebase</text>
+      <text class="ts" x="288" y="186">commits others already have.</text>
+
+      <line class="rule" x1="548" y1="12" x2="548" y2="200"/>
+      <text class="tb" x="568" y="24">Squash</text>
+      <text class="ts" x="568" y="42">one commit per change</text>
+      <line class="e" x1="586" y1="120" x2="740" y2="120"/>
+      <circle class="n" cx="586" cy="120" r="14"/><text class="ts" x="586" y="124" text-anchor="middle">A</text>
+      <circle class="n" cx="636" cy="120" r="14"/><text class="ts" x="636" y="124" text-anchor="middle">B</text>
+      <circle class="n" cx="686" cy="120" r="14"/><text class="ts" x="686" y="124" text-anchor="middle">C</text>
+      <circle class="n-good" cx="740" cy="120" r="14"/><text class="ts tb" x="740" y="124" text-anchor="middle">S</text>
+      <text class="ts" x="740" y="88" text-anchor="middle">D + E</text>
+      <text class="ts" x="568" y="170">One revert undoes the whole change;</text>
+      <text class="ts" x="568" y="186">the small commits stay in the PR.</text>
+    </svg>

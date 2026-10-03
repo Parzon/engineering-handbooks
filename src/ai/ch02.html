@@ -1,0 +1,213 @@
+<section class="chapter" id="ch2">
+  <header class="ch-head">
+    <span class="ch-num">2</span>
+    <p class="eyebrow">Part II · How models run</p>
+    <h2>How a model produces text</h2>
+    <p class="lede">A language model turns text into tokens, scores every possible next token, samples one, appends it and runs again; latency, cost, memory and the variability that evals must measure all follow from that loop.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>One forward pass per output token. Prices, limits and speed are all counted in tokens.</li>
+      <li>Two phases: <strong>prefill</strong> reads the prompt in parallel and sets the time to first token; <strong>decode</strong> writes one token at a time and sets tokens per second.</li>
+      <li>Sampling (temperature, top-p) is why the same prompt answers differently, and why evals repeat runs.</li>
+      <li>The context window holds input and output together; hidden reasoning spends the output budget too.</li>
+      <li>The KV cache holds every earlier token's keys and values in GPU memory, and caps how many requests fit at once.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Recurrent networks reading one word at a time</td><td>Transformers attending to the whole context at once</td><td>Attention trains in parallel and scales with data and compute.</td></tr>
+      <tr><td data-label="Then">Context of a few thousand tokens</td><td>Windows of hundreds of thousands</td><td>Long contexts are now practical, but cost memory and time, and the middle is used worst.</td></tr>
+      <tr><td data-label="Then">A model answers directly</td><td>Reasoning models think in hidden tokens first</td><td>Spending tokens on intermediate steps improves hard answers, at a price in tokens and latency.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch2-loop">The loop</h3>
+  <figure class="fig wide" id="fig-2-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 244" role="img" aria-label="Text is split by a tokenizer into subword tokens; each token becomes a vector; a stack of transformer layers turns the vectors into a score, a logit, for every token in the vocabulary; softmax and sampling pick one token; it is appended to the sequence and the model runs again, once per output token, until a stop token or the output limit.">
+      <rect class="n" x="16" y="30" width="110" height="64" rx="5"/><text class="tb" x="71" y="56" text-anchor="middle">text</text><text class="ts" x="71" y="76" text-anchor="middle">"disk full on"</text>
+      <rect class="n" x="148" y="30" width="120" height="64" rx="5"/><text class="tb" x="208" y="56" text-anchor="middle">tokens</text><text class="ts" x="208" y="76" text-anchor="middle">subword pieces</text>
+      <rect class="n" x="290" y="30" width="110" height="64" rx="5"/><text class="tb" x="345" y="56" text-anchor="middle">vectors</text><text class="ts" x="345" y="76" text-anchor="middle">one per token</text>
+      <rect class="n-acc" x="422" y="30" width="140" height="64" rx="5"/><text class="tb" x="492" y="56" text-anchor="middle">transformer</text><text class="ts" x="492" y="76" text-anchor="middle">attention + MLP × N</text>
+      <rect class="n" x="584" y="30" width="100" height="64" rx="5"/><text class="tb" x="634" y="56" text-anchor="middle">logits</text><text class="ts" x="634" y="76" text-anchor="middle">a score per token</text>
+      <rect class="n-warn" x="706" y="30" width="98" height="64" rx="5"/><text class="tb" x="755" y="56" text-anchor="middle">sample</text><text class="ts" x="755" y="76" text-anchor="middle">one token</text>
+      <line class="e" x1="127" y1="62" x2="146" y2="62" marker-end="url(#a)"/><line class="e" x1="269" y1="62" x2="288" y2="62" marker-end="url(#a)"/><line class="e" x1="401" y1="62" x2="420" y2="62" marker-end="url(#a)"/><line class="e" x1="563" y1="62" x2="582" y2="62" marker-end="url(#a)"/><line class="e" x1="685" y1="62" x2="704" y2="62" marker-end="url(#a)"/>
+      <path class="e-acc" d="M755,95 C755,150 208,150 208,97" marker-end="url(#a-acc)"/>
+      <text class="ts ta" x="480" y="172" text-anchor="middle">append it and run again: one forward pass per output token</text>
+      <text class="ts" x="16" y="208">English averages about four characters, or three quarters of a word, per token. Other languages, numbers and code cost more,</text>
+      <text class="ts" x="16" y="226">and the same text gives different counts in different model families. Generation stops at a stop token or the output limit.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 2.1</span>The generation loop. An <em>embedding</em> is the vector for a token inside the model, or, from a separate embedding model, the vector for a whole text, used for retrieval (Chapter 4).</figcaption>
+  </figure>
+
+  <h3 id="ch2-attention">Attention, at a lead's level</h3>
+  <p>Each layer does two things to every token's vector: <strong>attention</strong> mixes in information from other tokens, then a feed-forward network transforms each vector on its own. For attention, each token's vector is projected into a <em>query</em> (what it is looking for), a <em>key</em> (what it contains) and a <em>value</em> (what it passes on). A token's output is the average of the values, weighted by how well its query matches each key. Several heads do this in parallel, each learning a different kind of relation.</p>
+
+  <figure class="fig wide" id="fig-2-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Causal attention for the last token of 'the disk is full': its query is compared with the keys of every earlier token, including itself; a softmax over the scores gives weights; the output is the weighted sum of the values. A token never attends to later tokens, which is what allows generating one at a time while reusing the past. Compute grows with the square of the context length; the memory for past keys and values, the KV cache, grows linearly.">
+      <g class="ts">
+      <rect class="n" x="16" y="30" width="96" height="40" rx="4"/><text x="64" y="55" text-anchor="middle">the</text>
+      <rect class="n" x="126" y="30" width="96" height="40" rx="4"/><text x="174" y="55" text-anchor="middle">disk</text>
+      <rect class="n" x="236" y="30" width="96" height="40" rx="4"/><text x="284" y="55" text-anchor="middle">is</text>
+      <rect class="n-acc" x="346" y="30" width="96" height="40" rx="4"/><text x="394" y="55" text-anchor="middle">full</text>
+      <rect class="n-soft" x="456" y="30" width="96" height="40" rx="4"/><text x="504" y="55" text-anchor="middle" class="tmu">(future)</text>
+      </g>
+      <text class="ts" x="16" y="20">keys and values of every earlier token, read by the last one</text>
+      <path class="e-acc" d="M394,72 C394,130 64,130 64,74" marker-end="url(#a-acc)"/>
+      <path class="e-acc" d="M394,72 C394,120 174,120 174,74" marker-end="url(#a-acc)"/>
+      <path class="e-acc" d="M394,72 C394,108 284,108 284,74" marker-end="url(#a-acc)"/>
+      <line class="e-bad dash" x1="444" y1="50" x2="454" y2="50"/><text class="ts tr" x="456" y="96">never attended: causal</text>
+      <rect class="n" x="16" y="150" width="250" height="80" rx="5"/><text class="tb" x="28" y="172">Q, K, V</text><text class="ts" x="28" y="192">query: what this token looks for</text><text class="ts" x="28" y="208">key: what a token contains</text><text class="ts" x="28" y="224">value: what it passes on</text>
+      <rect class="n" x="286" y="150" width="250" height="80" rx="5"/><text class="tb" x="298" y="172">The output</text><text class="ts" x="298" y="192">softmax of query · keys gives</text><text class="ts" x="298" y="208">weights; the output is the</text><text class="ts" x="298" y="224">weighted sum of the values</text>
+      <rect class="n-warn" x="556" y="150" width="248" height="80" rx="5"/><text class="tb" x="568" y="172">The cost</text><text class="ts" x="568" y="192">compute: grows with the square</text><text class="ts" x="568" y="208">of the context; memory for past</text><text class="ts" x="568" y="224">keys and values: linear</text>
+      <text class="ts" x="580" y="56">many heads in parallel,</text><text class="ts" x="580" y="72">each a kind of relation;</text><text class="ts" x="580" y="88">many layers stacked</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 2.2</span>Causal attention for one token. Because a token attends only to earlier tokens, the keys and values computed for the past never change, and can be kept rather than recomputed: the KV cache.</figcaption>
+  </figure>
+
+  <h3 id="ch2-sampling">Logits, sampling and temperature</h3>
+  <figure class="fig wide" id="fig-2-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Next-token probabilities after 'the disk is', as bars for full, nearly, at, almost and other tokens. Low temperature sharpens the distribution toward 'full'; high temperature flattens it. Temperature 0 is greedy: always the top token. Top-p keeps only the smallest set of tokens whose probabilities reach p, here full and nearly, and samples among them. Low temperature suits extraction, classification, judges and tool calls; higher suits drafting.">
+      <text class="tl" x="16" y="22">TEMPERATURE 0.3: SHARP</text>
+      <g class="ts">
+      <text x="16" y="52">full</text><rect class="fill-acc" x="80" y="40" width="210" height="16"/><text x="298" y="52">0.82</text>
+      <text x="16" y="76">nearly</text><rect class="fill-acc" x="80" y="64" width="34" height="16"/><text x="122" y="76">0.13</text>
+      <text x="16" y="100">at</text><rect class="fill-acc" x="80" y="88" width="10" height="16"/><text x="98" y="100">0.04</text>
+      <text x="16" y="124">almost</text><rect class="fill-acc" x="80" y="112" width="3" height="16"/><text x="90" y="124">0.01</text>
+      </g>
+      <text class="tl" x="430" y="22">TEMPERATURE 1.5: FLAT</text>
+      <g class="ts">
+      <text x="430" y="52">full</text><rect class="fill-acc" x="494" y="40" width="110" height="16"/><text x="612" y="52">0.43</text>
+      <text x="430" y="76">nearly</text><rect class="fill-acc" x="494" y="64" width="67" height="16"/><text x="569" y="76">0.26</text>
+      <text x="430" y="100">at</text><rect class="fill-acc" x="494" y="88" width="46" height="16"/><text x="548" y="100">0.18</text>
+      <text x="430" y="124">almost</text><rect class="fill-acc" x="494" y="112" width="33" height="16"/><text x="535" y="124">0.13</text>
+      </g>
+      <rect class="n-soft" x="16" y="150" width="788" height="96" rx="6"/>
+      <text class="ts" x="28" y="172"><tspan class="tb">Temperature</tspan> divides the logits before softmax: below 1 sharpens toward the likeliest token, above 1 flattens.</text>
+      <text class="ts" x="28" y="192"><tspan class="tb">0 is greedy</tspan>: always the top token, the most repeatable setting, though not bit-identical on GPUs that batch requests.</text>
+      <text class="ts" x="28" y="212"><tspan class="tb">Top-p</tspan>: sample only from the smallest set reaching probability p; <tspan class="tb">top-k</tspan>: only the k likeliest. Tune one, not both.</text>
+      <text class="ts" x="28" y="232">Low temperature for extraction, classification, judges and tool calls; higher for drafting.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 2.3</span>The same logits at two temperatures (illustrative numbers). Sampling is why one prompt gives different answers, and why a case in an eval is run many times rather than once (Chapter 7).</figcaption>
+  </figure>
+
+  <h3 id="ch2-phases">Prefill and decode: two phases, two bottlenecks</h3>
+  <figure class="fig wide" id="fig-2-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="A request's timeline. Prefill runs the whole prompt through the model in one parallel pass and builds the KV cache; it is compute-bound, grows with the prompt and sets the time to first token. Decode produces one token per forward pass, reading all the weights and the KV cache from GPU memory each time; it is memory-bandwidth-bound and sets tokens per second per stream. Total time is roughly the time to first token plus output tokens divided by tokens per second. Measured for a 20-billion-parameter model on one GPU: time to first token about 0.2 to 0.3 seconds, and 176 tokens per second for a single stream.">
+      <rect class="n-acc" x="16" y="40" width="150" height="50" rx="4"/><text class="tb" x="91" y="62" text-anchor="middle">prefill</text><text class="ts" x="91" y="80" text-anchor="middle">whole prompt, parallel</text>
+      <g class="fill-good"><rect x="172" y="50" width="22" height="30"/><rect x="198" y="50" width="22" height="30"/><rect x="224" y="50" width="22" height="30"/><rect x="250" y="50" width="22" height="30"/><rect x="276" y="50" width="22" height="30"/><rect x="302" y="50" width="22" height="30"/><rect x="328" y="50" width="22" height="30"/><rect x="354" y="50" width="22" height="30"/><rect x="380" y="50" width="22" height="30"/><rect x="406" y="50" width="22" height="30"/><rect x="432" y="50" width="22" height="30"/><rect x="458" y="50" width="22" height="30"/><rect x="484" y="50" width="22" height="30"/><rect x="510" y="50" width="22" height="30"/><rect x="536" y="50" width="22" height="30"/><rect x="562" y="50" width="22" height="30"/></g>
+      <text class="ts" x="380" y="36" text-anchor="middle">decode: one token per forward pass</text>
+      <line class="rule-strong" x1="166" y1="100" x2="166" y2="116"/><text class="ts" x="166" y="130" text-anchor="middle">first token</text>
+      <text class="tb" x="600" y="70">total ≈ TTFT + N ÷ tok/s</text>
+      <rect class="n" x="16" y="150" width="384" height="86" rx="6"/><text class="tb" x="28" y="172">Prefill: compute-bound</text><text class="ts" x="28" y="192">large matrix multiplications keep the GPU busy;</text><text class="ts" x="28" y="208">grows with the prompt; sets time to first token</text><text class="ts" x="28" y="226">measured: about 0.2 to 0.3 s</text>
+      <rect class="n" x="420" y="150" width="384" height="86" rx="6"/><text class="tb" x="432" y="172">Decode: memory-bandwidth-bound</text><text class="ts" x="432" y="192">each pass reads all weights and the KV cache</text><text class="ts" x="432" y="208">to do little arithmetic; sets tokens per second</text><text class="ts" x="432" y="226">measured: 176 tokens/s, one stream</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 2.4</span>The two phases of a request, measured for a 20-billion-parameter open model on one 48 GB GPU. A longer prompt raises the time to first token; a longer answer raises total time at a steady rate. Hence: short prompts for a quick first word, streaming so users wait for the first token rather than the whole answer, and a cap on output.</figcaption>
+  </figure>
+
+  <h4>The KV cache</h4>
+  <p>Every layer keeps the keys and values of all tokens so far in GPU memory, so decode computes them only for the new token. Per sequence it takes roughly two (keys and values) × layers × KV heads × head size × bytes per value × tokens: gigabytes for long contexts. It limits how many requests fit on a GPU at once; in the reference measurements, eight parallel slots of a 20-billion-parameter model used 38 GB, most of it cache. Paged allocation, grouped-query attention (fewer KV heads, a property of the model) and a quantized cache shrink it, and <strong>prefix caching</strong> reuses the cache of a shared prompt prefix across requests, which is the self-hosted form of a provider's prompt caching (Chapter 10).</p>
+
+  <h3 id="ch2-window">The context window, and reasoning tokens</h3>
+  <figure class="fig wide" id="fig-2-5">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="The reference service's typical request, to scale: instructions 401 tokens, 20 alerts 685, 4 runbook sections 304, a prompt of 1,318 tokens at the median; then an answer of 172 tokens at the median including hidden reasoning, under an output cap of 800. Reasoning tokens are output: they count against the cap and are billed. At the model's default reasoning effort, 3 of 5 answers spent all 800 tokens thinking and said nothing; at high effort, 4.1 times the answer tokens were billed and 13 of 22 questions went unanswered.">
+      <text class="tl" x="16" y="22">ONE QUESTION, TO SCALE (TOKENS, MEDIAN)</text>
+      <rect class="n" x="16" y="34" width="144" height="40" rx="3"/><text class="ts" x="88" y="58" text-anchor="middle">instructions 401</text>
+      <rect class="n-acc" x="160" y="34" width="247" height="40" rx="3"/><text class="ts" x="283" y="58" text-anchor="middle">20 alerts 685</text>
+      <rect class="n" x="407" y="34" width="109" height="40" rx="3"/><text class="ts" x="461" y="58" text-anchor="middle">4 sections 304</text>
+      <rect class="n-good" x="516" y="34" width="62" height="40" rx="3"/><text class="ts" x="547" y="58" text-anchor="middle">172</text>
+      <rect class="n-soft dash" x="578" y="34" width="226" height="40" rx="3"/><text class="ts tmu" x="691" y="58" text-anchor="middle">room to the 800 cap</text>
+      <text class="ts" x="16" y="96">the prompt: 1,318 tokens at the median</text><text class="ts" x="516" y="96">the answer, reasoning included</text>
+      <rect class="n-bad" x="16" y="120" width="788" height="92" rx="6"/>
+      <text class="tb tr" x="28" y="142">Reasoning is output</text>
+      <text class="ts" x="28" y="164">It counts against the output cap and is billed. At the model's default effort, 3 of 5 answers spent all 800 tokens thinking</text>
+      <text class="ts" x="28" y="182">and said nothing; at high effort, 4.1× the answer tokens were billed and 13 of 22 questions went unanswered. An empty answer</text>
+      <text class="ts" x="28" y="200">is an error, never a blank success; a "length" finish means the answer was cut off. More reasoning is not more safety.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 2.5</span>Where one question's tokens go in the reference service, measured. Each part is its own median, so the parts add up to a little more than the prompt's median. The prompt is most of the bill, and the alerts are half the prompt; the context window must hold all of it plus the answer and its hidden reasoning.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/config.py#L142-L149">apps/api/app/config.py</a><span class="lines">an output limit sized for hidden reasoning</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Two settings for reasoning models, with the measurement behind each default in the comment.</p>
+        <ul class="notice">
+          <li>The output limit includes hidden thinking, so a limit sized for visible answers produced empty ones.</li>
+          <li>The effort parameter is sent only when set: models without reasoning reject it, so a setting that suits one model breaks another.</li>
+          <li>The model client reports an empty answer as its own error, <code>llm_empty_answer</code>, with a metric and an alert on truncated answers.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/config.py" data-lines="142-149"><code class="language-python">    # For reasoning models (OpenAI's o-series and gpt-5, gpt-oss) the limit
+    # includes their hidden thinking: measured with gpt-oss:20b at the default
+    # effort, 3 of 5 answers spent all 800 tokens thinking and said nothing.
+    llm_max_output_tokens: int = Field(800, ge=1)
+    # Reasoning models only ("low" | "medium" | "high"): how much they think
+    # before answering. Unset = not sent - other models reject the parameter.
+    # gpt-oss:20b at "low": 65-308 tokens instead of 460-800.
+    llm_reasoning_effort: Literal["low", "medium", "high"] | None = None</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p>A bigger context window is not free: prefill time and cache memory grow with it, and models use the middle of a long context worst. Send only what the question needs, ordered so that the most important material is at the start or the end.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Time to first token is prefill, which grows with the prompt; tokens per second is decode, which is memory-bound. Total is roughly TTFT plus output tokens over the decode rate."</p>
+    <p>"Reasoning tokens are output: they count against the limit and the bill, so an empty answer is an error we count and alert on."</p>
+  </aside>
+
+  <h3 id="ch2-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">Blank answers reported as successful</td><td data-label="Cause">Hidden reasoning used the whole output limit</td><td data-label="Fix">Lower the effort or raise the limit; treat an empty answer as an error.</td></tr>
+        <tr><td data-label="Symptom">A request is rejected after changing models</td><td data-label="Cause">A parameter the new model does not support, such as reasoning effort or a non-default temperature</td><td data-label="Fix">Send only parameters the model supports; unset means not sent.</td></tr>
+        <tr><td data-label="Symptom">Token counts differ from estimates</td><td data-label="Cause">Different tokenizers per model family; non-English text and code cost more</td><td data-label="Fix">Count with the target model's tokenizer, or from the provider's usage report.</td></tr>
+        <tr><td data-label="Symptom">The first word is slow on long prompts</td><td data-label="Cause">Prefill grows with the prompt</td><td data-label="Fix">Send less context; stream.</td></tr>
+        <tr><td data-label="Symptom">Temperature 0 still gives different answers</td><td data-label="Cause">Batched GPU arithmetic is not bit-identical across runs</td><td data-label="Fix">Expect near-repeatability, not identity; evaluate as a pass rate.</td></tr>
+        <tr><td data-label="Symptom">An important fact in a long context is ignored</td><td data-label="Cause">Models use the middle of long contexts worst</td><td data-label="Fix">Less context, better ranked; important material first or last.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch2-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Which phase sets the time to first token, which sets tokens per second, and what makes each worse?</p>
+      <details class="ans"><summary>Answer</summary><p>Prefill sets the time to first token and grows with the prompt's length; it is compute-bound. Decode sets tokens per second; it is memory-bandwidth-bound and slows as more streams share the GPU or the cache grows.</p></details>
+    </li>
+    <li>
+      <p>What does temperature do, and why do evals repeat runs?</p>
+      <details class="ans"><summary>Answer</summary><p>It divides the logits before softmax: lower sharpens toward the likeliest token, higher flattens. Sampling from the distribution means the same prompt gives different answers, so a case's behavior is a rate, measured over many runs.</p></details>
+    </li>
+    <li>
+      <p>What is the KV cache, and why does it limit concurrency?</p>
+      <details class="ans"><summary>Answer</summary><p>The stored keys and values of every earlier token, per layer, so decode does not recompute them. It lives in GPU memory and grows with each sequence's length, so it caps how many sequences fit on a GPU at once.</p></details>
+    </li>
+    <li>
+      <p>Why can a reasoning model return an empty answer?</p>
+      <details class="ans"><summary>Answer</summary><p>Its hidden reasoning is output and counts against the output limit; with a small limit or high effort, it can spend the whole budget thinking before writing anything visible.</p></details>
+    </li>
+  </ol>
+</section>

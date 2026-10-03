@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 330" role="img" aria-label="Four incidents. Embedding timeout set to one millisecond: the answer looked fine but lost its safety conditions; the trace showed the embedding span in error, retrieval keyword-only, and the 'Free space' section fifth by keyword and cut; metrics showed keyword-only searches and an alert after 15 minutes. Context set to one section: the answer invented a dangerous step; the trace showed top_k 1 and one section; no metric showed anything. Output limit of 60 tokens: the answer stopped after step one; the trace showed finish reason length and outcome truncated; a truncation metric and alert. A changed document prefix: the answer skipped freeing space; the trace showed keyword-only with no current vectors, and a new embedding key hash; metrics showed keyword-only searches and a warning to re-embed."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="330" fill="#ffffff"/>
+      <text class="tl" x="16" y="22">SETTING CHANGED</text><text class="tl" x="190" y="22">THE ANSWER</text><text class="tl" x="410" y="22">THE TRACE SHOWED</text><text class="tl" x="640" y="22">METRICS</text>
+      <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
+      <g class="ts">
+      <text x="16" y="54" class="tb">embedding timeout</text><text x="16" y="70">1 ms</text>
+      <text x="190" y="54">looked fine; the safety</text><text x="190" y="70">conditions were gone</text>
+      <text x="410" y="54">keyword-only; "Free space"</text><text x="410" y="70">was fifth, and cut</text>
+      <text x="640" y="54">keyword-only rises;</text><text x="640" y="70">alert after 15 min</text>
+      <line class="rule" x1="16" y1="86" x2="804" y2="86"/>
+      <text x="16" y="110" class="tb">context sections</text><text x="16" y="126">1</text>
+      <text x="190" y="110" class="tr">invented a dangerous</text><text x="190" y="126" class="tr">step</text>
+      <text x="410" y="110">top_k 1; one section</text><text x="410" y="126">in the prompt</text>
+      <text x="640" y="110" class="tb tr">nothing at all</text>
+      <line class="rule" x1="16" y1="142" x2="804" y2="142"/>
+      <text x="16" y="166" class="tb">output limit</text><text x="16" y="182">60 tokens</text>
+      <text x="190" y="166">stopped after step one</text>
+      <text x="410" y="166">finish reason "length";</text><text x="410" y="182">outcome truncated</text>
+      <text x="640" y="166">truncated answers;</text><text x="640" y="182">an alert</text>
+      <line class="rule" x1="16" y1="198" x2="804" y2="198"/>
+      <text x="16" y="222" class="tb">document prefix</text><text x="16" y="238">changed</text>
+      <text x="190" y="222">skipped how to free</text><text x="190" y="238">space</text>
+      <text x="410" y="222">no current vectors; the</text><text x="410" y="238">embedding key's hash changed</text>
+      <text x="640" y="222">keyword-only rises;</text><text x="640" y="238">"re-embed" warning</text>
+      <line class="rule" x1="16" y1="254" x2="804" y2="254"/>
+      </g>
+      <text class="ts" x="16" y="282"><tspan class="tb">Three of four answers read as competent.</tspan> Every request answered 200 and every stream ended normally.</text>
+      <text class="ts" x="16" y="302">One incident showed in no metric: only the trace recorded how many sections the model got.</text>
+    </svg>

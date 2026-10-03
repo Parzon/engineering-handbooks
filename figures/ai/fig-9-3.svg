@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 280" role="img" aria-label="Credentials caught, on 54 realistic shapes used for tuning and 24 held-out shapes written before the patterns changed. The first version caught 17 of 54 and 11 of 24. A widely used secret scanner caught 29 of 54 and 8 of 24. The current redactor caught 54 of 54 and, scored once, 21 of 24 held out. It changed none of 56 ordinary lines. A secret is recognized three ways: by name, an identifier that ends with password, secret, token or key; by format, known token prefixes and private keys; by position, a URL's user and password, authorization headers, command-line flags."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="280" fill="#ffffff"/>
+      <text class="tl" x="16" y="22">CREDENTIALS CAUGHT</text>
+      <text class="ts tb" x="200" y="44">tuning set (54)</text><text class="ts tb" x="520" y="44">held out (24), scored once</text>
+      <text class="ts" x="16" y="72">the first version</text><rect class="fill-bad" x="200" y="60" width="88" height="16"/><text class="ts" x="294" y="73">17</text><rect class="fill-bad" x="520" y="60" width="128" height="16"/><text class="ts" x="654" y="73">11</text>
+      <text class="ts" x="16" y="102">a secret scanner</text><rect class="n-soft" x="200" y="90" width="150" height="16"/><text class="ts" x="356" y="103">29</text><rect class="n-soft" x="520" y="90" width="93" height="16"/><text class="ts" x="619" y="103">8</text>
+      <text class="ts" x="16" y="132">the current redactor</text><rect class="fill-good" x="200" y="120" width="280" height="16"/><text class="ts" x="486" y="133">54</text><rect class="fill-good" x="520" y="120" width="245" height="16"/><text class="ts" x="771" y="133">21</text>
+      <text class="tl" x="16" y="172">THREE WAYS TO RECOGNIZE A SECRET</text>
+      <rect class="n" x="16" y="182" width="250" height="56" rx="5"/><text class="tb" x="28" y="204">by name</text><text class="ts" x="28" y="222">ENDS with password, token...</text>
+      <rect class="n" x="285" y="182" width="250" height="56" rx="5"/><text class="tb" x="297" y="204">by format</text><text class="ts" x="297" y="222">token prefixes, private keys</text>
+      <rect class="n" x="554" y="182" width="250" height="56" rx="5"/><text class="tb" x="566" y="204">by position</text><text class="ts" x="566" y="222">user:pass@, auth headers, flags</text>
+      <text class="ts" x="16" y="264">The first version matched whole words: a word boundary does not separate an underscore, so it never matched DB_PASSWORD.</text>
+    </svg>

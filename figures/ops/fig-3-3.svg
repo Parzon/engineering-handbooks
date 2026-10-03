@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 280" role="img" aria-label="The tag 0.8.2 points at an index digest. The index lists one image per architecture, amd64 and arm64, plus attestation entries. A client pulls the image matching its own processor; the wrong architecture fails with exec format error."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #146b55; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e2f1eb; stroke: #146b55; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #146b55; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #146b55; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #146b55; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="280" fill="#ffffff"/>
+      <rect class="n-soft" x="16" y="96" width="120" height="56" rx="5"/>
+      <text class="tl" x="76" y="116" text-anchor="middle">TAG (MOVABLE)</text>
+      <text class="tm tb" x="76" y="138" text-anchor="middle">api:0.8.2</text>
+      <line class="e" x1="137" y1="124" x2="178" y2="124" marker-end="url(#a)"/>
+
+      <rect class="n-acc" x="180" y="78" width="210" height="92" rx="6"/>
+      <text class="tl" x="196" y="100">INDEX (A DIGEST)</text>
+      <text class="tm" x="196" y="122">sha256:fcbc59d1…</text>
+      <text class="ts" x="196" y="142">lists one image per</text>
+      <text class="ts" x="196" y="158">processor type</text>
+
+      <rect class="n" x="450" y="20" width="200" height="56" rx="5"/>
+      <text class="tb" x="466" y="44">linux/amd64</text>
+      <text class="ts" x="466" y="62">most cloud servers</text>
+      <rect class="n" x="450" y="96" width="200" height="56" rx="5"/>
+      <text class="tb" x="466" y="120">linux/arm64</text>
+      <text class="ts" x="466" y="138">Graviton, Apple silicon</text>
+      <rect class="n-soft" x="450" y="172" width="200" height="56" rx="5"/>
+      <text class="tm" x="466" y="196">unknown/unknown</text>
+      <text class="ts" x="466" y="214">attestations, not images</text>
+      <path class="e" d="M391,110 C420,110 420,48 448,48" marker-end="url(#a)"/>
+      <line class="e" x1="391" y1="124" x2="448" y2="124" marker-end="url(#a)"/>
+      <path class="e dash" d="M391,138 C420,138 420,200 448,200" marker-end="url(#a)"/>
+
+      <text class="tb" x="676" y="44">An amd64 host</text>
+      <text class="ts" x="676" y="62">pulls this one</text>
+      <text class="tb" x="676" y="120">An arm64 host</text>
+      <text class="ts" x="676" y="138">pulls this one</text>
+      <text class="ts tr" x="450" y="252">An image for the wrong processor fails to start with</text>
+      <text class="tm tr" x="450" y="270">exec format error</text>
+    </svg>

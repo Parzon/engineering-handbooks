@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 220" role="img" aria-label="Memory in three tiers. A short root file, AGENTS.md or CLAUDE.md, with conventions, commands, prohibitions and pointers. Per-topic one-pagers. Deep reference documents. The reference repository's AGENTS.md lists build, test and check commands, access-control rules for every change that touches data, and what agents must not do: modify infrastructure without being asked, add a dependency without flagging it, edit a merged decision record, make a scan pass by exempting its finding, or weaken an eval case to make a run pass."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="220" fill="#ffffff"/>
+      <rect class="n-acc" x="16" y="16" width="250" height="80" rx="6"/><text class="tb" x="28" y="40">1 A short root file</text><text class="ts" x="28" y="62">commands, conventions,</text><text class="ts" x="28" y="78">prohibitions, pointers</text>
+      <rect class="n" x="285" y="16" width="250" height="80" rx="6"/><text class="tb" x="297" y="40">2 One-pagers per topic</text><text class="ts" x="297" y="62">testing, security, operations,</text><text class="ts" x="297" y="78">one job each</text>
+      <rect class="n" x="554" y="16" width="250" height="80" rx="6"/><text class="tb" x="566" y="40">3 Deep references</text><text class="ts" x="566" y="62">guides and decision records,</text><text class="ts" x="566" y="78">read when a task needs them</text>
+      <text class="tl" x="16" y="128">THE REFERENCE REPOSITORY'S PROHIBITIONS FOR AGENTS</text>
+      <g class="ts"><text x="16" y="152">touch infrastructure without being asked · add a dependency without flagging it · edit a merged decision record</text>
+      <text x="16" y="174">make a scan pass by exempting its finding · weaken, delete or re-label an eval case to make a run pass</text>
+      <text x="16" y="200"><tspan class="tb">When an agent gets something wrong twice,</tspan> the fix belongs in the root file, not in a longer prompt next time.</text></g>
+    </svg>

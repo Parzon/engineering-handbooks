@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 340" role="img" aria-label="Selected rows of the failure matrix. Valkey stopped: reads and writes work without rate limiting; the chat answers 503 in 14 milliseconds in production. PgBouncer frozen: 503 after 5 seconds. Postgres stopped: 503 in 15 milliseconds. Model hangs: the stream stays open with heartbeats, then llm_timeout at 60 seconds. Identity provider stopped: signed-in users notice nothing; new sign-ins fail; readiness reports degraded within 30 seconds. One worker killed: its streams are cut, everything else unaffected. Recreate deploy: new requests get 502 for 6.7 seconds. Rolling deploy through the edge: no failed request in three runs. Memory limit below the working set: a crash loop until fixed."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="340" fill="#ffffff"/>
+      <text class="tl" x="16" y="22">FAULT</text><text class="tl" x="250" y="22">WHAT USERS SEE</text><text class="tl" x="690" y="22">VERDICT</text>
+      <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
+      <text class="tb" x="16" y="54">Valkey stopped</text><text class="ts" x="250" y="54">reads, writes and sign-in work, unlimited; the chat refuses in 14 ms</text><rect class="n-good" x="690" y="40" width="114" height="22" rx="3"/><text class="ts" x="747" y="56" text-anchor="middle">degraded</text>
+      <text class="tb" x="16" y="88">PgBouncer frozen</text><text class="ts" x="250" y="88">a JSON 503 after 5.0 s</text><rect class="n-warn" x="690" y="74" width="114" height="22" rx="3"/><text class="ts" x="747" y="90" text-anchor="middle">fails fast</text>
+      <text class="tb" x="16" y="122">Postgres stopped</text><text class="ts" x="250" y="122">a JSON 503 in 15 ms; nobody is signed in without it</text><rect class="n-warn" x="690" y="108" width="114" height="22" rx="3"/><text class="ts" x="747" y="124" text-anchor="middle">fails fast</text>
+      <text class="tb" x="16" y="156">The model hangs</text><text class="ts" x="250" y="156">heartbeats keep the stream open; llm_timeout at 60 s</text><rect class="n-warn" x="690" y="142" width="114" height="22" rx="3"/><text class="ts" x="747" y="158" text-anchor="middle">bounded</text>
+      <text class="tb" x="16" y="190">Identity provider down</text><text class="ts" x="250" y="190">signed-in users notice nothing; new sign-ins fail</text><rect class="n-good" x="690" y="176" width="114" height="22" rx="3"/><text class="ts" x="747" y="192" text-anchor="middle">degraded</text>
+      <text class="tb" x="16" y="224">One worker killed</text><text class="ts" x="250" y="224">its streams cut (3 of 6); everything else unaffected</text><rect class="n-good" x="690" y="210" width="114" height="22" rx="3"/><text class="ts" x="747" y="226" text-anchor="middle">contained</text>
+      <text class="tb" x="16" y="258">Recreate deploy</text><text class="ts" x="250" y="258">streams finish; new requests get 502 for 6.7 s</text><rect class="n-bad" x="690" y="244" width="114" height="22" rx="3"/><text class="ts" x="747" y="260" text-anchor="middle">downtime</text>
+      <text class="tb" x="16" y="292">Rolling deploy</text><text class="ts" x="250" y="292">no failed request in three runs through the edge</text><rect class="n-good" x="690" y="278" width="114" height="22" rx="3"/><text class="ts" x="747" y="294" text-anchor="middle">invisible</text>
+      <text class="tb" x="16" y="326">Memory below working set</text><text class="ts" x="250" y="326">a crash loop; the site is down until the limit is fixed</text><rect class="n-bad" x="690" y="312" width="114" height="22" rx="3"/><text class="ts" x="747" y="328" text-anchor="middle">outage</text>
+    </svg>

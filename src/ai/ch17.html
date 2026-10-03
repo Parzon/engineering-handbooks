@@ -1,0 +1,157 @@
+<section class="chapter" id="ch17">
+  <header class="ch-head">
+    <span class="ch-num">17</span>
+    <p class="eyebrow">Part VIII · Architecture and leadership</p>
+    <h2>Leading AI delivery</h2>
+    <p class="lede">Delivering an AI feature is ordinary engineering leadership with one extra risk at its center: whether the model can do the task well enough is unknown until evals say so, so that assumption is tested first and every plan, estimate and conversation is built around it.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Turn a vague ask into an outcome, a user and a metric; write down constraints and non-goals; test the riskiest assumption first.</li>
+      <li>Order the risks: can it work (quality on real data), can it run (deploy, permissions, approvals), can it be operated (monitoring, rollback).</li>
+      <li>Estimate in ranges with assumptions; "works in the demo" to "passes the evals" is often the longest part.</li>
+      <li>Under schedule pressure, cut autonomy and scope before quality; never cut access control, isolation, the audit trail, the eval gate or the off switch.</li>
+      <li>Status is progress against the plan; bad news early, with a plan.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Scope, build, test, ship</td><td>Prove the model can do the task, then build around it</td><td>The core capability is uncertain until measured.</td></tr>
+      <tr><td data-label="Then">"Done" when the feature works</td><td>"Done" when the evals pass at the agreed bar</td><td>A demo succeeds on the examples someone chose.</td></tr>
+      <tr><td data-label="Then">Approvals near launch</td><td>Approvals requested in week one</td><td>Security review, data-processing terms and model access have long lead times.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch17-shape">From a vague ask to slices with owners</h3>
+  <figure class="fig wide" id="fig-17-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Five steps. Ask for the outcome and the user: which task or decision gets better, for whom, and how we will know. Write down constraints and non-goals, and confirm them with whoever asked. Find the riskiest assumption, usually that the model can do this well enough, and test it first with a spike and a small eval set. Slice thin and end to end, a walking skeleton through the real pipeline. Split into workstreams with one owner each and clear interfaces: data and retrieval; the model layer and evals; the product surface; platform, security and operations.">
+      <g class="ts">
+      <rect class="n" x="16" y="16" width="150" height="90" rx="6"/><text x="28" y="40" class="tb">1 Outcome</text><text x="28" y="60">which task gets</text><text x="28" y="76">better, for whom,</text><text x="28" y="92">measured how</text>
+      <rect class="n" x="176" y="16" width="150" height="90" rx="6"/><text x="188" y="40" class="tb">2 Constraints</text><text x="188" y="60">and non-goals,</text><text x="188" y="76">confirmed with</text><text x="188" y="92">whoever asked</text>
+      <rect class="n-warn" x="336" y="16" width="150" height="90" rx="6"/><text x="348" y="40" class="tb">3 Riskiest first</text><text x="348" y="60">"the model can do</text><text x="348" y="76">it": a spike and a</text><text x="348" y="92">small eval set</text>
+      <rect class="n" x="496" y="16" width="150" height="90" rx="6"/><text x="508" y="40" class="tb">4 Thin slices</text><text x="508" y="60">a walking skeleton</text><text x="508" y="76">through the real</text><text x="508" y="92">pipeline</text>
+      <rect class="n-acc" x="656" y="16" width="148" height="90" rx="6"/><text x="668" y="40" class="tb">5 Workstreams</text><text x="668" y="60">one owner each,</text><text x="668" y="76">clear interfaces</text>
+      </g>
+      <g class="e"><line x1="167" y1="56" x2="174" y2="56" marker-end="url(#a)"/><line x1="327" y1="56" x2="334" y2="56" marker-end="url(#a)"/><line x1="487" y1="56" x2="494" y2="56" marker-end="url(#a)"/><line x1="647" y1="56" x2="654" y2="56" marker-end="url(#a)"/></g>
+      <text class="tl" x="16" y="132">THE WORKSTREAMS OF AN AI FEATURE</text>
+      <g class="ts">
+      <rect class="n-soft" x="16" y="144" width="190" height="56" rx="5"/><text x="28" y="166" class="tb">data and retrieval</text><text x="28" y="186">sources, chunks, index</text>
+      <rect class="n-soft" x="216" y="144" width="190" height="56" rx="5"/><text x="228" y="166" class="tb">model layer and evals</text><text x="228" y="186">prompt, seam, cases</text>
+      <rect class="n-soft" x="416" y="144" width="190" height="56" rx="5"/><text x="428" y="166" class="tb">product surface</text><text x="428" y="186">UI, streaming, feedback</text>
+      <rect class="n-soft" x="616" y="144" width="188" height="56" rx="5"/><text x="628" y="166" class="tb">platform and safety</text><text x="628" y="186">security, operations</text>
+      </g>
+      <text class="ts" x="16" y="236">Slice end to end, not layer by layer: a thin answer through real data, real sign-in and the real deploy path beats a polished UI on a mock.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 17.1</span>Turning a request into work. The riskiest assumption in AI work is nearly always quality on real data; testing it in the first week is what makes the rest of the plan worth trusting.</figcaption>
+  </figure>
+
+  <h3 id="ch17-twelve">A twelve-week shape</h3>
+  <figure class="fig wide" id="fig-17-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Twelve weeks. Week 1: scope, users, success metric, non-goals, the riskiest assumption, repository, CI. Weeks 2 and 3: a skeleton in staging, a thin slice with a real model and realistic data, eval set version 1, authentication and permissions decided. Weeks 4 to 8: features by value and risk, a weekly demo to real users, evals gating every change. Weeks 9 and 10: hardening: a security review, one load check, a rehearsed restore and rollback, alerts on three to five signals, handover documents. Week 11: a pilot behind a flag or canary. Week 12: launch, really a buffer: plan to finish by week 10 or 11. Request slow approvals in week 1: cloud access, security review, data access, the model provider's terms, named pilot users.">
+      <g class="ts">
+      <rect class="n-acc" x="16" y="30" width="60" height="120" rx="4"/><text x="46" y="24" text-anchor="middle" class="tb">1</text>
+      <rect class="n" x="80" y="30" width="120" height="120" rx="4"/><text x="140" y="24" text-anchor="middle" class="tb">2-3</text>
+      <rect class="n" x="204" y="30" width="300" height="120" rx="4"/><text x="354" y="24" text-anchor="middle" class="tb">4-8</text>
+      <rect class="n-warn" x="508" y="30" width="120" height="120" rx="4"/><text x="568" y="24" text-anchor="middle" class="tb">9-10</text>
+      <rect class="n" x="632" y="30" width="80" height="120" rx="4"/><text x="672" y="24" text-anchor="middle" class="tb">11</text>
+      <rect class="n-good" x="716" y="30" width="88" height="120" rx="4"/><text x="760" y="24" text-anchor="middle" class="tb">12</text>
+      <text x="24" y="54">scope</text><text x="24" y="70">metric</text><text x="24" y="86">risks</text><text x="24" y="102">repo, CI</text>
+      <text x="88" y="54">skeleton in</text><text x="88" y="70">staging; thin</text><text x="88" y="86">slice, real</text><text x="88" y="102">model; evals v1;</text><text x="88" y="118">auth decided</text>
+      <text x="212" y="54">features by value and risk</text><text x="212" y="70">a weekly demo to real users</text><text x="212" y="86">evals gate every change</text>
+      <text x="516" y="54">security review</text><text x="516" y="70">one load check</text><text x="516" y="86">restore, rollback</text><text x="516" y="102">rehearsed; 3-5</text><text x="516" y="118">alerts; handover</text>
+      <text x="640" y="54">pilot</text><text x="640" y="70">behind a</text><text x="640" y="86">flag or</text><text x="640" y="102">canary</text>
+      <text x="724" y="54">launch:</text><text x="724" y="70">really a</text><text x="724" y="86">buffer</text>
+      </g>
+      <rect class="n-bad" x="16" y="172" width="788" height="52" rx="6"/><text class="tb tr" x="28" y="194">Week one: request everything with lead time</text><text class="ts" x="28" y="212">cloud and IAM access, the security review, data access and processing approvals, the provider's terms, named pilot users</text>
+      <text class="ts" x="16" y="252"><tspan class="tb">Left out until it hurts:</tspan> agents, rerankers, knowledge graphs, fine-tuning, self-hosted models, multi-region, more than two</text>
+      <text class="ts" x="16" y="270">environments, and a decision record for every choice (about five, for the ones that are expensive to reverse).</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 17.2</span>A twelve-week shape for an AI feature. Cheap and non-negotiable in the first two weeks: CI on every pull request with branch protection, a walking skeleton deployed to the real cloud by the pipeline, managed services over self-run ones, structured logs and an uptime alert, access control and secrets handling from the start, and an eval set of 20 to 30 cases.</figcaption>
+  </figure>
+
+  <h3 id="ch17-estimate">Estimates, risk and debt</h3>
+  <ul>
+    <li><strong>Estimate in ranges, with assumptions:</strong> "three to five weeks if the documents are clean text already". Break work into pieces of days; list dependencies (access, data, other teams, security review, procurement); name the unknowns. When an assumption breaks, re-estimate and say so early.</li>
+    <li><strong>The AI-specific slip</strong> is the gap between a demo that works on chosen examples and a feature that passes the evals on real ones; budget for it explicitly.</li>
+    <li><strong>A short risk list</strong> (likelihood, impact, owner, mitigation, and the signal that it is happening), reviewed with the status.</li>
+    <li><strong>Technical debt is a loan:</strong> take it deliberately and write down what and why; repay it when it slows the team or threatens reliability; never take it in access control, data isolation or evals.</li>
+    <li><strong>Time-box research</strong> with a question and an exit criterion; promote to production only what passed the evals; and budget the hardening, which is most of the work.</li>
+  </ul>
+
+  <h3 id="ch17-pressure">Three weeks asked, eight estimated</h3>
+  <figure class="fig wide" id="fig-17-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Product wants an agent in three weeks; engineering estimates eight. Ask: what is the date for, which tasks must work on day one, what does a wrong answer cost, who uses it with what data. Cut autonomy before quality: a workflow or read-only tools instead of actions; one use case, not five; one data source; internal users first. The minimum: the narrowest slice that proves value end to end, behind a feature flag, with a person approving any action. Communicate what is in and out, and the risks. Never compromise: access control and data isolation, the audit trail, the eval gate for safety cases, a way to switch it off, and honesty about what it cannot do.">
+      <rect class="n" x="16" y="16" width="250" height="120" rx="6"/><text class="tb" x="28" y="40">Ask</text><g class="ts"><text x="28" y="62">what is the date for?</text><text x="28" y="80">which tasks on day one?</text><text x="28" y="98">what does a wrong answer cost?</text><text x="28" y="116">who uses it, with what data?</text></g>
+      <rect class="n-warn" x="285" y="16" width="250" height="120" rx="6"/><text class="tb" x="297" y="40">Cut autonomy before quality</text><g class="ts"><text x="297" y="62">a workflow, or read-only tools</text><text x="297" y="80">one use case, not five</text><text x="297" y="98">one data source</text><text x="297" y="116">internal users first</text></g>
+      <rect class="n-acc" x="554" y="16" width="250" height="120" rx="6"/><text class="tb" x="566" y="40">The minimum</text><g class="ts"><text x="566" y="62">the narrowest slice that</text><text x="566" y="80">proves value end to end,</text><text x="566" y="98">behind a flag, a person</text><text x="566" y="116">approving any action</text></g>
+      <rect class="n-bad" x="16" y="156" width="788" height="110" rx="6"/><text class="tb tr" x="28" y="180">Never compromised</text>
+      <g class="ts"><text x="28" y="204">access control and data isolation</text><text x="28" y="224">the audit trail</text><text x="28" y="244">the eval gate for safety cases</text>
+      <text x="420" y="204">a way to switch it off</text><text x="420" y="224">honesty about what it cannot do</text></g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 17.3</span>A schedule conversation. Offer constraints as trade-offs, not refusals ("three weeks without tool use, or eight with it"), and state uncertainty as a range plus what would narrow it ("70% confident in six weeks; the eval spike on Friday will tell").</figcaption>
+  </figure>
+
+  <h3 id="ch17-team">Standards, review and the team</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Practice</th><th>What good looks like</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Practice">Standards</td><td data-label="Good">They live in the repository (agent instructions, CI checks, templates), not in heads; automate what can be checked, review what cannot</td></tr>
+        <tr><td data-label="Practice">Review</td><td data-label="Good">For correctness, clarity and shared ownership; say what and why, mark blocking or optional; review a design early rather than the code late</td></tr>
+        <tr><td data-label="Practice">Delegation</td><td data-label="Good">Outcomes with context and constraints, not steps; agreed check-in points; people own decisions in their area</td></tr>
+        <tr><td data-label="Practice">Disagreement</td><td data-label="Good">Agree the requirements, then compare options against them; spike for missing facts; the owner decides, it is written down, everyone commits</td></tr>
+        <tr><td data-label="Practice">Hiring</td><td data-label="Good">For what the job needs (debugging a real failure, reasoning about a design, reading an eval report), with the same questions and a rubric for everyone</td></tr>
+        <tr><td data-label="Practice">Upward</td><td data-label="Good">Lead with the decision or the risk, then options and costs, then a recommendation; bad news early, with a plan</td></tr>
+        <tr><td data-label="Practice">Stopping</td><td data-label="Good">Re-scope or stop when the riskiest assumption failed, cost outweighs value, or evals cannot reach the bar; eval results make that call defensible</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Incidents follow the blameless pattern of any service (Handbook 2, Chapter 17), with two additions for AI: record the prompt, model and data versions in the timeline, and add the failure to the eval set so it cannot return unnoticed.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"The first thing we test is whether the model can do the task on real data, with a small eval set; everything else is planned around that answer."</p>
+    <p>"If the date is fixed, we cut autonomy and scope, not access control, isolation, the audit trail, the eval gate or the off switch."</p>
+  </aside>
+
+  <h3 id="ch17-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">The project is late in its last month</td><td data-label="Cause">Approvals and access requested when needed</td><td data-label="Fix">Request everything with lead time in week one.</td></tr>
+        <tr><td data-label="Symptom">A great demo, a feature that never ships</td><td data-label="Cause">Quality on real data was never measured</td><td data-label="Fix">A spike and an eval set before building around the model.</td></tr>
+        <tr><td data-label="Symptom">Months of layers with nothing usable</td><td data-label="Cause">Built layer by layer</td><td data-label="Fix">Thin end-to-end slices through the real pipeline.</td></tr>
+        <tr><td data-label="Symptom">Safety was cut to meet a date</td><td data-label="Cause">No list of what is never compromised</td><td data-label="Fix">Agree the non-negotiables up front; cut autonomy and scope instead.</td></tr>
+        <tr><td data-label="Symptom">Status reports full of activity, no progress</td><td data-label="Cause">Reporting work done, not progress against the plan</td><td data-label="Fix">Done, next, blocked, risks.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch17-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What is usually the riskiest assumption in an AI project, and how is it tested?</p>
+      <details class="ans"><summary>Answer</summary><p>That the model can do the task well enough on real data. It is tested first, with a short spike and a small eval set of realistic cases, before anything is built around it.</p></details>
+    </li>
+    <li>
+      <p>Product wants an agent in three weeks; engineering estimates eight. What do you do?</p>
+      <details class="ans"><summary>Answer</summary><p>Ask what the date is for and what must work on day one; cut autonomy and scope (a workflow or read-only tools, one use case, one data source, internal users), ship the narrowest end-to-end slice behind a flag with a person approving any action, and state the risks. Do not cut access control, isolation, the audit trail, the safety eval gate or the off switch.</p></details>
+    </li>
+    <li>
+      <p>Where does AI work usually slip against an estimate?</p>
+      <details class="ans"><summary>Answer</summary><p>Between "works in the demo" and "passes the evals on real data", and in approvals with long lead times: security review, data-processing terms, model access.</p></details>
+    </li>
+  </ol>
+</section>

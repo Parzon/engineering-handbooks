@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 330" role="img" aria-label="Tools by layer. One request: the request id and JSON logs, then its trace. A live Python process: py-spy samples every thread's stack from outside, safe in production. Stepping through code: debugpy with the IDE attached, never in production. A hard crash: faulthandler prints the Python stack instead of a silent exit 139. The event loop: asyncio debug mode in development, the lag metric in production. Profiling: py-spy flame graphs, cProfile, tracemalloc for memory growth, -X importtime for startup. The kernel boundary: strace, and journalctl -k for out-of-memory kills. The network: a sidecar container in the app's network namespace with dig, ss, curl and tcpdump. The database: pg_stat_activity, pg_blocking_pids, pg_stat_statements and EXPLAIN ANALYZE."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="330" fill="#ffffff"/>
+      <text class="tl" x="16" y="22">QUESTION</text><text class="tl" x="300" y="22">TOOL</text>
+      <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
+      <text class="tb" x="16" y="52">What happened to this request?</text><text class="ts" x="300" y="52">the request id in JSON logs, across proxy and api; then its trace</text>
+      <text class="tb" x="16" y="84">What is each worker doing now?</text><text class="ts" x="300" y="84">py-spy: samples every thread's stack from outside; safe in production</text>
+      <text class="tb" x="16" y="116">Why does this line misbehave?</text><text class="ts" x="300" y="116">debugpy, the IDE attached over a loopback port; development only</text>
+      <text class="tb" x="16" y="148">It died with exit 139</text><text class="ts" x="300" y="148">faulthandler: the Python stack of every thread instead of silence</text>
+      <text class="tb" x="16" y="180">Is something blocking the loop?</text><text class="ts" x="300" y="180">asyncio debug mode in development; the loop-lag metric in production</text>
+      <text class="tb" x="16" y="212">Where does the time or memory go?</text><text class="ts" x="300" y="212">py-spy flame graphs, cProfile, tracemalloc, -X importtime for startup</text>
+      <text class="tb" x="16" y="244">What did the kernel do?</text><text class="ts" x="300" y="244">strace (slow); journalctl -k for out-of-memory kills</text>
+      <text class="tb" x="16" y="276">What does the app see on the network?</text><text class="ts" x="300" y="276">a sidecar in its network namespace: dig, ss, curl, tcpdump</text>
+      <text class="tb" x="16" y="308">What is the database doing?</text><text class="ts" x="300" y="308">pg_stat_activity, pg_blocking_pids, pg_stat_statements, EXPLAIN ANALYZE</text>
+    </svg>

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 230" role="img" aria-label="Data parallelism: a whole model on each GPU, requests spread across replicas; scales throughput and needs the model to fit on one GPU. Tensor parallelism: each layer's matrices split across the GPUs of one node over a fast interconnect; for a model too big for one GPU, and to cut per-token latency. Pipeline parallelism: different layers on different GPUs or nodes; fits huge models at the price of idle bubbles and added latency."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="230" fill="#ffffff"/>
+      <rect class="n" x="16" y="16" width="250" height="140" rx="6"/><text class="tb" x="28" y="40">Replicas (data parallel)</text>
+      <rect class="n-acc" x="30" y="56" width="60" height="44" rx="3"/><text class="ts" x="60" y="82" text-anchor="middle">model</text><rect class="n-acc" x="104" y="56" width="60" height="44" rx="3"/><text class="ts" x="134" y="82" text-anchor="middle">model</text><rect class="n-acc" x="178" y="56" width="60" height="44" rx="3"/><text class="ts" x="208" y="82" text-anchor="middle">model</text>
+      <text class="ts" x="28" y="124">scales throughput; the model</text><text class="ts" x="28" y="140">must fit on one GPU</text>
+      <rect class="n" x="285" y="16" width="250" height="140" rx="6"/><text class="tb" x="297" y="40">Tensor parallel</text>
+      <rect class="n-acc" x="299" y="56" width="222" height="44" rx="3"/><line class="rule-strong" x1="373" y1="56" x2="373" y2="100"/><line class="rule-strong" x1="447" y1="56" x2="447" y2="100"/><text class="ts" x="336" y="82" text-anchor="middle">slice 1</text><text class="ts" x="410" y="82" text-anchor="middle">slice 2</text><text class="ts" x="484" y="82" text-anchor="middle">slice 3</text>
+      <text class="ts" x="297" y="124">every layer split; one node, fast links;</text><text class="ts" x="297" y="140">too big for one GPU, lower latency</text>
+      <rect class="n" x="554" y="16" width="250" height="140" rx="6"/><text class="tb" x="566" y="40">Pipeline parallel</text>
+      <rect class="n-acc" x="568" y="56" width="66" height="44" rx="3"/><text class="ts" x="601" y="82" text-anchor="middle">layers 1</text><rect class="n-acc" x="646" y="56" width="66" height="44" rx="3"/><text class="ts" x="679" y="82" text-anchor="middle">layers 2</text><rect class="n-acc" x="724" y="56" width="66" height="44" rx="3"/><text class="ts" x="757" y="82" text-anchor="middle">layers 3</text>
+      <text class="ts" x="566" y="124">fits huge models; idle bubbles</text><text class="ts" x="566" y="140">and added latency</text>
+      <text class="ts" x="16" y="190"><tspan class="tb">The rule:</tspan> replicas when the model fits; tensor parallelism inside a node when it does not;</text>
+      <text class="ts" x="16" y="208">pipeline parallelism across nodes only when you must.</text>
+    </svg>

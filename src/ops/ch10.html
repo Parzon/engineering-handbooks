@@ -1,0 +1,248 @@
+<section class="chapter" id="ch10">
+  <header class="ch-head">
+    <span class="ch-num">10</span>
+    <p class="eyebrow">Part V · Running on AWS</p>
+    <h2>Kubernetes and EKS</h2>
+    <p class="lede">Kubernetes is a portable orchestrator that keeps declared workloads running through a control loop, with a richer model than ECS (separate readiness and liveness, init containers, an ecosystem of controllers), at the price of a cluster someone must run and a standing cost.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>You declare objects (a Deployment of three replicas of an image); controllers continuously reconcile reality toward them.</li>
+      <li>The control plane (API server, etcd, scheduler, controllers) decides; the nodes run pods. Managed offerings such as EKS, GKE and AKS run the control plane for you.</li>
+      <li>Readiness and liveness are separate probes: one controls traffic, the other restarts containers. ECS has only one signal.</li>
+      <li>Every pod gets a routable IP and services get DNS names, so containers on different hosts find each other the way Compose services do on one host.</li>
+      <li>Pick ECS for a few AWS-only services and a small team; pick Kubernetes for many services, a platform team, portability, or its ecosystem.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Run your own cluster manager and its database</td><td>A managed control plane: EKS, GKE, AKS</td><td>The control plane is the hardest part to operate well; providers run it.</td></tr>
+      <tr><td data-label="Then">Deploy with scripts that call the cluster</td><td>GitOps: the cluster pulls its desired state from Git (Argo CD, Flux)</td><td>Git becomes the audit log and the rollback button.</td></tr>
+      <tr><td data-label="Then">Fixed node groups sized by hand</td><td>Node autoscaling that picks instance types per workload (Karpenter, EKS Auto Mode, GKE Autopilot)</td><td>Capacity follows pods instead of guesses.</td></tr>
+      <tr><td data-label="Then">Ingress controllers configured per vendor</td><td>The Gateway API, a standard routing model</td><td>Portable routing across implementations.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch10-model">The model: declare, then reconcile</h3>
+  <p>Kubernetes inverts the deploy script. Instead of a sequence of commands, you submit objects that describe the end state: a <strong>Deployment</strong> that says "three replicas of this image", a <strong>Service</strong> that gives them a stable name, a <strong>ConfigMap</strong> and <strong>Secret</strong> for configuration. Controllers then run a loop forever: observe the cluster, compare it with the objects, act on the difference. A node dies, three replicas become two, and the loop starts a third elsewhere without anyone being paged.</p>
+
+  <figure class="fig wide" id="fig-10-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 320" role="img" aria-label="The control plane holds API server replicas behind a load balancer, etcd with three or five members using Raft, a scheduler and controllers with leader election. Worker nodes run the kubelet and pods. A reconcile loop: observe, compare with desired state, act. If the control plane fails, running pods keep running, but deploys, scaling and recovery from a dead node stop.">
+      <rect class="zone" x="16" y="16" width="380" height="290" rx="8"/>
+      <text class="tl" x="30" y="36">CONTROL PLANE (RUN BY THE PROVIDER ON EKS)</text>
+      <rect class="n-acc" x="30" y="50" width="352" height="54" rx="5"/>
+      <text class="tb" x="206" y="72" text-anchor="middle">API server, several replicas</text>
+      <text class="ts" x="206" y="90" text-anchor="middle">stateless, behind a load balancer; everything talks to it</text>
+      <rect class="n" x="30" y="116" width="170" height="70" rx="5"/>
+      <text class="tb" x="115" y="140" text-anchor="middle">etcd, 3 or 5</text>
+      <text class="ts" x="115" y="158" text-anchor="middle">the cluster's database;</text>
+      <text class="ts" x="115" y="174" text-anchor="middle">Raft consensus</text>
+      <rect class="n" x="212" y="116" width="170" height="70" rx="5"/>
+      <text class="tb" x="297" y="140" text-anchor="middle">Scheduler</text>
+      <text class="ts" x="297" y="158" text-anchor="middle">places pods on nodes;</text>
+      <text class="ts" x="297" y="174" text-anchor="middle">one leader at a time</text>
+      <rect class="n" x="30" y="198" width="352" height="94" rx="5"/>
+      <text class="tb" x="206" y="220" text-anchor="middle">Controllers: the reconcile loop</text>
+      <rect class="n-soft" x="50" y="234" width="90" height="40" rx="4"/><text class="ts" x="95" y="259" text-anchor="middle">observe</text>
+      <rect class="n-soft" x="162" y="234" width="90" height="40" rx="4"/><text class="ts" x="207" y="259" text-anchor="middle">compare</text>
+      <rect class="n-soft" x="274" y="234" width="90" height="40" rx="4"/><text class="ts" x="319" y="259" text-anchor="middle">act</text>
+      <line class="e" x1="141" y1="254" x2="160" y2="254" marker-end="url(#a)"/>
+      <line class="e" x1="253" y1="254" x2="272" y2="254" marker-end="url(#a)"/>
+      <path class="e dash" d="M319,275 V286 H95 V277" marker-end="url(#a)"/>
+
+      <rect class="zone" x="436" y="16" width="368" height="200" rx="8"/>
+      <text class="tl" x="450" y="36">WORKER NODES (YOURS, OR AUTO MODE)</text>
+      <rect class="n" x="450" y="50" width="160" height="150" rx="5"/>
+      <text class="tb" x="530" y="72" text-anchor="middle">Node 1</text>
+      <text class="ts" x="530" y="90" text-anchor="middle">kubelet, networking</text>
+      <rect class="n-acc" x="466" y="102" width="128" height="40" rx="4"/><text class="ts" x="530" y="127" text-anchor="middle">pod: api</text>
+      <rect class="n-acc" x="466" y="148" width="128" height="40" rx="4"/><text class="ts" x="530" y="173" text-anchor="middle">pod: web</text>
+      <rect class="n" x="628" y="50" width="160" height="150" rx="5"/>
+      <text class="tb" x="708" y="72" text-anchor="middle">Node 2</text>
+      <text class="ts" x="708" y="90" text-anchor="middle">kubelet, networking</text>
+      <rect class="n-acc" x="644" y="102" width="128" height="40" rx="4"/><text class="ts" x="708" y="127" text-anchor="middle">pod: api</text>
+      <rect class="n-acc" x="644" y="148" width="128" height="40" rx="4"/><text class="ts" x="708" y="173" text-anchor="middle">pod: worker</text>
+      <path class="e" d="M383,77 C410,77 410,110 448,110" marker-end="url(#a)"/>
+      <text class="ts" x="412" y="70" text-anchor="middle">desired</text>
+
+      <rect class="n-warn" x="436" y="232" width="368" height="74" rx="6"/>
+      <text class="tb" x="620" y="256" text-anchor="middle">If the control plane is down</text>
+      <text class="ts" x="620" y="276" text-anchor="middle">running pods keep running; deploys, autoscaling</text>
+      <text class="ts" x="620" y="292" text-anchor="middle">and recovery from a dead node stop</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 10.1</span>Kubernetes in one picture. etcd survives the loss of a minority of its members: one of three, or two of five. The API server is stateless and replicated; the scheduler and controllers elect a leader. On a managed service, all of the left half is the provider's job.</figcaption>
+  </figure>
+
+  <h3 id="ch10-probes">Two probes, two questions</h3>
+  <p>The biggest practical difference from ECS for the reference service is health. Kubernetes asks two separate questions. A <strong>readiness probe</strong> decides whether a pod receives traffic: when it fails, the pod is removed from its Service's endpoints, but keeps running. A <strong>liveness probe</strong> decides whether the container is stuck: when it fails, the container is restarted. The reference api was written for exactly this split, with <code>/ready</code> and <code>/health</code>.</p>
+
+  <figure class="fig wide" id="fig-10-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="During a database outage on Kubernetes, the readiness probe at /ready fails, so the pod stops receiving traffic but keeps running; the liveness probe at /health passes, so nothing restarts. On ECS, a single load balancer check acts on both questions at once, so a deep check restarts tasks.">
+      <text class="tb" x="16" y="26">Kubernetes: the database is down</text>
+      <rect class="n" x="16" y="42" width="160" height="84" rx="6"/>
+      <text class="tb" x="96" y="70" text-anchor="middle">api pod</text>
+      <text class="ts" x="96" y="90" text-anchor="middle">process alive,</text>
+      <text class="ts" x="96" y="106" text-anchor="middle">database unreachable</text>
+      <rect class="n-warn" x="236" y="42" width="250" height="38" rx="5"/>
+      <text class="ts" x="250" y="66">readiness: <tspan class="tm">/ready</tspan> fails</text>
+      <rect class="n-good" x="236" y="88" width="250" height="38" rx="5"/>
+      <text class="ts" x="250" y="112">liveness: <tspan class="tm">/health</tspan> passes</text>
+      <line class="e" x1="177" y1="61" x2="234" y2="61" marker-end="url(#a)"/>
+      <line class="e" x1="177" y1="107" x2="234" y2="107" marker-end="url(#a)"/>
+      <text class="ts" x="512" y="66">removed from the Service: no new traffic</text>
+      <text class="ts" x="512" y="112">no restart: it reconnects when the database is back</text>
+
+      <line class="rule" x1="16" y1="148" x2="804" y2="148"/>
+      <text class="tb" x="16" y="174">ECS: one signal for both questions</text>
+      <rect class="n" x="16" y="186" width="160" height="50" rx="6"/>
+      <text class="tb" x="96" y="216" text-anchor="middle">api task</text>
+      <rect class="n-bad" x="236" y="192" width="250" height="38" rx="5"/>
+      <text class="ts" x="250" y="216">load balancer check: one path</text>
+      <line class="e" x1="177" y1="211" x2="234" y2="211" marker-end="url(#a)"/>
+      <text class="ts" x="512" y="204">deep path: tasks replaced during an outage</text>
+      <text class="ts" x="512" y="222">so on ECS it must be the shallow one (Chapter 9)</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 10.2</span>Readiness and liveness. Kubernetes lets an unready pod sit out of rotation without being restarted. ECS cannot express that, which is why the reference service's load balancer checks only the shallow endpoint there.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/routes/health.py#L1-L51">apps/api/app/routes/health.py</a></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The two endpoints and the reasoning behind each. They fit Kubernetes probes unchanged.</p>
+        <ul class="notice">
+          <li><code>/health</code> checks nothing external, so a database outage never restarts every replica at once.</li>
+          <li><code>/ready</code> fails only on hard dependencies. The cache and the identity provider are soft: they are reported as degraded but keep the instance ready, so a partial outage does not become a total one.</li>
+          <li>Each check has its own short deadline, so the probe always answers on time.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/routes/health.py" data-lines="1-16"><code class="language-python">"""Liveness vs readiness - two different questions, two endpoints.
+
+/health (liveness): "is this process alive and its event loop turning?"
+No dependency checks: if the database is down, restarting the api does
+not help, and a liveness probe that checks it would restart every replica
+at once. `async def` on purpose: it runs on the event loop, so it fails
+exactly when the loop is blocked, and never waits for a worker thread.
+
+/ready (readiness): "should traffic be sent here right now?" Checks hard
+dependencies. Postgres is one; Redis is not - the rate limiter fails open,
+so a Redis outage is reported as "degraded" but keeps the instance ready.
+Nor is the identity provider: signed-in users carry on without it. Its
+state comes from the background check (app/oidc.py), never a call per
+probe. Marking every instance unready over a soft dependency turns a
+partial outage into a total one.
+"""</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/routes/health.py" data-lines="30-51"><code class="language-python">@router.get("/health")
+async def health() -&gt; dict[str, str]:
+    return {"status": "ok"}
+
+
+@router.get("/ready")
+async def ready(request: Request) -&gt; JSONResponse:
+    state = request.app.state
+    database, redis = await asyncio.gather(
+        probe(_ping_database(request), timeout_s=2.0),
+        probe(state.redis.ping(), timeout_s=0.25),
+    )
+    idp = state.oidc.reachable
+    body = {
+        "status": "ready" if database else "not_ready",
+        "checks": {
+            "database": "ok" if database else "unavailable",
+            "redis": "ok" if redis else "degraded",
+            "identity_provider": "unknown" if idp is None else "ok" if idp else "degraded",
+        },
+    }
+    return JSONResponse(body, status_code=200 if database else 503)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch10-map">ECS and Kubernetes, side by side</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Concern</th><th>ECS (built in the reference)</th><th>Kubernetes and EKS</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Concern">Unit</td><td data-label="ECS">Task definition (containers sharing localhost)</td><td data-label="Kubernetes">Pod spec</td></tr>
+        <tr><td data-label="Concern">Keep N running</td><td data-label="ECS">Service</td><td data-label="Kubernetes">Deployment (with a ReplicaSet)</td></tr>
+        <tr><td data-label="Concern">Init work</td><td data-label="ECS">Non-essential containers with <code>dependsOn: SUCCESS</code> and a start timeout</td><td data-label="Kubernetes"><code>initContainers</code>, sequential, built in</td></tr>
+        <tr><td data-label="Concern">Readiness and liveness</td><td data-label="ECS">One signal: the load balancer's check</td><td data-label="Kubernetes">Separate readiness and liveness probes</td></tr>
+        <tr><td data-label="Concern">Routing</td><td data-label="ECS">Load balancer listener rules, URL rewrite</td><td data-label="Kubernetes">Ingress or the Gateway API; on AWS the Load Balancer Controller creates the ALB</td></tr>
+        <tr><td data-label="Concern">Finding services</td><td data-label="ECS">Load balancer, Service Connect, Cloud Map</td><td data-label="Kubernetes">Service and cluster DNS: <code>api:8010</code> works, as in Compose</td></tr>
+        <tr><td data-label="Concern">Configuration and secrets</td><td data-label="ECS">Environment plus Secrets Manager injection</td><td data-label="Kubernetes">ConfigMap and Secret, plus External Secrets Operator or a CSI driver</td></tr>
+        <tr><td data-label="Concern">AWS permissions</td><td data-label="ECS">Task role</td><td data-label="Kubernetes">IRSA or EKS Pod Identity</td></tr>
+        <tr><td data-label="Concern">Rollout safety</td><td data-label="ECS">Min and max percent, circuit breaker with automatic rollback</td><td data-label="Kubernetes"><code>maxSurge</code>, <code>maxUnavailable</code>, a progress deadline; rollback by hand or with Argo Rollouts</td></tr>
+        <tr><td data-label="Concern">Autoscaling</td><td data-label="ECS">Application Auto Scaling on requests or CPU</td><td data-label="Kubernetes">Horizontal Pod Autoscaler for pods; Karpenter or Auto Mode for nodes</td></tr>
+        <tr><td data-label="Concern">Deploy</td><td data-label="ECS"><code>cdk deploy</code> from CI</td><td data-label="Kubernetes"><code>kubectl apply</code>, Helm, or Argo CD pulling from Git</td></tr>
+        <tr><td data-label="Concern">Cost floor</td><td data-label="ECS">None: pay per task</td><td data-label="Kubernetes">The control plane, about $0.10 an hour, before any node</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Both difficulties the reference build met on ECS are things Kubernetes handles natively: the web image's nginx would have found <code>api:8010</code> through cluster DNS, and the api's readiness and liveness split would have worked as designed. The same images could run on EKS Auto Mode in about an hour.</p>
+
+  <h3 id="ch10-why">Why orchestrators exist at all</h3>
+  <p>Container networking on one host is easy: Compose creates a private network and its service names resolve. Across hosts, that stops. You need IP connectivity between machines and an orchestration layer on top: Kubernetes gives every pod a routable IP through a CNI plugin, and gives services stable names. Placement, health, rescheduling after a node failure, and rolling updates across many hosts are the other jobs a single host never needed.</p>
+
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Choose</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Choose">Compose on one host</td><td data-label="When">One host is enough, and short maintenance windows are acceptable.</td></tr>
+        <tr><td data-label="Choose">ECS, Cloud Run or Container Apps</td><td data-label="When">A handful of services, a small team, one cloud. Less to operate and no control-plane bill.</td></tr>
+        <tr><td data-label="Choose">Kubernetes (EKS, GKE, AKS)</td><td data-label="When">Many services, a platform team to run it, portability across clouds, or a need for its ecosystem: operators, GitOps, a service mesh. Or the organization already runs it.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"For a handful of services ECS is less to run. Kubernetes earns its cost with many services and a platform team, or when the organization has standardized on it, and it would give us separate readiness and liveness for free."</p>
+  </aside>
+
+  <h3 id="ch10-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A database outage restarts every pod at once</td><td data-label="Cause">The liveness probe checks the database</td><td data-label="Fix">Liveness checks only the process; readiness checks hard dependencies.</td></tr>
+        <tr><td data-label="Symptom">A partial outage takes the whole service out of rotation</td><td data-label="Cause">Readiness fails on a soft dependency, such as a cache</td><td data-label="Fix">Report soft dependencies as degraded without failing readiness.</td></tr>
+        <tr><td data-label="Symptom">The team spends its time on the cluster, not the product</td><td data-label="Cause">Kubernetes adopted before its benefits were needed</td><td data-label="Fix">Use a managed container platform until many services or a platform team make the cluster pay.</td></tr>
+        <tr><td data-label="Symptom">A cluster costs money with nothing running</td><td data-label="Cause">The managed control plane is billed per hour</td><td data-label="Fix">Count it in the cost floor; share clusters across services.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch10-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What is the reconcile loop, and why does it make deploy scripts unnecessary?</p>
+      <details class="ans"><summary>Answer</summary><p>Controllers repeatedly observe the cluster, compare it with the declared objects, and act on the difference. You change the declaration, and the controllers make it true, including after failures, so there is no script of steps to run.</p></details>
+    </li>
+    <li>
+      <p>What happens to running workloads if the control plane fails?</p>
+      <details class="ans"><summary>Answer</summary><p>Running pods keep running, because each node's kubelet carries on. Deploys, autoscaling and recovery from a dead node stop until the control plane is back.</p></details>
+    </li>
+    <li>
+      <p>What is the difference between a readiness probe and a liveness probe?</p>
+      <details class="ans"><summary>Answer</summary><p>Readiness decides whether a pod receives traffic; failing it removes the pod from rotation without restarting it. Liveness decides whether the container is stuck; failing it restarts the container.</p></details>
+    </li>
+    <li>
+      <p>When would you choose EKS over ECS?</p>
+      <details class="ans"><summary>Answer</summary><p>When there are many services and a platform team, when portability across clouds matters, when the Kubernetes ecosystem (operators, GitOps, a mesh) is needed, or when the organization already runs Kubernetes.</p></details>
+    </li>
+  </ol>
+</section>

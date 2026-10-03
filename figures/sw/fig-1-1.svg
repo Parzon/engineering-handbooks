@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 400" role="img" aria-label="The repository grouped by purpose. The way in: README, START_HERE, the code map, AGENTS.md and CONTRIBUTING. The service: the api with its app, migrations, tests and evals; the web app; tools such as the mock model and the HTTPS edge. How it runs: compose files, Dockerfiles, the Makefile, .env.example, infra and scripts. Quality gates: workflows, Dependabot, code owners, the pull request template, accepted-risk and secret-scan files, browser and load tests. Knowledge: decision records, proposals, requirements, runbooks, handbook chapters, the privacy inventory, the tech stack and the guide."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="400" fill="#ffffff"/>
+      <rect class="n-acc" x="16" y="16" width="250" height="176" rx="6"/>
+      <text class="tl" x="30" y="38">THE WAY IN: WHERE DO I START?</text>
+      <text class="tm" x="30" y="64">README.md</text><text class="ts" x="140" y="64">what it is, how to run it</text>
+      <text class="tm" x="30" y="88">START_HERE.md</text><text class="ts" x="140" y="88">four reading levels</text>
+      <text class="tm" x="30" y="112">docs/code-map.md</text><text class="ts" x="160" y="112">a line per file</text>
+      <text class="tm" x="30" y="136">AGENTS.md</text><text class="ts" x="140" y="136">rules for AI tools</text>
+      <text class="tm" x="30" y="160">CONTRIBUTING.md</text><text class="ts" x="160" y="160">workflow, done</text>
+
+      <rect class="n" x="285" y="16" width="250" height="176" rx="6"/>
+      <text class="tl" x="299" y="38">THE SERVICE: WHAT DOES IT DO?</text>
+      <text class="tm" x="299" y="64">apps/api/app/</text><text class="ts" x="410" y="64">the service code</text>
+      <text class="tm" x="299" y="88">apps/api/migrations/</text><text class="ts" x="460" y="88">schema</text>
+      <text class="tm" x="299" y="112">apps/api/tests/</text><text class="ts" x="430" y="112">unit, integration</text>
+      <text class="tm" x="299" y="136">apps/api/evals/</text><text class="ts" x="430" y="136">model quality</text>
+      <text class="tm" x="299" y="160">apps/web/</text><text class="ts" x="380" y="160">the React app</text>
+      <text class="tm" x="299" y="184">tools/</text><text class="ts" x="350" y="184">mock model, HTTPS edge</text>
+
+      <rect class="n" x="554" y="16" width="250" height="176" rx="6"/>
+      <text class="tl" x="568" y="38">HOW IT RUNS: HOW DO I RUN IT?</text>
+      <text class="tm" x="568" y="64">compose*.yaml</text><text class="ts" x="680" y="64">base + overlays</text>
+      <text class="tm" x="568" y="88">*/Dockerfile</text><text class="ts" x="680" y="88">dev and prod</text>
+      <text class="tm" x="568" y="112">Makefile</text><text class="ts" x="650" y="112">every command</text>
+      <text class="tm" x="568" y="136">.env.example</text><text class="ts" x="680" y="136">config contract</text>
+      <text class="tm" x="568" y="160">infra/</text><text class="ts" x="620" y="160">monitoring, VM, AWS</text>
+      <text class="tm" x="568" y="184">scripts/</text><text class="ts" x="640" y="184">deploy, backup, drills</text>
+
+      <rect class="n" x="16" y="210" width="385" height="176" rx="6"/>
+      <text class="tl" x="30" y="232">QUALITY GATES: HOW IS A CHANGE CHECKED?</text>
+      <text class="tm" x="30" y="258">.github/workflows/</text><text class="ts" x="180" y="258">CI, release, weekly scan, deploy</text>
+      <text class="tm" x="30" y="282">.github/dependabot.yml</text><text class="ts" x="210" y="282">update pull requests</text>
+      <text class="tm" x="30" y="306">.github/CODEOWNERS</text><text class="ts" x="190" y="306">who must approve what</text>
+      <text class="tm" x="30" y="330">pull_request_template.md</text><text class="ts" x="220" y="330">evidence asked for</text>
+      <text class="tm" x="30" y="354">.trivyignore.yaml</text><text class="ts" x="180" y="354">accepted risks, expiring</text>
+      <text class="tm" x="30" y="378">tests/e2e, tests/load</text><text class="ts" x="200" y="378">browser and load tests</text>
+
+      <rect class="n" x="419" y="210" width="385" height="176" rx="6"/>
+      <text class="tl" x="433" y="232">KNOWLEDGE: WHY IS IT LIKE THIS?</text>
+      <text class="tm" x="433" y="258">docs/adr/</text><text class="ts" x="530" y="258">26 decision records</text>
+      <text class="tm" x="433" y="282">docs/prd/, docs/rfc/</text><text class="ts" x="600" y="282">what and why; how</text>
+      <text class="tm" x="433" y="306">docs/runbooks/</text><text class="ts" x="560" y="306">procedures under pressure</text>
+      <text class="tm" x="433" y="330">docs/handbook/</text><text class="ts" x="560" y="330">how it works here</text>
+      <text class="tm" x="433" y="354">docs/privacy.md</text><text class="ts" x="560" y="354">personal data held</text>
+      <text class="tm" x="433" y="378">TECH_STACK.md, the guide</text><text class="ts" x="640" y="378">choices and traps</text>
+    </svg>

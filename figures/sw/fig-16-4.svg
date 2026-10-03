@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 320" role="img" aria-label="Bottlenecks in order. One: a missing index, before any real load arrives. Two: connection churn, a metastable slow state ended by a fixed pool. Three: api CPU on reads, about 530 signed-in reads per second per core. Four: api CPU on streaming, the SDK's 126 microseconds per chunk; 500 streams saturate 2 CPUs. Five: event-loop saturation turning into errors elsewhere, because every wall-clock timeout fires early; timeouts appeared at 46 percent CPU. Six: connection budgets between workers, the pooler and Postgres. Seven: the model provider's quota."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="320" fill="#ffffff"/>
+      <rect class="n-soft" x="16" y="16" width="788" height="36" rx="4"/><text class="tb" x="28" y="39">1</text><text class="ts" x="52" y="39">A missing index: the first bottleneck arrives before any real load does (Chapter 6)</text>
+      <rect class="n-soft" x="16" y="58" width="788" height="36" rx="4"/><text class="tb" x="28" y="81">2</text><text class="ts" x="52" y="81">Connection churn: a slow state that sustains itself; a fixed-size pool ended it (Chapter 7)</text>
+      <rect class="n-soft" x="16" y="100" width="788" height="36" rx="4"/><text class="tb" x="28" y="123">3</text><text class="ts" x="52" y="123">api CPU on reads: about 530 signed-in reads per second per core</text>
+      <rect class="n-soft" x="16" y="142" width="788" height="36" rx="4"/><text class="tb" x="28" y="165">4</text><text class="ts" x="52" y="165">api CPU on streaming: the SDK's 126 µs per chunk; 500 streams saturate two CPUs</text>
+      <rect class="n-warn" x="16" y="184" width="788" height="36" rx="4"/><text class="tb" x="28" y="207">5</text><text class="ts" x="52" y="207">Event-loop saturation becomes errors elsewhere: every wall-clock timeout fires early, from 46% CPU</text>
+      <rect class="n-soft" x="16" y="226" width="788" height="36" rx="4"/><text class="tb" x="28" y="249">6</text><text class="ts" x="52" y="249">Connection budgets: 2 workers × 20 = 40 pooler clients per replica; the pooler's 500 allows about 12 replicas</text>
+      <rect class="n-soft" x="16" y="268" width="788" height="36" rx="4"/><text class="tb" x="28" y="291">7</text><text class="ts" x="52" y="291">The model provider's quota: with a real provider, this binds first; plan capacity from it</text>
+    </svg>

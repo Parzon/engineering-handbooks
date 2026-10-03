@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="Twelve weeks. Week 1: scope, users, success metric, non-goals, the riskiest assumption, repository, CI. Weeks 2 and 3: a skeleton in staging, a thin slice with a real model and realistic data, eval set version 1, authentication and permissions decided. Weeks 4 to 8: features by value and risk, a weekly demo to real users, evals gating every change. Weeks 9 and 10: hardening: a security review, one load check, a rehearsed restore and rollback, alerts on three to five signals, handover documents. Week 11: a pilot behind a flag or canary. Week 12: launch, really a buffer: plan to finish by week 10 or 11. Request slow approvals in week 1: cloud access, security review, data access, the model provider's terms, named pilot users."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="300" fill="#ffffff"/>
+      <g class="ts">
+      <rect class="n-acc" x="16" y="30" width="60" height="120" rx="4"/><text x="46" y="24" text-anchor="middle" class="tb">1</text>
+      <rect class="n" x="80" y="30" width="120" height="120" rx="4"/><text x="140" y="24" text-anchor="middle" class="tb">2-3</text>
+      <rect class="n" x="204" y="30" width="300" height="120" rx="4"/><text x="354" y="24" text-anchor="middle" class="tb">4-8</text>
+      <rect class="n-warn" x="508" y="30" width="120" height="120" rx="4"/><text x="568" y="24" text-anchor="middle" class="tb">9-10</text>
+      <rect class="n" x="632" y="30" width="80" height="120" rx="4"/><text x="672" y="24" text-anchor="middle" class="tb">11</text>
+      <rect class="n-good" x="716" y="30" width="88" height="120" rx="4"/><text x="760" y="24" text-anchor="middle" class="tb">12</text>
+      <text x="24" y="54">scope</text><text x="24" y="70">metric</text><text x="24" y="86">risks</text><text x="24" y="102">repo, CI</text>
+      <text x="88" y="54">skeleton in</text><text x="88" y="70">staging; thin</text><text x="88" y="86">slice, real</text><text x="88" y="102">model; evals v1;</text><text x="88" y="118">auth decided</text>
+      <text x="212" y="54">features by value and risk</text><text x="212" y="70">a weekly demo to real users</text><text x="212" y="86">evals gate every change</text>
+      <text x="516" y="54">security review</text><text x="516" y="70">one load check</text><text x="516" y="86">restore, rollback</text><text x="516" y="102">rehearsed; 3-5</text><text x="516" y="118">alerts; handover</text>
+      <text x="640" y="54">pilot</text><text x="640" y="70">behind a</text><text x="640" y="86">flag or</text><text x="640" y="102">canary</text>
+      <text x="724" y="54">launch:</text><text x="724" y="70">really a</text><text x="724" y="86">buffer</text>
+      </g>
+      <rect class="n-bad" x="16" y="172" width="788" height="52" rx="6"/><text class="tb tr" x="28" y="194">Week one: request everything with lead time</text><text class="ts" x="28" y="212">cloud and IAM access, the security review, data access and processing approvals, the provider's terms, named pilot users</text>
+      <text class="ts" x="16" y="252"><tspan class="tb">Left out until it hurts:</tspan> agents, rerankers, knowledge graphs, fine-tuning, self-hosted models, multi-region, more than two</text>
+      <text class="ts" x="16" y="270">environments, and a decision record for every choice (about five, for the ones that are expensive to reverse).</text>
+    </svg>

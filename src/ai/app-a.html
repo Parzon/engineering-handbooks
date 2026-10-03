@@ -1,0 +1,123 @@
+<p>Terms used in this handbook, each with the chapter that explains it. Terms from the other two handbooks are in their own glossaries.</p>
+<dl class="glossary">
+  <dt>Agent</dt>
+  <dd>A model that directs its own steps: which tool to call, with what arguments, and when to stop. Contrast with a workflow. <a class="see" href="#ch6">Chapter 6</a></dd>
+  <dt>Attention</dt>
+  <dd>The step in each transformer layer where a token's vector mixes in information from earlier tokens, weighted by how well its query matches their keys. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>Audit trail</dt>
+  <dd>An append-only record of every event (who wrote what, what the model was given), written with the change it records. Unlike traces, it is complete and kept by policy. <a class="see" href="#ch9">Chapter 9</a></dd>
+  <dt>Baseline</dt>
+  <dd>A committed eval result for the current prompt and model; a change is a regression if a case fails significantly more often than in it. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>Batching</dt>
+  <dd>Running several sequences through one forward pass. Continuous batching adds and removes sequences at every step. Raises throughput, slows each stream. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>Bulkhead</dt>
+  <dd>Separate pools or limits so one workload cannot starve another of shared capacity. <a class="see" href="#ch11">Chapter 11</a></dd>
+  <dt>Calibration (of a judge)</dt>
+  <dd>Grading answers a person labeled YES and NO, with at least one NO per criterion, before trusting a judge's verdicts. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>Change data capture (CDC)</dt>
+  <dd>Reading a database's write-ahead log and publishing each insert, update and delete as an event. <a class="see" href="#ch13">Chapter 13</a></dd>
+  <dt>Chunk</dt>
+  <dd>The unit a document is split into for retrieval: both what the search matches and what the model reads. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Circuit breaker</dt>
+  <dd>Stops calling a dependency after repeated failures, lets one trial through after a cooldown, and closes again on success. <a class="see" href="#ch11">Chapter 11</a></dd>
+  <dt>Confused deputy</dt>
+  <dd>A component with more rights than its caller, used by the caller (or by text that steers a model) to act beyond the caller's own rights. <a class="see" href="#ch6">Chapter 6</a></dd>
+  <dt>Context window</dt>
+  <dd>The most tokens, input and output together, a model attends to at once; hidden reasoning spends it too. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>Data contract</dt>
+  <dd>An agreed, versioned schema with meanings and freshness between a producing team and its consumers. <a class="see" href="#ch14">Chapter 14</a></dd>
+  <dt>Dead-letter queue</dt>
+  <dd>Where a job goes after its last allowed attempt, with its last error, for a person to fix and redrive. <a class="see" href="#ch11">Chapter 11</a></dd>
+  <dt>Decode</dt>
+  <dd>The phase that writes one token per forward pass; memory-bandwidth-bound; sets tokens per second. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>Embedding</dt>
+  <dd>A vector standing for a token inside a model, or for a whole text from an embedding model; similar meanings point in similar directions. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Embedding key</dt>
+  <dd>A record, stored with every vector, of the model, dimensions and document prefix that made it; vectors with different keys are not comparable. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Entity resolution</dt>
+  <dd>Deciding that two names are one thing, or one name is two, in a knowledge graph. <a class="see" href="#ch5">Chapter 5</a></dd>
+  <dt>Eval</dt>
+  <dd>A versioned case run against the real model and prompt, often many times, measured as a pass rate rather than pass or fail. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>Fisher's exact test</dt>
+  <dd>A test of whether two pass rates really differ; used to decide whether a case regressed against the baseline. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>Full jitter</dt>
+  <dd>Retry backoff that sleeps a random time between zero and the capped exponential delay, so clients that failed together do not retry together. <a class="see" href="#ch11">Chapter 11</a></dd>
+  <dt>Gateway (model)</dt>
+  <dd>A service between applications and model backends: authentication, request and token limits, routing, fallback, logging and cost tracking. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>GenAI semantic conventions</dt>
+  <dd>OpenTelemetry's names for model spans and attributes: models, tokens, finish reasons, time to first chunk. Still marked experimental. <a class="see" href="#ch8">Chapter 8</a></dd>
+  <dt>GraphRAG</dt>
+  <dd>Retrieval that finds entry points by similarity and then follows relationships in a knowledge graph. <a class="see" href="#ch5">Chapter 5</a></dd>
+  <dt>HNSW</dt>
+  <dd>A layered-graph approximate nearest-neighbor index: fast, memory-hungry, with build-time and query-time width parameters. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Hybrid search</dt>
+  <dd>Keyword and semantic retrieval run together and merged, usually by reciprocal rank fusion. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Iceberg</dt>
+  <dd>An open table format: metadata over Parquet files that gives atomic commits, snapshots and schema evolution. <a class="see" href="#ch13">Chapter 13</a></dd>
+  <dt>Idempotency</dt>
+  <dd>The property that repeating an operation has the same effect as doing it once; with at-least-once delivery, it makes processing effectively once. <a class="see" href="#ch11">Chapter 11</a></dd>
+  <dt>Judge</dt>
+  <dd>A second model asked a yes-or-no question about an answer, for what no deterministic check can decide. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>Knowledge graph</dt>
+  <dd>Entities as nodes and typed relationships as edges, stored as subject, predicate, object facts. <a class="see" href="#ch5">Chapter 5</a></dd>
+  <dt>KV cache</dt>
+  <dd>The keys and values of every earlier token, kept per layer in GPU memory so decode does not recompute them; it caps concurrency. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>Lakehouse</dt>
+  <dd>Files in object storage plus a table format, giving warehouse-like tables that several engines can read. <a class="see" href="#ch13">Chapter 13</a></dd>
+  <dt>Lethal trifecta</dt>
+  <dd>Private data, untrusted content and a way to send data out in one session: with all three, an injection can steal data. <a class="see" href="#ch9">Chapter 9</a></dd>
+  <dt>Logit</dt>
+  <dd>The model's raw score for one candidate next token; softmax turns logits into probabilities. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>MCP</dt>
+  <dd>The Model Context Protocol: one protocol between AI applications (hosts) and servers offering tools, resources and prompts. <a class="see" href="#ch6">Chapter 6</a></dd>
+  <dt>Medallion layers</dt>
+  <dd>Bronze (raw, kept), silver (cleaned, typed) and gold (the modeled tables) in a lakehouse. <a class="see" href="#ch13">Chapter 13</a></dd>
+  <dt>MRR</dt>
+  <dd>Mean reciprocal rank: the average of 1 ÷ the rank of the first relevant result. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Off switch</dt>
+  <dd>A setting that stops an AI feature in seconds on every server, without a deploy, while the rest of the service keeps working. <a class="see" href="#ch12">Chapter 12</a></dd>
+  <dt>Overfiltering</dt>
+  <dd>A filter applied after an approximate index's candidate list, which can leave a small tenant with no results and no error. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Point-in-time correctness</dt>
+  <dd>A training row uses only data that existed at its moment; a join that leaks later data inflates offline results. <a class="see" href="#ch14">Chapter 14</a></dd>
+  <dt>Prefill</dt>
+  <dd>The phase that reads the whole prompt in one parallel pass and builds the KV cache; compute-bound; sets time to first token. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>Prompt caching</dt>
+  <dd>A provider's discount for a long, identical prompt prefix it has seen recently. <a class="see" href="#ch10">Chapter 10</a></dd>
+  <dt>Prompt injection</dt>
+  <dd>Text that tries to instruct the model: typed by the user (direct) or inside content the model reads for them (indirect). <a class="see" href="#ch9">Chapter 9</a></dd>
+  <dt>Quantization</dt>
+  <dd>Storing weights in fewer bits (8 or 4) to save memory and speed decode, at an uneven cost in quality. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>Reasoning model</dt>
+  <dd>A model that spends hidden output tokens thinking before it answers; the thinking counts against the output limit and is billed. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>Recall@k</dt>
+  <dd>Whether a relevant item is in the top k results; it bounds what generation can use. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Reciprocal rank fusion</dt>
+  <dd>Merging ranked lists by summing 1 ÷ (60 + rank) per item, so their scores need no calibration. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Redaction</dt>
+  <dd>Replacing credentials in text before any model call, recognized by name, format or position. <a class="see" href="#ch9">Chapter 9</a></dd>
+  <dt>Reranker</dt>
+  <dd>A model that reads the question and each candidate together to reorder the top results; more accurate than vector similarity, too slow for the whole corpus. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Retrieval-augmented generation (RAG)</dt>
+  <dd>Answering with a model given passages retrieved for the question at that moment. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Rule of three</dt>
+  <dd>Zero failures in n runs bounds the failure rate below about 3/n, with 95% confidence. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>Rule of Two</dt>
+  <dd>In one session, at most two of untrusted input, sensitive data, and the power to act or send out, without a person in between. <a class="see" href="#ch6">Chapter 6</a></dd>
+  <dt>Sampling (traces)</dt>
+  <dd>Keeping a share of traces: head sampling decides at the start, tail sampling at the end, once errors and latency are known. <a class="see" href="#ch8">Chapter 8</a></dd>
+  <dt>Semantic cache</dt>
+  <dd>Reusing an answer for a similar question; wrong when answers depend on live data or on who asks. <a class="see" href="#ch10">Chapter 10</a></dd>
+  <dt>Temperature</dt>
+  <dd>A divisor applied to logits before sampling: below 1 sharpens toward the likeliest token, above 1 flattens. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>Time to first token (TTFT)</dt>
+  <dd>How long until the first token arrives: the provider starting, then any reasoning, before the answer's first token. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>Token</dt>
+  <dd>The subword unit a model reads and writes; prices, limits and speed are counted in tokens. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>Top-p</dt>
+  <dd>Sampling only from the smallest set of tokens whose probabilities reach p. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>Training-serving skew</dt>
+  <dd>A feature computed one way for training and another for serving, so the model sees different numbers live. <a class="see" href="#ch14">Chapter 14</a></dd>
+  <dt>Workflow</dt>
+  <dd>Models and tools run through code paths written in advance; contrast with an agent. <a class="see" href="#ch6">Chapter 6</a></dd>
+</dl>

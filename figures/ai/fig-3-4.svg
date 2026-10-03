@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 290" role="img" aria-label="Inside the application, every model call goes through one seam that speaks the OpenAI-compatible API and maps failures to a small set of typed errors; a mock server sits behind the same seam in tests. When several services share models, a gateway sits between applications and backends: authentication, request and token limits per user or tenant, routing to the cheapest model that handles each request, fallback on errors or 429s, logging and cost tracking. Behind it: managed APIs, or inference servers such as vLLM, TGI or Ollama doing batching, KV cache management and streaming on GPUs."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="290" fill="#ffffff"/>
+      <rect class="zone" x="16" y="16" width="230" height="258" rx="8"/><text class="tl" x="30" y="36">THE APPLICATION</text>
+      <rect class="n" x="30" y="50" width="200" height="44" rx="5"/><text class="ts" x="130" y="76" text-anchor="middle">the prompt, the context</text>
+      <rect class="n-acc" x="30" y="110" width="200" height="64" rx="5"/><text class="tb" x="130" y="134" text-anchor="middle">the seam</text><text class="ts" x="130" y="152" text-anchor="middle">one API, typed errors,</text><text class="ts" x="130" y="166" text-anchor="middle">explicit timeouts</text>
+      <rect class="n-soft" x="30" y="196" width="200" height="56" rx="5"/><text class="ts" x="130" y="220" text-anchor="middle">in tests: a mock server</text><text class="ts" x="130" y="238" text-anchor="middle">speaking the same API</text>
+      <line class="e" x1="130" y1="95" x2="130" y2="108" marker-end="url(#a)"/>
+      <rect class="n-warn" x="290" y="70" width="230" height="160" rx="6"/><text class="tb" x="302" y="94">Gateway (when shared)</text>
+      <g class="ts"><text x="302" y="118">authentication</text><text x="302" y="138">request and token limits per tenant</text><text x="302" y="158">routing to the cheapest model</text><text x="302" y="178">fallback on errors and 429s</text><text x="302" y="198">logging, cost tracking</text></g>
+      <line class="e" x1="231" y1="142" x2="288" y2="142" marker-end="url(#a)"/>
+      <rect class="n" x="566" y="40" width="238" height="80" rx="6"/><text class="tb" x="578" y="64">Managed APIs</text><text class="ts" x="578" y="84">strongest models, priced per token;</text><text class="ts" x="578" y="100">their terms and rate limits</text>
+      <rect class="n" x="566" y="150" width="238" height="100" rx="6"/><text class="tb" x="578" y="174">Inference servers</text><text class="ts" x="578" y="194">vLLM, TGI, Ollama: batching,</text><text class="ts" x="578" y="210">KV cache, streaming, on GPUs</text><text class="ts" x="578" y="230">you run them, busy or idle</text>
+      <path class="e" d="M521,120 C545,120 545,80 564,80" marker-end="url(#a)"/><path class="e" d="M521,170 C545,170 545,200 564,200" marker-end="url(#a)"/>
+    </svg>

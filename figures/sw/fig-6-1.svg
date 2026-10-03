@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 250" role="img" aria-label="A chain of migrations, each naming its parent: create alerts, add an external id, index by time, teams and users, row-level security, runbooks. Three databases record different positions: a developer's is at the newest revision, CI's throwaway database starts empty and replays all of them, production is two behind. Upgrading production runs only the two missing migrations, in order."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="250" fill="#ffffff"/>
+      <rect class="n" x="16" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="26" y="60">39b0de02</text><text class="ts" x="26" y="78">create alerts</text>
+      <rect class="n" x="150" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="160" y="60">75397b87</text><text class="ts" x="160" y="78">external id</text>
+      <rect class="n" x="284" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="294" y="60">51ef9f54</text><text class="ts" x="294" y="78">index by time</text>
+      <rect class="n" x="418" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="428" y="60">3713e568</text><text class="ts" x="428" y="78">teams and users</text>
+      <rect class="n-acc" x="552" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="562" y="60">ce83ff21</text><text class="ts" x="562" y="78">row-level security</text>
+      <rect class="n-acc" x="686" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="696" y="60">9c9fd881</text><text class="ts" x="696" y="78">runbooks</text>
+      <line class="e" x1="149" y1="69" x2="136" y2="69" marker-end="url(#a)"/>
+      <line class="e" x1="283" y1="69" x2="270" y2="69" marker-end="url(#a)"/>
+      <line class="e" x1="417" y1="69" x2="404" y2="69" marker-end="url(#a)"/>
+      <line class="e" x1="551" y1="69" x2="538" y2="69" marker-end="url(#a)"/>
+      <line class="e" x1="685" y1="69" x2="672" y2="69" marker-end="url(#a)"/>
+      <text class="ts" x="16" y="26">each file names its parent (down_revision); the dates in file names are labels for humans</text>
+
+      <rect class="n-soft" x="16" y="140" width="250" height="40" rx="5"/><text class="ts" x="28" y="165">production records 3713e568: two behind</text>
+      <path class="e-acc" d="M141,139 V120 H611 V100" marker-end="url(#a-acc)"/>
+      <path class="e-acc" d="M141,139 V120 H745 V100" marker-end="url(#a-acc)"/>
+      <text class="ts ta" x="300" y="146">an upgrade runs only the two it is missing, in order</text>
+      <rect class="n-soft" x="290" y="196" width="250" height="40" rx="5"/><text class="ts" x="302" y="221">CI starts empty and replays all six</text>
+      <rect class="n-soft" x="556" y="196" width="248" height="40" rx="5"/><text class="ts" x="568" y="221">"heads" must print exactly one</text>
+    </svg>

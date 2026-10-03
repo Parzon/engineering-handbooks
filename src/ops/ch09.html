@@ -1,0 +1,360 @@
+<section class="chapter" id="ch9">
+  <header class="ch-head">
+    <span class="ch-num">9</span>
+    <p class="eyebrow">Part V · Running on AWS</p>
+    <h2>Containers on ECS Fargate</h2>
+    <p class="lede">ECS on Fargate runs containers with no servers to manage: you describe each task once, a service keeps the right number running behind a load balancer, and every release is a rolling replacement that rolls itself back if the new version cannot start.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>A <strong>task definition</strong> is a versioned description of containers: image, CPU and memory, environment, secrets, logs, health check. A <strong>service</strong> keeps N copies running.</li>
+      <li>A release registers a new task definition revision and updates the service: new tasks start beside the old ones, and the old ones stop once the new are healthy.</li>
+      <li>The deployment circuit breaker rolls a release back by itself when its tasks keep failing to start.</li>
+      <li>ECS has <strong>one</strong> health signal, the load balancer's check, and acts on it like a liveness check. Point it at a shallow endpoint.</li>
+      <li>Anything that must be counted once across copies, such as rate limits or sessions, needs a shared store. A sidecar in each task counts on its own.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Compose on a server you patch</td><td>Task definitions and services on Fargate, no hosts to manage</td><td>The platform owns the machines, the patching and the placement.</td></tr>
+      <tr><td data-label="Then">A restart policy brings a crashed container back</td><td>The service scheduler replaces failed tasks, in any availability zone</td><td>Recovery from a lost host is automatic, not just from a crashed process.</td></tr>
+      <tr><td data-label="Then">A proxy container routes paths to services</td><td>Load balancer listener rules, including path rewriting</td><td>Routing becomes managed configuration, highly available by default.</td></tr>
+      <tr><td data-label="Then">A deploy script and a manual rollback</td><td>Rolling updates with a circuit breaker that rolls back on its own</td><td>A bad release stops itself before users notice.</td></tr>
+      <tr><td data-label="Then">Scaling by resizing the server</td><td>Autoscaling the number of tasks on requests per target</td><td>Capacity follows traffic, within limits you set.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch9-pieces">The pieces</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Piece</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Piece">ECR</td><td data-label="What">The image registry.</td></tr>
+        <tr><td data-label="Piece">Task definition</td><td data-label="What">The versioned container spec, with numbered revisions: images, CPU and memory, environment, secrets from Secrets Manager, log destination, health checks, ports, and the order containers start in.</td></tr>
+        <tr><td data-label="Piece">Service</td><td data-label="What">Keeps N copies of a task running, replaces failed ones, and performs rolling deploys.</td></tr>
+        <tr><td data-label="Piece">Application Load Balancer</td><td data-label="What">The public entry point. Terminates TLS with a managed certificate, routes by path, and sends traffic only to healthy tasks.</td></tr>
+        <tr><td data-label="Piece">Execution role and task role</td><td data-label="What">The first lets ECS pull images and read secrets; the second is what your code may call (Chapter 5).</td></tr>
+        <tr><td data-label="Piece">CloudWatch Logs</td><td data-label="What">Every container's standard output and error, shipped by the platform.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure class="fig wide" id="fig-9-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 360" role="img" aria-label="The reference service on ECS. The load balancer listens on port 80: internal paths return 404; /api/* is rewritten and sent to the api service; everything else goes to the web service. Each service runs two tasks across two zones. The api task holds dbinit and migrate init containers, a mock model sidecar and the api. The api reaches RDS Postgres and ElastiCache Valkey. Images come from ECR, secrets from Secrets Manager, logs go to CloudWatch.">
+      <rect class="n-acc" x="16" y="128" width="150" height="104" rx="6"/>
+      <text class="tb" x="91" y="152" text-anchor="middle">Load balancer :80</text>
+      <text class="ts" x="91" y="174" text-anchor="middle">internal paths: 404</text>
+      <text class="ts" x="91" y="192" text-anchor="middle">/api/*: rewrite, api</text>
+      <text class="ts" x="91" y="210" text-anchor="middle">else: web</text>
+
+      <rect class="zone" x="200" y="20" width="370" height="232" rx="8"/>
+      <text class="tl" x="214" y="40">API SERVICE: 2 TO 4 TASKS, 2 ZONES</text>
+      <rect class="n" x="214" y="52" width="342" height="186" rx="5"/>
+      <text class="tb" x="228" y="74">One api task (shared localhost)</text>
+      <rect class="n-soft" x="228" y="86" width="150" height="40" rx="4"/><text class="tm" x="240" y="104">dbinit</text><text class="ts" x="240" y="119">app role; then exits</text>
+      <rect class="n-soft" x="390" y="86" width="150" height="40" rx="4"/><text class="tm" x="402" y="104">migrate</text><text class="ts" x="402" y="119">migrations; exits</text>
+      <rect class="n-soft" x="228" y="136" width="150" height="40" rx="4"/><text class="tm" x="240" y="154">mock-llm</text><text class="ts" x="240" y="169">sidecar, healthy</text>
+      <rect class="n-acc" x="390" y="136" width="150" height="88" rx="4"/><text class="tm tb" x="402" y="156">api</text><text class="ts" x="402" y="174">starts only when both</text><text class="ts" x="402" y="190">init containers succeed</text><text class="ts" x="402" y="206">and the sidecar is healthy</text>
+      <text class="ts" x="228" y="200">health check for the</text>
+      <text class="ts" x="228" y="216">load balancer: /health</text>
+
+      <rect class="zone" x="200" y="268" width="370" height="74" rx="8"/>
+      <text class="tl" x="214" y="288">WEB SERVICE: 2 TASKS</text>
+      <text class="ts" x="214" y="308">nginx serving the built app; health check /healthz</text>
+      <text class="ts" x="214" y="326">only files: the load balancer routes /api itself</text>
+
+      <path class="e-acc" d="M167,170 C185,170 185,140 212,140" marker-end="url(#a-acc)"/>
+      <path class="e" d="M167,200 C185,200 185,305 198,305" marker-end="url(#a)"/>
+
+      <rect class="n" x="612" y="40" width="192" height="56" rx="5"/><text class="tb" x="708" y="64" text-anchor="middle">RDS Postgres</text><text class="ts" x="708" y="82" text-anchor="middle">TLS required</text>
+      <rect class="n" x="612" y="110" width="192" height="56" rx="5"/><text class="tb" x="708" y="134" text-anchor="middle">ElastiCache Valkey</text><text class="ts" x="708" y="152" text-anchor="middle">shared by every task</text>
+      <line class="e" x1="557" y1="100" x2="610" y2="70" marker-end="url(#a)"/>
+      <line class="e" x1="557" y1="150" x2="610" y2="140" marker-end="url(#a)"/>
+      <rect class="n-soft" x="612" y="196" width="192" height="30" rx="4"/><text class="ts" x="708" y="216" text-anchor="middle">ECR: images, pulled at start</text>
+      <rect class="n-soft" x="612" y="232" width="192" height="30" rx="4"/><text class="ts" x="708" y="252" text-anchor="middle">Secrets Manager: at start</text>
+      <rect class="n-soft" x="612" y="268" width="192" height="30" rx="4"/><text class="ts" x="708" y="288" text-anchor="middle">CloudWatch Logs: per container</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 9.1</span>The reference service on ECS Fargate. The containers in one task share a network namespace and talk over localhost. Services that scale separately are separate services, found through the load balancer.</figcaption>
+  </figure>
+
+  <h4>Compose, translated to ECS</h4>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Compose</th><th>ECS</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Compose">a <code>services:</code> entry</td><td data-label="ECS">a task definition and a service</td></tr>
+        <tr><td data-label="Compose"><code>build:</code></td><td data-label="ECS">CI builds; the task definition names an image in ECR</td></tr>
+        <tr><td data-label="Compose"><code>ports:</code></td><td data-label="ECS">the container port, and a load balancer target group</td></tr>
+        <tr><td data-label="Compose"><code>environment:</code> and <code>.env</code></td><td data-label="ECS"><code>environment</code> for plain values; <code>secrets</code> from Secrets Manager or Parameter Store</td></tr>
+        <tr><td data-label="Compose"><code>depends_on:</code></td><td data-label="ECS">inside one task, <code>dependsOn</code> with START, COMPLETE, SUCCESS or HEALTHY; between services, nothing: the app retries</td></tr>
+        <tr><td data-label="Compose"><code>restart:</code></td><td data-label="ECS">the service scheduler replaces failed tasks</td></tr>
+        <tr><td data-label="Compose">named volumes</td><td data-label="ECS">mostly none: state lives in RDS and S3, or EFS when a shared file system is truly needed</td></tr>
+        <tr><td data-label="Compose">the database and cache containers</td><td data-label="ECS">RDS and ElastiCache</td></tr>
+        <tr><td data-label="Compose">the Compose network and its service names</td><td data-label="ECS">the VPC and security groups; the load balancer, Service Connect or Cloud Map for names</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The Compose file stays as the local development environment, and the task definition is its production counterpart. Five Compose containers often become two or three ECS services plus managed services.</p>
+
+  <h3 id="ch9-rehearse">Rehearse the task locally first</h3>
+  <p>Most cloud failures are configuration, and a Fargate task can be rehearsed on one machine before any money is spent: containers in a task share one network namespace, which <code>docker run --network container:&lt;first&gt;</code> reproduces, and a plain Postgres container with only an owner user stands in for RDS, which runs no setup scripts. The rehearsal for the reference build found four problems:</p>
+  <ul>
+    <li><strong>The production guard worked.</strong> With production settings the api refused to start: plain-HTTP cookies and a fake model. Without a domain or a model provider, both were honest exceptions, named one by one in a waiver setting rather than turned off.</li>
+    <li><strong>The web image assumed Compose.</strong> Its nginx found the api through Docker's internal DNS, which Fargate does not have. On AWS the load balancer routes <code>/api/*</code> straight to the api and strips the prefix, and nginx only serves files.</li>
+    <li><strong>A rollback trap.</strong> Rolling back across a migration made the migration tool fail on a revision it did not know. The migration step was taught to recognize that case and do a code-only rollback (Chapter 13).</li>
+    <li><strong>Least privilege.</strong> A setup container creates the application's own database user, allowed to read and write rows but not to change the schema, and does it idempotently, because RDS will not run setup scripts.</li>
+  </ul>
+
+  <h3 id="ch9-start">How a task starts: init containers</h3>
+  <p>Each api task first runs two short-lived <strong>init containers</strong>: one creates the least-privileged database user, the next runs migrations as the schema owner. Only when both have exited successfully, and the model sidecar is healthy, does the api container start. Every new task migrates before it serves, which is simple, but tasks can start together (the first deploy starts two), and two migration runs at once collided: one failed. So the runs take turns on a database lock, and a deploy also starts one new task at a time.</p>
+  <p>One detail of how ECS evaluates those dependencies cost an afternoon. When the database was down, a new task's first init container failed straight away; the second, which depended on it, then never ran; and the api, which depended only on the second, waited forever. The task stayed PENDING for 13 minutes, billed, until stopped by hand.</p>
+
+  <figure class="fig wide" id="fig-9-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Left, a chain: api depends on migrate, which depends on dbinit. dbinit fails fast, migrate never runs, and the api waits: the task stays pending, measured more than four minutes in a test and 13 minutes in an outage. Right, direct dependencies: api depends on dbinit and on migrate. dbinit fails, the api gives up, and ECS stops the task in about 1.5 minutes, then retries.">
+      <text class="tb" x="16" y="26">A chain</text>
+      <text class="ts" x="16" y="44">api waits on migrate, which waits on dbinit</text>
+      <rect class="n-bad" x="16" y="60" width="110" height="50" rx="5"/><text class="tm tb" x="71" y="82" text-anchor="middle">dbinit</text><text class="ts tr" x="71" y="100" text-anchor="middle">exits 2</text>
+      <rect class="n-soft" x="150" y="60" width="110" height="50" rx="5"/><text class="tm tb" x="205" y="82" text-anchor="middle">migrate</text><text class="ts" x="205" y="100" text-anchor="middle">never runs</text>
+      <rect class="n-warn" x="284" y="60" width="110" height="50" rx="5"/><text class="tm tb" x="339" y="82" text-anchor="middle">api</text><text class="ts tw" x="339" y="100" text-anchor="middle">waits forever</text>
+      <line class="e" x1="149" y1="85" x2="128" y2="85" marker-end="url(#a)"/>
+      <line class="e" x1="283" y1="85" x2="262" y2="85" marker-end="url(#a)"/>
+      <rect class="n-bad" x="16" y="140" width="378" height="56" rx="6"/>
+      <text class="tb tr" x="205" y="164" text-anchor="middle">Task PENDING, still billed</text>
+      <text class="ts" x="205" y="184" text-anchor="middle">over 4 minutes in a test; 13 minutes in an outage</text>
+
+      <line class="rule" x1="418" y1="16" x2="418" y2="240"/>
+      <text class="tb" x="440" y="26">Direct dependencies</text>
+      <text class="ts" x="440" y="44">api waits on each init container itself</text>
+      <rect class="n-bad" x="440" y="60" width="110" height="50" rx="5"/><text class="tm tb" x="495" y="82" text-anchor="middle">dbinit</text><text class="ts tr" x="495" y="100" text-anchor="middle">exits 2</text>
+      <rect class="n-soft" x="440" y="120" width="110" height="50" rx="5"/><text class="tm tb" x="495" y="142" text-anchor="middle">migrate</text><text class="ts" x="495" y="160" text-anchor="middle">never runs</text>
+      <rect class="n" x="640" y="88" width="110" height="50" rx="5"/><text class="tm tb" x="695" y="110" text-anchor="middle">api</text><text class="ts" x="695" y="128" text-anchor="middle">gives up</text>
+      <line class="e" x1="639" y1="105" x2="552" y2="85" marker-end="url(#a)"/>
+      <line class="e" x1="639" y1="122" x2="552" y2="145" marker-end="url(#a)"/>
+      <rect class="n-good" x="440" y="190" width="364" height="56" rx="6"/>
+      <text class="tb" x="622" y="214" text-anchor="middle">Task stopped in 1.5 minutes</text>
+      <text class="ts" x="622" y="234" text-anchor="middle">ECS starts a fresh one; it succeeds once the database is back</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 9.2</span>The same failure, two dependency shapes. A start timeout only covers a container that is still running, not one that already failed two links down a chain. The rule: the essential container depends directly on every init container, and each init container has a start timeout.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L401-L415">infra/aws/service.py</a><span class="lines">the api's start conditions</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The fix, with the measurement that justified it in the comment. Each dependency names a condition: the init containers must exit with <code>SUCCESS</code>, the sidecar must be <code>HEALTHY</code>.</p>
+        <ul class="notice">
+          <li>All three are direct dependencies of the api, the essential container: when any fails, the api gives up and ECS stops the task.</li>
+          <li>Each init container also has a 120-second start timeout, the most Fargate allows.</li>
+          <li>The comment keeps the evidence: the chain stuck for more than four minutes; direct dependencies stopped the task in one and a half.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="401-415"><code class="language-python"># Every init container is a direct dependency of the essential api: when one fails, the
+# api gives up and ECS stops the task. Through a chain (api -&gt; migrate -&gt; dbinit) a dbinit
+# that fails fast leaves migrate "stopped" without running, and the task PENDING forever
+# (measured with one-off tasks: the chain stuck &gt;4 min; direct: stopped in 1.5 min).
+api.add_container_dependencies(
+    ecs.ContainerDependency(
+        container=dbinit, condition=ecs.ContainerDependencyCondition.SUCCESS
+    ),
+    ecs.ContainerDependency(
+        container=migrate, condition=ecs.ContainerDependencyCondition.SUCCESS
+    ),
+    ecs.ContainerDependency(
+        container=mock_llm, condition=ecs.ContainerDependencyCondition.HEALTHY
+    ),
+)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch9-deploy">A release on ECS</h3>
+  <ol>
+    <li>CI copies the release images to ECR, authenticating with an OIDC role (Chapter 5).</li>
+    <li>The deploy registers a new task definition revision with the new image and updates the service.</li>
+    <li>ECS starts new tasks beside the old ones, waits for the load balancer's health check, shifts traffic, and stops the old tasks, which finish their in-flight requests first.</li>
+    <li>If the new tasks keep failing to start, the <strong>deployment circuit breaker</strong> rolls the service back to the previous revision, and the deploy fails.</li>
+  </ol>
+
+  <figure class="fig wide" id="fig-9-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Top: a good release with two tasks, at most 150 percent: one new task starts, becomes healthy, one old task stops; repeat. Serving capacity never drops below two. Bottom: a bad release: new tasks fail to start three times in about four minutes; the circuit breaker rolls back; the old tasks never stopped serving.">
+      <text class="tb" x="16" y="24">A good release: never fewer than 2 healthy, at most 3 running</text>
+      <rect class="n" x="16" y="38" width="250" height="22" rx="3"/><text class="ts" x="141" y="54" text-anchor="middle">old task 1</text>
+      <rect class="n" x="16" y="64" width="470" height="22" rx="3"/><text class="ts" x="251" y="80" text-anchor="middle">old task 2</text>
+      <rect class="n-good" x="130" y="90" width="674" height="22" rx="3"/><text class="ts" x="467" y="106" text-anchor="middle">new task 1: started, healthy, then serving</text>
+      <rect class="n-good" x="350" y="116" width="454" height="22" rx="3"/><text class="ts" x="577" y="132" text-anchor="middle">new task 2</text>
+      <text class="ts" x="16" y="156">min 100%: start before stopping · max 150%: one extra task at a time during a deploy</text>
+
+      <line class="rule" x1="16" y1="170" x2="804" y2="170"/>
+      <text class="tb" x="16" y="194">A bad release: the circuit breaker rolls back</text>
+      <rect class="n" x="16" y="206" width="788" height="22" rx="3"/><text class="ts" x="410" y="222" text-anchor="middle">old tasks keep serving throughout</text>
+      <rect class="n-bad" x="150" y="234" width="60" height="12" rx="2"/>
+      <rect class="n-bad" x="300" y="234" width="60" height="12" rx="2"/>
+      <rect class="n-bad" x="450" y="234" width="60" height="12" rx="2"/>
+      <text class="ts tr" x="520" y="244">3 failed starts, about 4 min</text>
+      <text class="ts" x="690" y="244">rolled back</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 9.3</span>Rolling deploys on the reference service. In the deliberate bad-release drill, the new api refused to start on a production check; ECS retried three times, the circuit breaker rolled back, and CloudFormation removed the bad revision. Users kept being served by the old tasks.</figcaption>
+  </figure>
+
+  <p>Measured on the reference service, with a probe sending requests twice a second: a forward deploy took 3 minutes 17 seconds with 352 requests and none failed, and the deliberate bad release was rolled back in under 8 minutes while the old tasks kept serving. ECS Exec gives a shell into a running task, without SSH, for the rare case that needs one.</p>
+
+  <h3 id="ch9-health">One health signal</h3>
+  <p>The reference api follows the Kubernetes convention of two health endpoints. <code>/health</code> answers "is the process alive?" and checks nothing external. <code>/ready</code> answers "should traffic come here?" and requires the database. On Kubernetes they feed two separate probes. <strong>ECS has one signal</strong>, the load balancer's target health check, and it replaces any task that check calls unhealthy. So a deep check behaves like a liveness check, and a database outage turns into task churn. A drill showed exactly that:</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Database stopped for 7 minutes</th><th>Load balancer checks <code>/ready</code> (deep)</th><th>Load balancer checks <code>/health</code> (shallow)</th></tr></thead>
+      <tbody>
+        <tr><td data-label="">Target health</td><td data-label="Deep">every api target unhealthy</td><td data-label="Shallow">2 of 2 healthy</td></tr>
+        <tr><td data-label="">What ECS did</td><td data-label="Deep">replaced tasks, whose replacements could not start</td><td data-label="Shallow">nothing</td></tr>
+        <tr><td data-label="">What users saw</td><td data-label="Deep"><code>/ready</code> 503; the page and <code>/health</code> fine</td><td data-label="Shallow">the same</td></tr>
+        <tr><td data-label="">Alarms</td><td data-label="Deep">unhealthy targets and 5xx</td><td data-label="Shallow">5xx only</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The rule on ECS: point the load balancer at a shallow check; rely on the init containers for readiness at start (migrations succeed only if the database answers); and detect outages with an alarm on 5xx responses. The api reconnected four seconds after the database returned, with no restart.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L455-L517">infra/aws/service.py</a><span class="lines">the service's deployment settings and the api's health check</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The service definition and the api target group's health check, each with its reasoning beside it.</p>
+        <ul class="notice">
+          <li><code>min_healthy_percent=100</code> and <code>max_healthy_percent=150</code>: start one new task before stopping an old one, one at a time.</li>
+          <li>The circuit breaker is enabled with rollback.</li>
+          <li>The health check path is <code>/health</code>, and the comment explains why <code>/ready</code> would turn an outage into churn.</li>
+          <li>The deregistration delay covers the longest answer. ECS takes a task out of the load balancer before it sends SIGTERM, and the balancer drops whatever is still in flight when the delay ends: at 30 seconds, long answers were cut during deploys.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="455-475"><code class="language-python">return ecs.FargateService(
+    self,
+    f"{name.title()}Service",
+    service_name=name,
+    cluster=cluster,
+    task_definition=task,
+    desired_count=2,
+    # A public IP to pull images without a NAT gateway; the SG admits only the ALB.
+    # production: private subnets, a NAT gateway or VPC endpoints for ECR and logs.
+    assign_public_ip=True,
+    vpc_subnets=public,
+    security_groups=[sg],
+    min_healthy_percent=100,  # start a new task before stopping an old one
+    # 150% of 2 = one extra task at a time during a deploy. Tasks still start together
+    # (the first deploy, a scale-out): their migrate init containers then take turns on
+    # an advisory lock (apps/api/migrations/env.py).
+    max_healthy_percent=150,
+    circuit_breaker=ecs.DeploymentCircuitBreaker(enable=True, rollback=True),
+    health_check_grace_period=Duration.seconds(120),
+    # `aws ecs execute-command`: a shell without SSH. production: off, or limited by
+    # IAM to the on-call role, with session logging.</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="503-517"><code class="language-python"># Liveness, not readiness. ECS replaces any task its load balancer calls unhealthy,
+# so a deep check (/ready: the database) turns a database outage into task churn:
+# measured, every api task marked unhealthy and replacements stuck in dbinit. Kubernetes
+# separates the two (readinessProbe /ready, livenessProbe /health); ECS has one signal.
+# Readiness at start is covered by the init containers: migrate succeeds only if the
+# database answers. A database outage still shows: /api/ready 503 and the 5xx alarm.
+health_check=elbv2.HealthCheck(
+    path="/health", interval=Duration.seconds(10), healthy_threshold_count=2
+),
+# ECS takes a task out of the ALB first, waits this long, and only then sends it
+# SIGTERM; at the end of the wait the ALB drops whatever is still in flight. So the
+# wait must cover the longest chat stream (LLM_STREAM_TIMEOUT_S, 120 s): at 30 s,
+# any answer longer than that was cut during a deploy. Deploys wait up to this long
+# per task only while requests are in flight.
+deregistration_delay=Duration.seconds(130),</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch9-scale">Scaling out, and the state that must be shared</h3>
+  <p>The api's login endpoint is rate-limited per client: 30 attempts a minute, counted in Valkey. While the api ran with a private Valkey container beside it in each task, scaling to two tasks quietly doubled the limit, because each task counted on its own.</p>
+
+  <figure class="fig wide" id="fig-9-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 220" role="img" aria-label="Login attempts allowed in one minute against a limit of 30: one task with its own Valkey allowed 30; two tasks each with their own Valkey allowed 60; two tasks sharing one ElastiCache Valkey allowed 30.">
+      <text class="tl" x="16" y="18">LOGIN ATTEMPTS ALLOWED IN ONE MINUTE, LIMIT 30</text>
+      <line class="rule" x1="300" y1="30" x2="300" y2="190"/><text class="ts" x="300" y="206" text-anchor="middle">0</text>
+      <line class="rule" x1="405" y1="30" x2="405" y2="190"/><text class="ts" x="405" y="206" text-anchor="middle">15</text>
+      <line class="rule-strong dash" x1="510" y1="26" x2="510" y2="190"/><text class="ts tb" x="510" y="206" text-anchor="middle">30: the limit</text>
+      <line class="rule" x1="615" y1="30" x2="615" y2="190"/><text class="ts" x="615" y="206" text-anchor="middle">45</text>
+      <line class="rule" x1="720" y1="30" x2="720" y2="190"/><text class="ts" x="720" y="206" text-anchor="middle">60</text>
+      <text class="ts" x="16" y="60">1 task, its own Valkey</text>
+      <rect class="f1" x="300" y="42" width="210" height="26" rx="3"/><text class="ts tb" x="518" y="60">30</text>
+      <text class="ts" x="16" y="104">2 tasks, a Valkey each</text>
+      <text class="ts tr tb" x="16" y="120">twice the limit</text>
+      <rect class="f1" x="300" y="92" width="420" height="26" rx="3"/><text class="ts tb" x="728" y="110">60</text>
+      <text class="ts" x="16" y="160">2 tasks, one shared Valkey</text>
+      <rect class="f1" x="300" y="142" width="210" height="26" rx="3"/><text class="ts tb" x="518" y="160">30</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 9.4</span>Per-task state breaks when you scale. Measured through the load balancer: with a cache container in each task, every task added raised the effective limit. One shared ElastiCache node, with TLS and reachable only from the api's security group, restored it.</figcaption>
+  </figure>
+
+  <p>The general rule: a sidecar suits state that belongs to one task. Anything that must be counted once across copies (rate limits, sessions, locks) needs a shared store. The fix shipped through a pull request together with two tasks per service, one per zone, and <strong>autoscaling</strong> from two to four api tasks on requests per target, capped so that four tasks times one worker times ten pooled connections stays well inside the small database's connection limit (two workers of five at first, until a review matched the task's half CPU to one worker).</p>
+  <p>Autoscaling takes minutes. Under a steady 80 requests a second, the scaling alarm fired five minutes after the load started and four tasks were running a minute later: about six minutes from load to capacity, made of three one-minute data points, the metric's delay and the task start. The k6 load test that drove it sent 33,601 requests with none failed and a 95th-percentile latency of 58 ms. Autoscaling follows trends, so the minimum count must carry a sudden spike on its own. Stopping one task by hand, as a host failure would, caused no failed requests: ECS started a replacement at once.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"The api runs as an ECS service on Fargate: two tasks across two zones, autoscaling to four, rolling deploys with the circuit breaker on, so a release that can't start rolls itself back."</p>
+    <p>"ECS has one health signal, so the load balancer checks a shallow endpoint; readiness at start comes from the init containers, and outages show up in the 5xx alarm."</p>
+  </aside>
+
+  <h3 id="ch9-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A database outage makes ECS replace healthy api tasks</td><td data-label="Cause">The load balancer checks a deep readiness endpoint, and ECS treats it as liveness</td><td data-label="Fix">Check a shallow endpoint; detect outages with a 5xx alarm.</td></tr>
+        <tr><td data-label="Symptom">A task sits in PENDING for many minutes, billed</td><td data-label="Cause">Init containers in a chain: one failed fast, the next never ran, the essential container waits</td><td data-label="Fix">Make the essential container depend directly on every init container, each with a start timeout.</td></tr>
+        <tr><td data-label="Symptom">Rate limits are higher than configured after scaling out</td><td data-label="Cause">Each task counts in its own sidecar store</td><td data-label="Fix">A shared store for anything that must be counted once.</td></tr>
+        <tr><td data-label="Symptom">Two new tasks run migrations at the same moment</td><td data-label="Cause">Every task migrates in an init container, and the deploy starts several at once</td><td data-label="Fix">Start one new task at a time, or run migrations as a one-off task before the deploy.</td></tr>
+        <tr><td data-label="Symptom">The web container's proxy returns 502 for every api call on Fargate</td><td data-label="Cause">It resolves the api through Docker's internal DNS, which Fargate does not have</td><td data-label="Fix">Route <code>/api</code> at the load balancer, or use Service Connect for names.</td></tr>
+        <tr><td data-label="Symptom">Streams are cut during a deploy</td><td data-label="Cause">The container's stop timeout is shorter than the longest answer</td><td data-label="Fix">Raise the stop timeout (Fargate allows up to two minutes) and let the server drain.</td></tr>
+        <tr><td data-label="Symptom">A short spike overwhelms the service before autoscaling reacts</td><td data-label="Cause">Scaling takes several minutes from load to capacity</td><td data-label="Fix">Size the minimum task count for spikes; scale on a leading metric.</td></tr>
+        <tr><td data-label="Symptom">An outage is reported that the load balancer never saw</td><td data-label="Cause">The client's own network (DNS timeouts, lost packets) failed, not the service</td><td data-label="Fix">Judge outages from server-side metrics, and run synthetic checks from inside the cloud.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch9-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What is the difference between a task definition and a service?</p>
+      <details class="ans"><summary>Answer</summary><p>A task definition is a versioned description of the containers to run. A service keeps a number of copies of one revision running, replaces failed ones, and rolls them to a new revision during a deploy.</p></details>
+    </li>
+    <li>
+      <p>Why should the load balancer's health check on ECS be shallow?</p>
+      <details class="ans"><summary>Answer</summary><p>ECS replaces any task the load balancer calls unhealthy. If the check depends on the database, a database outage makes every task "unhealthy", and ECS churns tasks that cannot help. A shallow check keeps the tasks; the outage is detected by the 5xx alarm instead.</p></details>
+    </li>
+    <li>
+      <p>What do <code>min_healthy_percent=100</code> and <code>max_healthy_percent=150</code> mean for a service of two tasks?</p>
+      <details class="ans"><summary>Answer</summary><p>Never fewer than two healthy tasks, and at most three running: one new task starts, becomes healthy, then one old task stops, and the cycle repeats.</p></details>
+    </li>
+    <li>
+      <p>Why did scaling to two tasks double the login rate limit?</p>
+      <details class="ans"><summary>Answer</summary><p>Each task had its own Valkey container and counted attempts on its own, so each allowed the full limit. Shared limits need a shared store.</p></details>
+    </li>
+    <li>
+      <p>How long does autoscaling take to add capacity, and what does that imply?</p>
+      <details class="ans"><summary>Answer</summary><p>About six minutes in the reference build, from the start of the load to the new tasks running. The minimum task count must absorb a sudden spike without help.</p></details>
+    </li>
+  </ol>
+</section>

@@ -1,0 +1,237 @@
+<section class="chapter" id="ch7">
+  <header class="ch-head">
+    <span class="ch-num">7</span>
+    <p class="eyebrow">Part IV · Getting code onto servers</p>
+    <h2>Infrastructure as code</h2>
+    <p class="lede">Infrastructure as code describes networks, servers, databases and permissions in reviewed files, and a tool works out and applies the difference between that description and what exists, so environments can be rebuilt, reviewed and audited like software.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>You declare the end state; the tool compares it with its record of what exists and makes only the calls that close the gap.</li>
+      <li>Always look at the difference before applying it: <code>cdk diff</code> or <code>terraform plan</code>, ideally in the pull request.</li>
+      <li>CDK writes AWS infrastructure in a real programming language and hands it to CloudFormation. Terraform uses its own language and reaches any cloud through providers.</li>
+      <li>A change made by hand in the console is <strong>drift</strong>: detect it, and fix it through the code, or the next deploy will silently undo it.</li>
+      <li>Infrastructure changes go through pull requests, and CI applies them with keyless credentials.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Click through the cloud console, then write down what you did</td><td>Declare it in code; the tool creates it</td><td>A console session leaves no reviewable record and cannot be repeated exactly.</td></tr>
+      <tr><td data-label="Then">Hand-written CloudFormation JSON or YAML</td><td>CDK in Python or TypeScript, or Terraform's HCL</td><td>Loops, functions and types replace thousands of lines of copied template.</td></tr>
+      <tr><td data-label="Then">Configuration management tools changing running servers</td><td>Immutable images, with a first-boot script for the last mile</td><td>Replacing a server is more predictable than mutating it.</td></tr>
+      <tr><td data-label="Then">Nobody sure what a change will do</td><td>A diff or plan reviewed in the pull request before anything is applied</td><td>The reviewer sees which resources will be created, changed or destroyed.</td></tr>
+      <tr><td data-label="Then">Environments that slowly drift apart</td><td>Drift detection against the recorded state</td><td>A manual change is found instead of being discovered during an outage.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch7-how">How the tools work</h3>
+  <p>Every infrastructure-as-code tool has the same three parts: a description of the desired end state, a record of what it has already created, and an engine that turns the difference into API calls. The tools differ in the language you write and in where the record lives.</p>
+
+  <figure class="fig wide" id="fig-7-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 276" role="img" aria-label="Two lanes. CDK: Python code is synthesized into a CloudFormation template; cdk diff compares it with the deployed stack; CloudFormation creates, updates or deletes only what differs and remembers every resource in the stack. Terraform: HCL code is planned against a state file stored remotely with a lock; apply calls the provider's APIs for the difference and updates the state.">
+      <text class="tb" x="16" y="26">CDK on AWS</text>
+      <rect class="n" x="16" y="38" width="140" height="64" rx="5"/><text class="tb" x="86" y="64" text-anchor="middle">Python code</text><text class="ts" x="86" y="82" text-anchor="middle">constructs, loops</text>
+      <rect class="n" x="196" y="38" width="150" height="64" rx="5"/><text class="tb" x="271" y="64" text-anchor="middle">Template</text><text class="ts" x="271" y="82" text-anchor="middle">cdk synth, no AWS calls</text>
+      <rect class="n-acc" x="386" y="38" width="150" height="64" rx="5"/><text class="tb" x="461" y="64" text-anchor="middle">cdk diff</text><text class="ts" x="461" y="82" text-anchor="middle">read it in review</text>
+      <rect class="n" x="576" y="38" width="228" height="64" rx="5"/><text class="tb" x="690" y="64" text-anchor="middle">CloudFormation stack</text><text class="ts" x="690" y="82" text-anchor="middle">applies the difference, remembers</text>
+      <line class="e" x1="157" y1="70" x2="194" y2="70" marker-end="url(#a)"/>
+      <line class="e" x1="347" y1="70" x2="384" y2="70" marker-end="url(#a)"/>
+      <line class="e-acc" x1="537" y1="70" x2="574" y2="70" marker-end="url(#a-acc)"/>
+      <text class="ts" x="16" y="124">CloudFormation keeps the record in AWS, so deleting the stack removes exactly what it created.</text>
+
+      <line class="rule" x1="16" y1="142" x2="804" y2="142"/>
+      <text class="tb" x="16" y="170">Terraform, any cloud</text>
+      <rect class="n" x="16" y="182" width="140" height="64" rx="5"/><text class="tb" x="86" y="208" text-anchor="middle">HCL code</text><text class="ts" x="86" y="226" text-anchor="middle">resources, modules</text>
+      <rect class="n-soft" x="196" y="182" width="150" height="64" rx="5"/><text class="tb" x="271" y="208" text-anchor="middle">State file</text><text class="ts" x="271" y="226" text-anchor="middle">remote, with a lock</text>
+      <rect class="n-acc" x="386" y="182" width="150" height="64" rx="5"/><text class="tb" x="461" y="208" text-anchor="middle">terraform plan</text><text class="ts" x="461" y="226" text-anchor="middle">read it in review</text>
+      <rect class="n" x="576" y="182" width="228" height="64" rx="5"/><text class="tb" x="690" y="208" text-anchor="middle">terraform apply</text><text class="ts" x="690" y="226" text-anchor="middle">provider API calls, state updated</text>
+      <path class="e" d="M156,214 H194" marker-end="url(#a)"/>
+      <line class="e" x1="347" y1="214" x2="384" y2="214" marker-end="url(#a)"/>
+      <line class="e-acc" x1="537" y1="214" x2="574" y2="214" marker-end="url(#a-acc)"/>
+      <path class="e dash" d="M690,247 V262 H271 V250" marker-end="url(#a)"/>
+      <text class="ts" x="480" y="257" text-anchor="middle">apply updates the state</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 7.1</span>Two engines, one idea. Code is turned into a desired state, compared with the record of what exists, and only the difference is applied. The step in the accent color is the one a reviewer must read.</figcaption>
+  </figure>
+
+  <p><strong>CDK</strong> (AWS Cloud Development Kit) lets you write infrastructure in Python, TypeScript and other languages. It synthesizes a CloudFormation template, and <strong>CloudFormation</strong> creates the resources and remembers them as a stack. Because AWS keeps that record, deleting the stack removes exactly what it created, and drift detection compares reality with it.</p>
+  <p><strong>Terraform</strong> uses its own declarative language, HCL, and reaches any cloud or service through <strong>providers</strong>. It keeps its record in a <strong>state file</strong>. That file must live remotely (an S3 bucket, an Azure storage blob, a Google Cloud bucket) with a lock, so two people applying at once cannot corrupt it, and it must be protected: it can contain secrets. Terraform moved to the Business Source License; OpenTofu is its open-source fork. <strong>Pulumi</strong> offers real programming languages across clouds.</p>
+
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Choose</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Choose">CDK</td><td data-label="When">The work is AWS-only, and the team prefers writing a real programming language. The reference service uses it.</td></tr>
+        <tr><td data-label="Choose">Terraform or OpenTofu</td><td data-label="When">The organization runs several clouds, or a platform team has already standardized on it. This is the common case in larger organizations.</td></tr>
+        <tr><td data-label="Choose">Pulumi</td><td data-label="When">Several clouds, and a strong preference for a general-purpose language over HCL.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch7-stacks">The reference infrastructure, as five stacks</h3>
+  <p>The reference service's AWS infrastructure is about a thousand lines of Python in <code>infra/aws/</code>, split into five stacks by lifetime and cost. Things that are free and permanent (the registry, the CI roles, the network) live apart from the things that cost money by the hour (the VM, the ECS application), so the expensive parts can be destroyed and re-created at will.</p>
+
+  <figure class="fig wide" id="fig-7-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Five stacks. triage-registry, triage-cicd and triage-network are permanent and free or nearly so. triage-vm and triage-app cost money per hour and are created and destroyed at will. The CI stack and both compute stacks reference the registry's repositories; both compute stacks use the network's VPC.">
+      <text class="tl" x="16" y="20">PERMANENT, FREE OR CENTS</text>
+      <text class="tl" x="560" y="20">BILLED BY THE HOUR, DISPOSABLE</text>
+      <rect class="n" x="16" y="34" width="200" height="58" rx="5"/><text class="tm tb" x="116" y="58" text-anchor="middle">triage-registry</text><text class="ts" x="116" y="76" text-anchor="middle">3 image repositories</text>
+      <rect class="n" x="16" y="104" width="200" height="58" rx="5"/><text class="tm tb" x="116" y="128" text-anchor="middle">triage-cicd</text><text class="ts" x="116" y="146" text-anchor="middle">OIDC provider, 2 roles</text>
+      <rect class="n" x="16" y="174" width="200" height="58" rx="5"/><text class="tm tb" x="116" y="198" text-anchor="middle">triage-network</text><text class="ts" x="116" y="216" text-anchor="middle">VPC, 2 zones, no NAT</text>
+      <rect class="n-acc" x="560" y="56" width="244" height="58" rx="5"/><text class="tm tb" x="682" y="80" text-anchor="middle">triage-vm</text><text class="ts" x="682" y="98" text-anchor="middle">one VM, about $0.10 an hour</text>
+      <rect class="n-acc" x="560" y="146" width="244" height="58" rx="5"/><text class="tm tb" x="682" y="170" text-anchor="middle">triage-app</text><text class="ts" x="682" y="188" text-anchor="middle">ECS, RDS, cache, ALB: $0.17/h</text>
+      <path class="e" d="M217,63 C300,63 300,133 218,133" marker-end="url(#a)"/>
+      <text class="ts" x="300" y="100">repositories</text>
+      <path class="e" d="M217,55 C400,55 450,85 558,85" marker-end="url(#a)"/>
+      <path class="e" d="M217,70 C400,70 450,165 558,170" marker-end="url(#a)"/>
+      <path class="e" d="M217,203 C400,203 450,100 558,96" marker-end="url(#a)"/>
+      <path class="e" d="M217,210 C400,210 450,185 558,182" marker-end="url(#a)"/>
+      <text class="ts" x="390" y="48" text-anchor="middle">image repositories</text>
+      <text class="ts" x="390" y="226" text-anchor="middle">VPC and subnets</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 7.2</span>Stacks split by lifetime. Each arrow is a cross-stack reference, which CloudFormation implements as an export from the producer and an import in the consumer: the producer must be deployed first, and cannot delete what a consumer still imports.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/app.py#L10-L19">infra/aws/app.py</a><span class="lines">and a dependency fixed in</span><a href="{{TA}}/infra/aws/service.py#L171-L175">service.py</a></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The CDK entry point wires the five stacks together by passing Python objects. CDK turns each object passed between stacks into a CloudFormation export and import.</p>
+        <ul class="notice">
+          <li>The account comes from the environment, not from the code, so no account ID is committed to the public repository.</li>
+          <li>The second excerpt is a fix for a real teardown failure: CloudFormation deleted a database and its password secret at the same moment, and the database's delete step then failed. An explicit dependency orders the deletes.</li>
+          <li>The comment records the recovery procedure for anyone who meets the same failure.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/app.py" data-lines="10-19"><code class="language-python">app = cdk.App()
+env = cdk.Environment(account=os.environ["CDK_DEFAULT_ACCOUNT"], region="ap-south-1")
+registry = RegistryStack(app, "triage-registry", env=env)  # Stage 1
+CicdStack(app, "triage-cicd", repos=registry.repos, env=env)  # Stage 2
+network = NetworkStack(app, "triage-network", env=env)  # shared by 3-5, free
+VmStack(app, "triage-vm", vpc=network.vpc, repos=registry.repos, env=env)  # Stage 3
+AppStack(
+    app, "triage-app", vpc=network.vpc, db_subnets=network.db_subnets, repos=registry.repos, env=env
+)  # Stages 4-5
+app.synth()</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="171-175"><code class="language-python"># Delete the database before its master secret. The template refers to the secret only
+# inside a {{resolve:secretsmanager:...}} reference, and CloudFormation deleted both at
+# once: the DB's delete handler then could not resolve the secret -&gt; DELETE_FAILED
+# (recovery: delete-stack --retain-resources for what is already gone).
+db.node.add_dependency(owner.node.default_child)  # the secret only, not its attachment</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p>The first attempt at that fix depended on the secret's whole construct, which includes an attachment that itself depends on the database: a cycle. It was caught when the template was synthesized, before anything was deployed, which is one reason to run <code>cdk synth</code> and a template linter in CI.</p>
+
+  <h3 id="ch7-drift">Drift: when reality and the code disagree</h3>
+  <p>To test scaling, the reference ECS service was scaled from one task to two with a single command-line call: a change made outside the code. CloudFormation's drift detection reported it precisely. Left alone, the next deploy would have set the count back to one without anyone noticing.</p>
+
+  <figure class="fig wide" id="fig-7-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 200" role="img" aria-label="Drift in four steps: the code says one task; a command-line change sets two; drift detection reports DesiredCount expected 1, actual 2; the change is made in code, reviewed, merged and deployed, and drift shows IN_SYNC.">
+      <rect class="n" x="16" y="40" width="176" height="84" rx="6"/>
+      <text class="tb" x="104" y="66" text-anchor="middle">The code says</text>
+      <text class="tm" x="104" y="90" text-anchor="middle">desired count: 1</text>
+      <rect class="n-warn" x="220" y="40" width="176" height="84" rx="6"/>
+      <text class="tb" x="308" y="66" text-anchor="middle">A manual change</text>
+      <text class="tm" x="308" y="90" text-anchor="middle">update-service</text>
+      <text class="tm" x="308" y="108" text-anchor="middle">--desired-count 2</text>
+      <rect class="n-bad" x="424" y="40" width="176" height="84" rx="6"/>
+      <text class="tb" x="512" y="66" text-anchor="middle">Drift detected</text>
+      <text class="tm" x="512" y="90" text-anchor="middle">expected 1</text>
+      <text class="tm" x="512" y="108" text-anchor="middle">actual 2</text>
+      <rect class="n-good" x="628" y="40" width="176" height="84" rx="6"/>
+      <text class="tb" x="716" y="66" text-anchor="middle">Fixed in code</text>
+      <text class="ts" x="716" y="90" text-anchor="middle">pull request, CI, deploy</text>
+      <text class="tm" x="716" y="108" text-anchor="middle">IN_SYNC</text>
+      <line class="e" x1="193" y1="82" x2="218" y2="82" marker-end="url(#a)"/>
+      <line class="e" x1="397" y1="82" x2="422" y2="82" marker-end="url(#a)"/>
+      <line class="e" x1="601" y1="82" x2="626" y2="82" marker-end="url(#a)"/>
+      <text class="ts" x="410" y="160" text-anchor="middle">Without detection, the next deploy would have reset the count to 1, silently.</text>
+      <text class="ts" x="410" y="178" text-anchor="middle">The same pull request added autoscaling, so the count is now managed in code.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 7.3</span>Drift on the reference stack. The fix went the proper way: a pull request, green CI, a merge, and the deploy workflow applying it. Drift detection then reported the stack in sync.</figcaption>
+  </figure>
+
+  <h3 id="ch7-boot">The last mile: first-boot scripts</h3>
+  <p>A virtual machine still needs something to run on its first boot. <strong>cloud-init</strong> (passed as <code>user_data</code> on AWS) runs once, at first boot: install the container runtime, log in to the registry with the machine's role, pull a specific version, run it with a restart policy, fetch secrets at runtime. It does not run again on later deploys. A new version either replaces instances (a new launch configuration in an Auto Scaling group) or runs a command on the existing ones through Run Command. The mature form bakes the runtime and agents into a golden image and keeps the first-boot script to "pull and run".</p>
+
+  <h4>The same registry in Terraform, on three clouds</h4>
+  <p>The language and the workflow carry over between clouds; the resources do not. An AWS container service has no Azure twin with the same fields, so it is rewritten. The image registry from this chapter's first stack, in Terraform on each cloud:</p>
+  <pre class="code" data-lines="1-21"><code class="language-plaintext">resource "aws_ecr_repository" "api" {
+  name                 = "triage-assistant-api"
+  image_tag_mutability = "IMMUTABLE"
+  image_scanning_configuration { scan_on_push = true }
+}
+
+resource "azurerm_container_registry" "images" {
+  name                = "triageassistant"          # globally unique, letters and digits only
+  resource_group_name = azurerm_resource_group.app.name
+  location            = "centralindia"
+  sku                 = "Basic"
+}
+
+resource "google_artifact_registry_repository" "images" {
+  repository_id = "triage-assistant"
+  location      = "asia-south1"
+  format        = "DOCKER"
+}</code></pre>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"All infrastructure is code in the repo. Changes go through pull requests with the diff in review, CI applies them with keyless credentials, and drift detection catches anything changed by hand."</p>
+  </aside>
+
+  <h3 id="ch7-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom"><code>No export named … found</code> when deploying one stack</td><td data-label="Cause">It references a resource in another stack, and that stack was not updated first</td><td data-label="Fix">Deploy the producing stack first; cross-stack references are ordered dependencies.</td></tr>
+        <tr><td data-label="Symptom">A change made in the console disappeared</td><td data-label="Cause">The next deploy reset it to what the code says</td><td data-label="Fix">Run drift detection, and make every change in code.</td></tr>
+        <tr><td data-label="Symptom">A stack delete ends in <code>DELETE_FAILED</code></td><td data-label="Cause">Resources were deleted in parallel although one needed the other</td><td data-label="Fix">Add an explicit dependency; finish a stuck delete by retaining the resources that are already gone.</td></tr>
+        <tr><td data-label="Symptom">A dependency fix creates a cycle</td><td data-label="Cause">Depending on a whole construct pulls in parts that depend back</td><td data-label="Fix">Depend on the specific resource; synthesize and lint the template in CI.</td></tr>
+        <tr><td data-label="Symptom">The account ID ended up in a public repository</td><td data-label="Cause">Generated output (<code>cdk.out</code>, the context cache) was committed</td><td data-label="Fix">Ignore generated output from the first commit; read the account from the environment.</td></tr>
+        <tr><td data-label="Symptom">The tool cannot work out the account from a sign-in profile</td><td data-label="Cause">Some sign-in methods are not understood by every tool version</td><td data-label="Fix">Export the account explicitly in the environment before running it.</td></tr>
+        <tr><td data-label="Symptom">Secrets readable in the Terraform state</td><td data-label="Cause">State stores resource attributes in plain text</td><td data-label="Fix">Remote, encrypted state with restricted access and a lock.</td></tr>
+        <tr><td data-label="Symptom">A small edit to the first-boot script replaced the server</td><td data-label="Cause">cloud-init runs only at first boot, so a changed script means a new instance</td><td data-label="Fix">Expect it; keep data off the instance and the boot script small.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch7-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What are the three parts of every infrastructure-as-code tool?</p>
+      <details class="ans"><summary>Answer</summary><p>A description of the desired state, a record of what already exists (a CloudFormation stack or a Terraform state file), and an engine that turns the difference into API calls.</p></details>
+    </li>
+    <li>
+      <p>Why must a Terraform state file be remote and locked?</p>
+      <details class="ans"><summary>Answer</summary><p>So the whole team shares one record, and two applies cannot run at once and corrupt it. It must also be access-controlled and encrypted, because it can contain secrets.</p></details>
+    </li>
+    <li>
+      <p>What is drift, and why is it dangerous even when the manual change was correct?</p>
+      <details class="ans"><summary>Answer</summary><p>Drift is a difference between the real infrastructure and the code. The next deploy restores what the code says, so a correct manual change is silently undone, and nobody reviewing the code knows it ever existed.</p></details>
+    </li>
+    <li>
+      <p>When would you choose Terraform over CDK?</p>
+      <details class="ans"><summary>Answer</summary><p>When the organization runs several clouds, or a platform team has already standardized on Terraform. CDK fits AWS-only work by a team that prefers a general-purpose language.</p></details>
+    </li>
+  </ol>
+</section>

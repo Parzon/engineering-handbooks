@@ -1,0 +1,223 @@
+<section class="chapter" id="ch13">
+  <header class="ch-head">
+    <span class="ch-num">13</span>
+    <p class="eyebrow">Part VII · Quality</p>
+    <h2>Testing, code style and review</h2>
+    <p class="lede">Each layer of tests earns its place by catching a class of bug the layer below cannot; real services beat mocks wherever they can run; and the style rules that matter most are about where logic lives, how failures are named, and what a comment is for.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Many fast unit tests on pure decisions, fewer integration tests against real services, a handful of end-to-end tests in a real browser against the production shape.</li>
+      <li>Do not mock the database or the model provider's SDK: the bugs that mattered lived in drivers, poolers and SDK behavior.</li>
+      <li>Some bugs appear only under load, under failure or over hundreds of runs; load tests, failure drills and repeated evals are test layers too.</li>
+      <li>Coverage is a floor that finds unexercised code; only assertions find wrong behavior.</li>
+      <li>A flaky test is reporting a race, in the test or the application. Retrying hides the second kind.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Integration tests against a shared test database</td><td>A throwaway stack per run, real services in containers, deleted afterwards</td><td>Containers made real dependencies cheap; shared state made tests order-dependent.</td></tr>
+      <tr><td data-label="Then">Mocks that record calls</td><td>Fakes that work, and real services where possible</td><td>Mocks test your assumptions about a dependency, and assumptions are where bugs hide.</td></tr>
+      <tr><td data-label="Then">Style debates in review</td><td>Formatters and linters in CI; review for design and behavior</td><td>Machines settle formatting, so people can review what matters.</td></tr>
+      <tr><td data-label="Then">"Tested locally" in the PR</td><td>How it was verified: the commands and the numbers</td><td>A claim with no command behind it is a hope.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch13-layers">The layers, and what each catches</h3>
+  <figure class="fig wide" id="fig-13-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 330" role="img" aria-label="The reference service's test layers as a pyramid. At the base, 181 api unit tests in about 4 seconds and 52 web component tests. Above, 115 api integration tests against a throwaway stack of real Postgres, PgBouncer, Valkey, Keycloak and a mock model, in about 40 seconds. Above that, image checks on the production image, and 12 end-to-end tests in a real browser through the TLS edge. Beside the pyramid, the layers that run on demand: evals against real models, load tests, 22 failure drills, and a smoke test of every published release.">
+      <polygon class="n-soft" points="60,300 500,300 440,234 120,234"/>
+      <text class="tb" x="280" y="262" text-anchor="middle">unit: 181 api, 52 web</text><text class="ts" x="280" y="282" text-anchor="middle">pure decisions; seconds, no services</text>
+      <polygon class="n" points="122,230 438,230 386,170 174,170"/>
+      <text class="tb" x="280" y="196" text-anchor="middle">integration: 115</text><text class="ts" x="280" y="216" text-anchor="middle">a throwaway stack of real services</text>
+      <polygon class="n" points="176,166 384,166 346,122 214,122"/>
+      <text class="tb" x="280" y="142" text-anchor="middle">image checks</text><text class="ts" x="280" y="158" text-anchor="middle">the production image</text>
+      <polygon class="n-acc" points="216,118 344,118 280,46"/>
+      <text class="tb" x="280" y="100" text-anchor="middle">e2e: 12</text>
+      <text class="ts" x="380" y="60">a real browser through the edge,</text><text class="ts" x="380" y="76">against the production stack</text>
+      <line class="rule" x1="340" y1="70" x2="374" y2="66"/>
+      <text class="tl" x="560" y="40">ON DEMAND, BEFORE A CHANGE</text>
+      <rect class="n-warn" x="560" y="54" width="244" height="50" rx="4"/><text class="tb" x="572" y="74">evals</text><text class="ts" x="572" y="92">real models, pass rates over runs</text>
+      <rect class="n-warn" x="560" y="112" width="244" height="50" rx="4"/><text class="tb" x="572" y="132">load tests</text><text class="ts" x="572" y="150">capacity and latency under load</text>
+      <rect class="n-warn" x="560" y="170" width="244" height="50" rx="4"/><text class="tb" x="572" y="190">22 failure drills</text><text class="ts" x="572" y="208">each dependency down, then back</text>
+      <rect class="n-warn" x="560" y="228" width="244" height="50" rx="4"/><text class="tb" x="572" y="248">release smoke</text><text class="ts" x="572" y="266">the published images, both CPUs</text>
+      <text class="ts tmu" x="60" y="322">every pull request: unit, integration, image checks, e2e</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.1</span>The reference service's test layers, with their sizes. Everything on the pyramid runs in CI on every pull request; the layers on the right need real models, a production-sized stack or a published release, and run before the kind of change they protect.</figcaption>
+  </figure>
+
+  <figure class="fig wide" id="fig-13-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 320" role="img" aria-label="Which layer caught which bug. Integration tests: a pooler that could not authenticate to Postgres while its health check stayed green; a migration that logged success and was rolled back. Image checks: a production image that could not start because a runtime dependency was installed only for development. End-to-end tests: Stop re-submitting the question, which the component test passed before and after the fix. Load tests: a missing index, p95 7 seconds at 40 requests per second, under 152 milliseconds alone; a sign-in design that collapsed at 1,000 requests per second. Failure drills: leaked connections after Postgres froze under load; an identity-provider outage invisible to every request. Repeated evals: a prompt that printed its own instructions 5 times in 200 runs.">
+      <text class="tl" x="16" y="22">LAYER</text><text class="tl" x="200" y="22">A BUG ONLY IT CAUGHT</text>
+      <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
+      <text class="tb" x="16" y="54">Integration</text><text class="ts" x="200" y="54">the pooler could not authenticate to Postgres; its own health check stayed green</text>
+      <line class="rule" x1="16" y1="68" x2="804" y2="68"/>
+      <text class="tb" x="16" y="92">Image check</text><text class="ts" x="200" y="92">production image crash-looped: a runtime library was installed only as a dev dependency</text>
+      <line class="rule" x1="16" y1="106" x2="804" y2="106"/>
+      <text class="tb" x="16" y="130">End to end</text><text class="ts" x="200" y="130">Stop re-submitted the question; the component test passed before and after the fix</text>
+      <line class="rule" x1="16" y1="144" x2="804" y2="144"/>
+      <text class="tb" x="16" y="168">Load test</text><text class="ts" x="200" y="168">a missing index: p95 7 s at 40 requests per second, 43–152 ms when tested alone</text>
+      <text class="ts" x="200" y="186">a sign-in design that doubled CPU per request and collapsed at 1,000 per second</text>
+      <line class="rule" x1="16" y1="200" x2="804" y2="200"/>
+      <text class="tb" x="16" y="224">Failure drill</text><text class="ts" x="200" y="224">13 of 40 pool slots leaked forever after Postgres froze under load</text>
+      <text class="ts" x="200" y="242">an identity-provider outage that no request noticed (metadata was cached)</text>
+      <line class="rule" x1="16" y1="256" x2="804" y2="256"/>
+      <text class="tb" x="16" y="280">Repeated evals</text><text class="ts" x="200" y="280">a prompt printed its own instructions 5 times in 200 runs; 110 calls had all passed</text>
+      <line class="rule" x1="16" y1="294" x2="804" y2="294"/>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.2</span>Real bugs from the reference service and the only layer that caught each. Every functional test was green for the load-test and drill findings; the testing guide in the repository lists over two dozen more.</figcaption>
+  </figure>
+
+  <h3 id="ch13-real">Real services, fakes, and what not to mock</h3>
+  <p>The integration suite starts its own Compose project, with its own containers, network and volumes, so tests never see development data and everything is deleted afterwards. Before the tests run, the migrations build the schema, and a check fails if the models and the migrations disagree. The test database runs with durability turned off, because throwaway data does not need it and every commit then skips the disk flush. Timeouts and limits are set small (a 1-second model read timeout, 0.2-second heartbeats, five requests a minute) so failure paths are fast to test.</p>
+  <ul>
+    <li><strong>Do not mock the database.</strong> Real SQL through the real driver and pooler; a mocked session would have missed both of the big database bugs.</li>
+    <li><strong>Do not mock the provider's SDK.</strong> The mock model is an HTTP server speaking the provider's API, so tests exercise the real SDK, its retries, its streaming and its exceptions; it can also hang, drop mid-stream or return 429 on demand, and it counts cancelled streams.</li>
+    <li><strong>Do not fake time when the test is about time.</strong> Heartbeat and timeout tests use small real durations, because the bugs live in the interaction with the event loop.</li>
+    <li><strong>Prefer fakes to mocks.</strong> A fake is a small working implementation; a mock records calls and ties the test to the implementation.</li>
+  </ul>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/tests/integration/test_access.py#L47-L69">apps/api/tests/integration/test_access.py</a><span class="lines">tests named for behavior</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Access tests use a cast of signed-in users, one per role, and assert what each one sees through the real api and database.</p>
+        <ul class="notice">
+          <li>The test names read as bug reports when they fail.</li>
+          <li>Assertions are on what a user sees: messages, status codes, the error code; not on which function was called.</li>
+          <li>Another team's alert answers 404, exactly like a missing one, so ids cannot be probed.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/tests/integration/test_access.py" data-lines="47-69"><code class="language-python">async def test_each_user_sees_only_their_teams(cast: dict[str, AsyncClient]) -&gt; None:
+    await post(cast["payments"], "payments", "pay-1")
+    await post(cast["platform"], "platform", "plat-1")
+    assert await listed(cast["payments"]) == ["pay-1"]
+    assert await listed(cast["platform"]) == ["plat-1"]
+    assert await listed(cast["viewer"]) == ["plat-1"]
+    assert await listed(cast["org"]) == ["plat-1", "pay-1"]
+    assert await listed(cast["newcomer"]) == []
+
+
+async def test_other_teams_alerts_are_not_found_not_forbidden(
+    cast: dict[str, AsyncClient],
+) -&gt; None:
+    secret = await post(cast["platform"], "platform")
+    # Same answer as for an id that does not exist: ids cannot be probed.
+    for response in (
+        await cast["payments"].get(f"/alerts/{secret}"),
+        await cast["payments"].delete(f"/alerts/{secret}"),
+        await cast["payments"].get("/alerts", params={"team": "platform"}),
+        await cast["newcomer"].get(f"/alerts/{secret}"),
+    ):
+        assert response.status_code == 404
+        assert response.json()["error"]["code"] == "not_found"</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h4>The minimum for a new endpoint</h4>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Path</th><th>What the test asserts</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Path">Success</td><td data-label="Asserts">The status, the body's shape, and what was stored</td></tr>
+        <tr><td data-label="Path">Validation</td><td data-label="Asserts">A 422 naming the field that failed</td></tr>
+        <tr><td data-label="Path">Not found, conflict</td><td data-label="Asserts">Where the endpoint can return them</td></tr>
+        <tr><td data-label="Path">Dependency down</td><td data-label="Asserts">The database or cache pointed nowhere, or a port that accepts and never answers: a 503 with its error code, not just "not 200"</td></tr>
+        <tr><td data-label="Path">Access</td><td data-label="Asserts">Signed out 401; another team's resource 404; a role too low 403; a POST from another origin 403</td></tr>
+        <tr><td data-label="Path">Rate limit and metrics</td><td data-label="Asserts">A user of its own for limited routes; a new metric moved, with bounded labels</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch13-style">Code style that linters cannot enforce</h3>
+  <figure class="fig wide" id="fig-13-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Decisions are pure functions; input and output stay at the edges. A route reads the request, the session and the database, then calls a pure function such as access_from_claims, build_messages or score, which takes plain values and returns plain values, then the route writes the response. The pure functions need no database, network or mocks to test, which is why 181 unit tests run in seconds. A class is for something with state and a lifecycle, such as the identity-provider client or the model client.">
+      <rect class="zone" x="16" y="16" width="788" height="140" rx="8"/><text class="tl" x="30" y="36">A ROUTE: I/O AT THE EDGES</text>
+      <rect class="n" x="40" y="56" width="190" height="76" rx="5"/><text class="tb" x="52" y="80">read</text><text class="ts" x="52" y="100">request, session,</text><text class="ts" x="52" y="116">database rows</text>
+      <rect class="n-acc" x="300" y="48" width="220" height="92" rx="6"/><text class="tb" x="312" y="72">decide: a pure function</text><text class="ts" x="312" y="92">plain values in, plain out</text><text class="tm" x="312" y="112">access_from_claims</text><text class="tm" x="312" y="128">build_messages · score</text>
+      <rect class="n" x="590" y="56" width="190" height="76" rx="5"/><text class="tb" x="602" y="80">write</text><text class="ts" x="602" y="100">response, rows,</text><text class="ts" x="602" y="116">metrics</text>
+      <line class="e" x1="231" y1="94" x2="298" y2="94" marker-end="url(#a)"/><line class="e" x1="521" y1="94" x2="588" y2="94" marker-end="url(#a)"/>
+      <text class="ts" x="16" y="184"><tspan class="tb">Tested without a database, network or mocks:</tspan> that is why 181 unit tests run in seconds.</text>
+      <text class="ts" x="16" y="208"><tspan class="tb">A class</tspan> only for state with a lifecycle: the identity-provider client (metadata, keys), the model client (a connection pool).</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.3</span>Where logic goes. The access model, the prompt the model is shown and the eval scoring are each one pure function, tested case by case.</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Rule</th><th>What it means in practice</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Rule">A failure has a stable code and a human message</td><td data-label="Practice">Clients, metrics and alerts key on the code (<code>llm_timeout</code>, <code>csrf_failed</code>); the message can change freely. One error shape for every response, with the request id.</td></tr>
+        <tr><td data-label="Rule">Catch where you can handle it</td><td data-label="Practice">A database outage maps to a 503 in one place, not in every route. An unexpected exception becomes a generic 500, logged with its traceback, never returned.</td></tr>
+        <tr><td data-label="Rule">Fail loudly at startup</td><td data-label="Practice">Settings validated with bounds; a missing required secret refuses to start.</td></tr>
+        <tr><td data-label="Rule">Never block the event loop; bound every wait</td><td data-label="Practice">One synchronous call made the health check take 4.8 s under load. Background tasks start and stop with the application.</td></tr>
+        <tr><td data-label="Rule">Names say what, fully</td><td data-label="Practice"><code>newest_alerts</code>, <code>require_role</code>; modules named by responsibility, never <code>utils.py</code>.</td></tr>
+        <tr><td data-label="Rule">Comments say why</td><td data-label="Practice">The best record the measurement or incident behind the code. A comment that restates the code is deleted, and so is commented-out code: Git remembers it.</td></tr>
+        <tr><td data-label="Rule">Strict types</td><td data-label="Practice">mypy strict and strict TypeScript; <code>Any</code> only at JSON boundaries; every suppression names its error code.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch13-flaky">Coverage, flaky tests and review</h3>
+  <p><strong>Coverage.</strong> The api's gate is 85% of lines and branches, and it measures 92.6%. Coverage needs to know about the concurrency library in use: without it, the lines after every awaited database call were reported as never run, and the same tests read 89.7%. A line that ran is not a behavior that was checked.</p>
+  <p><strong>Flaky tests.</strong> Nothing is retried, in pytest or in Playwright. The causes met in practice were all races: asyncio runs a task's done-callbacks one loop iteration after it finishes, so a test asserted too early; two quick cancellations merged into one; and tests shared a per-user rate-limit budget. A model's answers are the one exception, because they vary by design; evals measure a pass rate over repeated runs instead (Handbook 1, Chapter 7).</p>
+  <p><strong>Review.</strong> Formatting and lint are settled by machines in CI, so review is for design and behavior. A good description says what changed and why, how it was verified with the commands and the numbers, one line per new dependency, and what the reviewer should read first. When CI and a laptop disagree, suspect state the laptop has and CI does not: stale images, an old dependency volume, a different user id. CI's user id once exposed a <code>HOME=/</code> problem the developer's had hidden.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Unit tests cover the pure decisions; integration tests run against a throwaway stack of real services; a few browser tests run against the production shape. Load tests, drills and repeated evals catch what those cannot."</p>
+    <p>"We don't mock the database or the provider SDK; the bugs that mattered were in the drivers and the pooler."</p>
+  </aside>
+
+  <h3 id="ch13-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">All tests pass; production crash-loops</td><td data-label="Cause">Tests ran in the dev image, where a dev dependency supplied a missing runtime one</td><td data-label="Fix">Test the production image itself in CI.</td></tr>
+        <tr><td data-label="Symptom">A component test passes before and after a real fix</td><td data-label="Cause">jsdom is not a browser</td><td data-label="Fix">A browser test for anything involving focus, forms or timing.</td></tr>
+        <tr><td data-label="Symptom">Coverage drops after moving to an async ORM</td><td data-label="Cause">The coverage tool loses track at the library's context switches</td><td data-label="Fix">Configure coverage for the concurrency library used.</td></tr>
+        <tr><td data-label="Symptom">A green eval report while the judge failed every call</td><td data-label="Cause">A missing verdict was treated as a pass</td><td data-label="Fix">A missing verdict fails the run.</td></tr>
+        <tr><td data-label="Symptom">A green report for a wrong answer</td><td data-label="Cause">The case's only check looked for one word</td><td data-label="Fix">Read the answers, not just the scores; strengthen the case.</td></tr>
+        <tr><td data-label="Symptom">A redaction function passed every unit test and missed 37 of 54 real secrets</td><td data-label="Cause">Each test used a whole-word label; real logs write <code>DB_PASSWORD=</code></td><td data-label="Fix">Score it against a corpus of real shapes, held out from tuning.</td></tr>
+        <tr><td data-label="Symptom">An insert fails with a policy error after row-level security is added</td><td data-label="Cause"><code>INSERT … RETURNING</code> is also checked against the read policy</td><td data-label="Fix">An integration test for every write path.</td></tr>
+        <tr><td data-label="Symptom">A test fails one run in twenty</td><td data-label="Cause">A race in the test or the application</td><td data-label="Fix">Find it; never add retries.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch13-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Why does the reference service avoid mocking the database and the model SDK?</p>
+      <details class="ans"><summary>Answer</summary><p>A mock tests your assumptions about a dependency. The real failures were in the driver, the pooler and the SDK's behavior, which only real services (or an HTTP server speaking the real API) exercise.</p></details>
+    </li>
+    <li>
+      <p>Name two kinds of bug that unit and integration tests cannot find.</p>
+      <details class="ans"><summary>Answer</summary><p>Bugs that appear only under load, such as a missing index or a design that collapses at high request rates; and bugs that appear only during a failure, such as connections leaked after a database froze. Rare model behavior is a third, found only over many runs.</p></details>
+    </li>
+    <li>
+      <p>Why put decisions in pure functions?</p>
+      <details class="ans"><summary>Answer</summary><p>They take and return plain values, so they can be tested exhaustively and fast, with no database, network or mocks; the I/O stays in the routes and clients that call them.</p></details>
+    </li>
+    <li>
+      <p>What should a pull request description contain besides what changed?</p>
+      <details class="ans"><summary>Answer</summary><p>Why it changed, how it was verified with the commands and the numbers, one line per new dependency, and what the reviewer should read first.</p></details>
+    </li>
+  </ol>
+</section>

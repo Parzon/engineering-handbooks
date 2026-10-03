@@ -1,0 +1,178 @@
+<section class="chapter" id="ch18">
+  <header class="ch-head">
+    <span class="ch-num">18</span>
+    <p class="eyebrow">Part VIII · Architecture and leadership</p>
+    <h2>Working with AI coding agents</h2>
+    <p class="lede">A coding agent is a fast, capable newcomer that never gets tired and is sometimes confidently wrong; teams get the speed safely by giving it a written contract in the repository, a plan-implement-verify loop, small changes, and a human who reviews, merges and owns the result.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>The loop: plan, review the plan, implement, verify with tests, types and lint, and write down what was learned.</li>
+      <li>State the goal as an outcome with its constraints, not as a method.</li>
+      <li>An instructions file in the repository is the contract: commands, conventions and prohibitions. When an agent gets something wrong twice, the fix goes there.</li>
+      <li>Tests are the real gate: untested generated code is as unmergeable as untested human code, and a test must never be loosened to get green.</li>
+      <li>Small pull requests, one concern each; a human merges and owns what was merged.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Autocomplete in the editor</td><td>Agents that plan, edit many files, run commands and tests</td><td>Models became good enough to carry a task from a goal to a change.</td></tr>
+      <tr><td data-label="Then">Conventions in a wiki and in senior engineers' heads</td><td>An instructions file in the repository, read by people and agents</td><td>An agent only follows what is written where it looks.</td></tr>
+      <tr><td data-label="Then">Review effort proportional to diff size</td><td>Smaller diffs, deliberately</td><td>Generated diffs are large and plausible; large diffs get rubber-stamped.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch18-loop">The loop</h3>
+  <figure class="fig wide" id="fig-18-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="The loop: plan, with no implementation; a person reviews the plan; implement; verify with tests, types and lint, because 'it ran once' is not verification; preserve state by writing down what was learned. Skipping the plan on a non-trivial task is the most-cited cause of wasted output. Prompts state the goal as an outcome with its constraints: 'the health check survives a database restart', not 'add a try/except at line 40'.">
+      <g class="ts">
+      <rect class="n-acc" x="16" y="30" width="140" height="70" rx="6"/><text x="28" y="54" class="tb">1 Plan</text><text x="28" y="74">no code yet</text><text x="28" y="90">explore first</text>
+      <rect class="n-warn" x="176" y="30" width="140" height="70" rx="6"/><text x="188" y="54" class="tb">2 Review it</text><text x="188" y="74">a person checks</text><text x="188" y="90">the approach</text>
+      <rect class="n" x="336" y="30" width="140" height="70" rx="6"/><text x="348" y="54" class="tb">3 Implement</text><text x="348" y="74">in small steps</text><text x="348" y="90">you can checkpoint</text>
+      <rect class="n-good" x="496" y="30" width="140" height="70" rx="6"/><text x="508" y="54" class="tb">4 Verify</text><text x="508" y="74">tests, types, lint;</text><text x="508" y="90">"it ran" is not it</text>
+      <rect class="n" x="656" y="30" width="148" height="70" rx="6"/><text x="668" y="54" class="tb">5 Write it down</text><text x="668" y="74">what was learned,</text><text x="668" y="90">for the next session</text>
+      </g>
+      <g class="e"><line x1="157" y1="65" x2="174" y2="65" marker-end="url(#a)"/><line x1="317" y1="65" x2="334" y2="65" marker-end="url(#a)"/><line x1="477" y1="65" x2="494" y2="65" marker-end="url(#a)"/><line x1="637" y1="65" x2="654" y2="65" marker-end="url(#a)"/></g>
+      <rect class="n-soft" x="16" y="128" width="788" height="100" rx="6"/>
+      <text class="tb" x="28" y="152">Prompts: an outcome with constraints, in one message</text>
+      <text class="ts" x="28" y="176"><tspan class="tb tg">"the health check survives a database restart"</tspan>, not <tspan class="tr">"add a try/except at line 40"</tspan></text>
+      <text class="ts" x="28" y="200">Split a big feature into a plan you can checkpoint. Keep a session going across related tasks; reset when switching projects.</text>
+      <text class="ts" x="28" y="218">Parallel work: one Git worktree and one branch per agent session.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 18.1</span>The working loop with a coding agent. Skipping the plan on a non-trivial task is the most common cause of wasted output.</figcaption>
+  </figure>
+
+  <h3 id="ch18-contract">The repository is the contract</h3>
+  <figure class="fig wide" id="fig-18-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 220" role="img" aria-label="Memory in three tiers. A short root file, AGENTS.md or CLAUDE.md, with conventions, commands, prohibitions and pointers. Per-topic one-pagers. Deep reference documents. The reference repository's AGENTS.md lists build, test and check commands, access-control rules for every change that touches data, and what agents must not do: modify infrastructure without being asked, add a dependency without flagging it, edit a merged decision record, make a scan pass by exempting its finding, or weaken an eval case to make a run pass.">
+      <rect class="n-acc" x="16" y="16" width="250" height="80" rx="6"/><text class="tb" x="28" y="40">1 A short root file</text><text class="ts" x="28" y="62">commands, conventions,</text><text class="ts" x="28" y="78">prohibitions, pointers</text>
+      <rect class="n" x="285" y="16" width="250" height="80" rx="6"/><text class="tb" x="297" y="40">2 One-pagers per topic</text><text class="ts" x="297" y="62">testing, security, operations,</text><text class="ts" x="297" y="78">one job each</text>
+      <rect class="n" x="554" y="16" width="250" height="80" rx="6"/><text class="tb" x="566" y="40">3 Deep references</text><text class="ts" x="566" y="62">guides and decision records,</text><text class="ts" x="566" y="78">read when a task needs them</text>
+      <text class="tl" x="16" y="128">THE REFERENCE REPOSITORY'S PROHIBITIONS FOR AGENTS</text>
+      <g class="ts"><text x="16" y="152">touch infrastructure without being asked · add a dependency without flagging it · edit a merged decision record</text>
+      <text x="16" y="174">make a scan pass by exempting its finding · weaken, delete or re-label an eval case to make a run pass</text>
+      <text x="16" y="200"><tspan class="tb">When an agent gets something wrong twice,</tspan> the fix belongs in the root file, not in a longer prompt next time.</text></g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 18.2</span>Instructions for agents, in three tiers. The root file is short because it is read on every task; the detail lives in documents it points to, which are the same documents people read (Handbook 2, Chapter 1).</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/docs/handbook/code-style.md#L208-L228">docs/handbook/code-style.md</a><span class="lines">rules for working with coding agents</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The reference repository's team rules for agents, kept beside its code-style rules.</p>
+        <ul class="notice">
+          <li>An agent reports what it ran, with the output: a claim of "done" without commands is a hope.</li>
+          <li>A failing check is information, never something to delete or loosen.</li>
+          <li>A secret pasted into a conversation is burned and must be rotated; agents read the example environment file, never the real one.</li>
+          <li>Destructive commands, and anything against a shared environment, need a human.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="docs/handbook/code-style.md" data-lines="208-228"><code class="language-markdown">### Working with AI coding agents
+
+1. **`AGENTS.md` is the contract.** It gives commands, conventions and
+   prohibitions, and agents such as Claude Code and Codex read it. When
+   an agent gets something wrong twice, the fix belongs in `AGENTS.md`.
+2. **An agent runs `make check` before saying it is done**, and reports
+   what it ran, with the output.
+3. **Review agent code like a capable newcomer's code:**
+   - read the tests first;
+   - check the failure paths and the timeouts;
+   - check that nothing was weakened to make a test pass.
+4. **Never let an agent delete or loosen a test, an eval case or a
+   calibration label** to get green. A failing check is information.
+5. **Small PRs, one concern each.** Agents produce plausible code fast.
+   A large diff hides the one wrong line.
+6. **No secrets in prompts or chats.** A key pasted into a conversation
+   is burned: rotate it. Agents read `.env.example`, never `.env`.
+7. **A human merges, and owns what was merged.** An agent's confidence
+   is not verification. The commands and numbers in the PR are.
+8. **Destructive commands need a human:** deleting volumes, force
+   pushes, dropping data, anything against a shared environment.</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch18-review">Reviewing agent-written code</h3>
+  <figure class="fig wide" id="fig-18-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 240" role="img" aria-label="Review standards: no merge without human review; CI green is mandatory; tests are the gate; small pull requests; the reviewer can explain why the code works. Failure patterns to watch: invented APIs or parameters; silently swallowed exceptions; clever, unmaintainable one-liners; tests that assert something trivial; checks weakened to pass. For a team: an instructions file in the repository, AI review as a blocking check on large pull requests with human review still required, and pull requests as the audit trail of what agents changed and why.">
+      <rect class="n-good" x="16" y="16" width="384" height="140" rx="6"/><text class="tb" x="28" y="40">The standard</text>
+      <g class="ts"><text x="28" y="64">no merge without a human review</text><text x="28" y="84">CI green, always</text><text x="28" y="104">tests are the gate, written or checked by a person</text><text x="28" y="124">small pull requests, one concern each</text><text x="28" y="144">the reviewer can explain why it works</text></g>
+      <rect class="n-warn" x="420" y="16" width="384" height="140" rx="6"/><text class="tb" x="432" y="40">Failure patterns to look for</text>
+      <g class="ts"><text x="432" y="64">invented APIs or parameters</text><text x="432" y="84">silently swallowed exceptions</text><text x="432" y="104">clever, unmaintainable one-liners</text><text x="432" y="124">tests asserting something trivial</text><text x="432" y="144">a check weakened to get green</text></g>
+      <text class="ts" x="16" y="186"><tspan class="tb">For a team:</tspan> AI review as a blocking check on large pull requests, with human review still required; pull requests as</text>
+      <text class="ts" x="16" y="204">the audit trail of what agents changed and why; read the tests first, then the failure paths and timeouts.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 18.3</span>Review standards matter more, not less, with coding agents. "The AI probably got it right" is not a review; the commands and numbers in the pull request are the evidence.</figcaption>
+  </figure>
+
+  <h3 id="ch18-n8n">Workflow tools beside code</h3>
+  <p>Low-code workflow tools such as n8n sit next to coding agents in many teams. A workflow there is a JSON document (nodes, connections, parameters), so it can live in Git and an agent can write it; the tool's own MCP server and published skills are better than hand-written JSON, where agents invent node types and parameters. Exports carry credential names, not secrets, but a request node imported from a command line can carry authorization headers, so scan before committing. Credential ids, webhook URLs and the active flag are what break between environments. Use the workflow tool for orchestration and glue (prebuilt integrations, credentials, triggers, retries, flows that non-engineers can read), and code for real logic (unit tests, type checks, reviewable diffs, complex branching). Check the license: several such tools are source-available rather than open source.</p>
+
+  <h3 id="ch18-features">And when building AI features</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Rule</th><th>Where this handbook covers it</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Rule">The prompt is code: reviewed, versioned, changed only with eval runs before and after</td><td data-label="Where">Chapters 1 and 7</td></tr>
+        <tr><td data-label="Rule">The model sees only what the asker may see</td><td data-label="Where">Chapters 4 and 9</td></tr>
+        <tr><td data-label="Rule">Model output is untrusted: rendered as text, never executed, never fed to a tool without confirmation</td><td data-label="Where">Chapters 6 and 9</td></tr>
+        <tr><td data-label="Rule">Tools read only, as the asker; a tool that changes anything waits for a confirmation step and a least-privilege account</td><td data-label="Where">Chapter 6</td></tr>
+        <tr><td data-label="Rule">Quality measured with a calibrated judge; releases gated on safety cases</td><td data-label="Where">Chapter 7</td></tr>
+        <tr><td data-label="Rule">Every model call bounded: rate limits, output tokens, stream duration; the cost on a dashboard</td><td data-label="Where">Chapters 3 and 10</td></tr>
+        <tr><td data-label="Rule">Log metadata, not content</td><td data-label="Where">Chapter 8</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Agents work from the repository's instructions file, plan before they code, and report the commands they ran. A human reviews small pull requests and owns the merge."</p>
+    <p>"Tests are the gate for generated code; an agent may never loosen a test or an eval case to get green."</p>
+  </aside>
+
+  <h3 id="ch18-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">An agent's large change was approved and broke production</td><td data-label="Cause">A large plausible diff, rubber-stamped</td><td data-label="Fix">Small pull requests; read the tests first.</td></tr>
+        <tr><td data-label="Symptom">A suite turned green by editing the test</td><td data-label="Cause">The agent loosened a check to pass</td><td data-label="Fix">A written prohibition; review test changes separately.</td></tr>
+        <tr><td data-label="Symptom">The same mistake in every session</td><td data-label="Cause">The lesson stayed in a chat</td><td data-label="Fix">Put it in the instructions file.</td></tr>
+        <tr><td data-label="Symptom">Code calls an API that does not exist</td><td data-label="Cause">An invented method or parameter</td><td data-label="Fix">Verification by running types, tests and the real call.</td></tr>
+        <tr><td data-label="Symptom">A key appeared in a conversation</td><td data-label="Cause">A secret pasted into a prompt</td><td data-label="Fix">Rotate it; agents read the example file, never the real one.</td></tr>
+        <tr><td data-label="Symptom">Two agents overwrote each other's work</td><td data-label="Cause">One working copy shared between sessions</td><td data-label="Fix">One worktree and branch per session.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch18-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Why should a prompt to a coding agent state an outcome rather than a method?</p>
+      <details class="ans"><summary>Answer</summary><p>An outcome with constraints ("the health check survives a database restart") lets the agent find the right change and gives a test for success; a method ("add a try/except at line 40") encodes a guess and cannot be verified against the real goal.</p></details>
+    </li>
+    <li>
+      <p>What failure patterns do you look for when reviewing agent-written code?</p>
+      <details class="ans"><summary>Answer</summary><p>Invented APIs or parameters, silently swallowed exceptions, clever one-liners nobody can maintain, tests that assert something trivial, and checks weakened to make the change pass.</p></details>
+    </li>
+    <li>
+      <p>An agent keeps making the same mistake. Where does the fix go?</p>
+      <details class="ans"><summary>Answer</summary><p>In the repository's instructions file, which every session reads, so the correction is permanent and visible to people too.</p></details>
+    </li>
+  </ol>
+</section>

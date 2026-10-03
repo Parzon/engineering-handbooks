@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 340" role="img" aria-label="Levers and whether they apply to the reference service. Context size: yes, the biggest; fewer alerts saves tokens and can lose the deploy that started an incident; measure with evals. Output cap and reasoning effort: yes; high effort billed 4.1 times the answer tokens and left 13 of 22 questions unanswered. A smaller model: the biggest price lever, from 4.33 to 0.67 dollars per 1,000, only with evals. Provider prompt caching: no; the stable part is about 400 tokens, under the 1,024-token minimum, and alerts change with every new alert. Semantic caching of answers: wrong here; the closest pair of benchmark questions needed different answers, and answers depend on live alerts and on who asks. Batch APIs: half price for work that can wait, not interactive chat. Self-hosting: only when the GPU stays busy."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="340" fill="#ffffff"/>
+      <g class="ts">
+      <text x="16" y="22" class="tl">LEVER</text><text x="250" y="22" class="tl">HERE</text>
+      <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
+      <rect class="n-good" x="16" y="40" width="220" height="30" rx="4"/><text x="28" y="60" class="tb">context size</text><text x="250" y="60">the biggest: fewer alerts and sections; can lose the deploy that started it</text>
+      <rect class="n-good" x="16" y="78" width="220" height="30" rx="4"/><text x="28" y="98" class="tb">output cap, reasoning</text><text x="250" y="98">high effort: 4.1× the answer tokens, and 13 of 22 questions unanswered</text>
+      <rect class="n-good" x="16" y="116" width="220" height="30" rx="4"/><text x="28" y="136" class="tb">a smaller model</text><text x="250" y="136">the biggest price lever ($4.33 to $0.67 per 1,000), only with evals</text>
+      <rect class="n-bad" x="16" y="154" width="220" height="30" rx="4"/><text x="28" y="174" class="tb">prompt caching</text><text x="250" y="174">no: the stable part is ~400 tokens, under the 1,024 minimum</text>
+      <rect class="n-bad" x="16" y="192" width="220" height="30" rx="4"/><text x="28" y="212" class="tb">semantic answer cache</text><text x="250" y="212">wrong: answers depend on live alerts and on who asks</text>
+      <rect class="n-soft" x="16" y="230" width="220" height="30" rx="4"/><text x="28" y="250" class="tb">batch APIs</text><text x="250" y="250">half price for work that can wait: re-embedding, nightly summaries</text>
+      <rect class="n-soft" x="16" y="268" width="220" height="30" rx="4"/><text x="28" y="288" class="tb">self-hosting</text><text x="250" y="288">only when busy: 60× the small hosted model at this volume</text>
+      <rect class="n-soft" x="16" y="306" width="220" height="30" rx="4"/><text x="28" y="326" class="tb">token budgets</text><text x="250" y="326">per user or team: bound a runaway client in tokens, not just requests</text>
+      </g>
+    </svg>

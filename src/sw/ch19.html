@@ -1,0 +1,211 @@
+<section class="chapter" id="ch19">
+  <header class="ch-head">
+    <span class="ch-num">19</span>
+    <p class="eyebrow">Part IX · Choosing and starting</p>
+    <h2>Starting a new service</h2>
+    <p class="lede">A new service starts with its pipeline, not its features: a walking skeleton deployed end to end before the first feature, the platform copied from a template that already works, and only the domain, the AI part and the configuration written fresh.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Before any feature: the repository, CI on an empty project, a secrets strategy, branch protection, and a health endpoint deployed by the pipeline.</li>
+      <li>A new engineer goes from <code>git clone</code> to a running stack in under an hour, ideally with one command.</li>
+      <li>From a template: keep the platform, replace the domain, configure the providers.</li>
+      <li>Replace the domain in order: requirements, data model with its access rules, routes, eval cases before the prompt, then the UI.</li>
+      <li>Some rules stop copies drifting into different platforms; change them only with a decision record.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Features first; deployment worked out near launch</td><td>A walking skeleton in the real cloud in the first two weeks</td><td>Cloud access, IAM, networking, TLS and DNS always hold surprises.</td></tr>
+      <tr><td data-label="Then">Every project laid out differently</td><td>One shape for every project, from a template</td><td>Whoever inherits project seven already knows where everything is.</td></tr>
+      <tr><td data-label="Then">A shared development database</td><td>A database per developer in containers, seeded; an ephemeral one per pull request in CI</td><td>Isolation and reproducibility are cheap now.</td></tr>
+      <tr><td data-label="Then">A copy of production data for debugging</td><td>Synthetic or anonymized data, in staging, never on laptops</td><td>Personal data on laptops is a breach waiting to happen.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch19-order">Before the first feature</h3>
+  <figure class="fig wide" id="fig-19-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Order of operations before feature code. One: a repository, .gitignore and a README saying what and why. Two: monorepo by default for a small team. Three: lint, format and a CI skeleton that runs on an empty repository. Four: .env.example and a secrets strategy, decided before implemented. Five: branch protection before the first pull request. Six: boring, reversible stack defaults. Seven: the first deliverable, a health endpoint built by CI and deployed by CD. Eight: structured logs and an uptime check from day one. Nine: a decision record for each irreversible call.">
+      <g>
+      <rect class="n" x="16" y="16" width="250" height="44" rx="5"/><text class="tb" x="28" y="36">1</text><text class="ts" x="48" y="36">repository, .gitignore, a README</text><text class="ts" x="48" y="52">saying what and why</text>
+      <rect class="n" x="16" y="68" width="250" height="44" rx="5"/><text class="tb" x="28" y="88">2</text><text class="ts" x="48" y="88">a monorepo, for a small team</text><text class="ts" x="48" y="104">one PR spans api, UI and infra</text>
+      <rect class="n" x="16" y="120" width="250" height="44" rx="5"/><text class="tb" x="28" y="140">3</text><text class="ts" x="48" y="140">lint, format, and CI running on</text><text class="ts" x="48" y="156">an empty project</text>
+      <rect class="n" x="285" y="16" width="250" height="44" rx="5"/><text class="tb" x="297" y="36">4</text><text class="ts" x="317" y="36">.env.example and a secrets</text><text class="ts" x="317" y="52">strategy, decided first</text>
+      <rect class="n" x="285" y="68" width="250" height="44" rx="5"/><text class="tb" x="297" y="88">5</text><text class="ts" x="317" y="88">branch protection before the</text><text class="ts" x="317" y="104">first pull request</text>
+      <rect class="n" x="285" y="120" width="250" height="44" rx="5"/><text class="tb" x="297" y="140">6</text><text class="ts" x="317" y="140">boring, reversible defaults;</text><text class="ts" x="317" y="156">no novelty budget spent here</text>
+      <rect class="n-acc" x="554" y="16" width="250" height="44" rx="5"/><text class="tb" x="566" y="36">7</text><text class="ts" x="586" y="36">a health endpoint, built by CI</text><text class="ts" x="586" y="52">and deployed by CD: the skeleton</text>
+      <rect class="n" x="554" y="68" width="250" height="44" rx="5"/><text class="tb" x="566" y="88">8</text><text class="ts" x="586" y="88">structured logs and an uptime</text><text class="ts" x="586" y="104">check, from day one</text>
+      <rect class="n" x="554" y="120" width="250" height="44" rx="5"/><text class="tb" x="566" y="140">9</text><text class="ts" x="586" y="140">a decision record for each</text><text class="ts" x="586" y="156">irreversible call</text>
+      </g>
+      <text class="tl" x="16" y="196">RULES THAT GENERALIZE</text>
+      <text class="ts" x="16" y="220">The pipeline exists before feature one. Secrets never reach Git from the first commit: retrofitting means rewriting history.</text>
+      <text class="ts" x="16" y="242">A new engineer runs the stack within an hour of cloning. Prefer decisions that are cheap to reverse.</text>
+      <text class="ts" x="16" y="264">Request slow approvals in week one: cloud access, security review, data-processing terms, named pilot users.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 19.1</span>The order of operations before feature code. Step seven matters most: once a health endpoint reaches the real environment through the pipeline, every later feature travels a path that already works.</figcaption>
+  </figure>
+
+  <p data-adr="ADR-0001">Every project a team builds should look the same outside its domain logic, so that whoever inherits it, often an infrastructure team taking a proven service to scale, knows where everything is with no ramp-up. The reference repository's first decision record set that shape: the api and web apps in fixed places, the AI logic in its own clearly named module, infrastructure in its own directory, decisions as numbered records, the same CI shape, and configuration from environment variables so the secrets source can change without code changes (Chapter 1).</p>
+
+  <h3 id="ch19-template">From a template: keep, replace, configure</h3>
+  <figure class="fig wide" id="fig-19-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Keep the platform: Compose, Makefile, Dockerfiles, CI and release workflows; sign-in, sessions and roles; database access, pools, timeouts and row-level security plumbing; rate limits, streaming, errors, logs and metrics; the model seam and the mock; the eval harness; redaction; the audit trail, off switch and retention; production's refusals and the scans; deploys, backups, drills and monitoring. Replace the domain: the data model and migrations; routes, visibility queries and schemas; the prompt and its context; eval cases and baselines; the retrieval benchmark; the mock's canned answer; the UI; browser tests and load scripts. Configure: the model provider, identity provider, public URL and secrets; the registry and hosts. Rewrite: the personal-data inventory.">
+      <rect class="n-good" x="16" y="16" width="300" height="268" rx="6"/><text class="tb" x="28" y="40">Keep: the platform</text>
+      <g class="ts"><text x="28" y="64">Compose, Makefile, Dockerfiles, CI, releases</text><text x="28" y="86">sign-in, sessions, roles</text><text x="28" y="108">database access, pools, timeouts, RLS</text><text x="28" y="130">rate limits, streaming, errors, logs, metrics</text><text x="28" y="152">the model seam and the mock</text><text x="28" y="174">the eval harness; redaction</text><text x="28" y="196">audit trail, off switch, retention</text><text x="28" y="218">production's refusals; the scans</text><text x="28" y="240">deploys, backups, drills, monitoring</text></g>
+      <rect class="n-acc" x="330" y="16" width="270" height="268" rx="6"/><text class="tb" x="342" y="40">Replace: the domain</text>
+      <g class="ts"><text x="342" y="64">the data model and its migrations</text><text x="342" y="86">routes, visibility queries, schemas</text><text x="342" y="108">the prompt and its context</text><text x="342" y="130">eval cases, judge answers, baseline</text><text x="342" y="152">the retrieval benchmark</text><text x="342" y="174">the mock's canned answer</text><text x="342" y="196">the UI</text><text x="342" y="218">browser tests, load scripts</text></g>
+      <rect class="n-warn" x="614" y="16" width="190" height="150" rx="6"/><text class="tb" x="626" y="40">Configure</text>
+      <g class="ts"><text x="626" y="64">the model provider</text><text x="626" y="86">the identity provider</text><text x="626" y="108">the public URL, secrets</text><text x="626" y="130">the registry and hosts</text></g>
+      <rect class="n" x="614" y="180" width="190" height="104" rx="6"/><text class="tb" x="626" y="204">Rewrite</text>
+      <g class="ts"><text x="626" y="228">the personal-data</text><text x="626" y="246">inventory, for your</text><text x="626" y="264">own tables</text></g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 19.2</span>What a new service changes when it starts from the reference template. Retrieval from documents is "keep or drop": point it at the new domain's documents, or leave the embedding model unset and the assistant uses its own context alone.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/scripts/new-project.sh#L1-L23">scripts/new-project.sh</a><span class="lines">making a copy your own</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The template is a GitHub template repository; a copy starts with one commit and no link back. This script renames it, and its header says exactly what it touches and what it leaves alone.</p>
+        <ul class="notice">
+          <li>The cookie prefix is renamed too: browsers scope cookies by host, not port, so two services from one template on <code>localhost</code> would sign each other out.</li>
+          <li>The docs are left alone on purpose: they describe the template, and are yours to rewrite.</li>
+          <li>It was tested on a fresh copy with the longest name it accepts; the first run failed lint, which is why the names now come from one constant.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="scripts/new-project.sh" data-lines="1-23"><code class="language-bash">#!/usr/bin/env bash
+# Make a fresh copy of this template your own project:
+#   scripts/new-project.sh &lt;name&gt; &lt;github-owner&gt;      e.g. claims-helper acme-corp
+#
+# Replaces the template's identifiers everywhere outside the docs:
+# - "Parzon/triage-assistant" (repository links: runbook URLs in the alert
+#   rules, the security-advisory link, the VM bootstrap's clone URL);
+# - "@Parzon" (CODEOWNERS);
+# - "triage-assistant" (compose projects, image names, the Grafana
+#   folder, the page heading, the api's title);
+# - the cookie names' prefix (COOKIE_PREFIX in app/sessions.py). Cookies
+#   are scoped by host, not port: two projects from this template on
+#   localhost would otherwise sign each other out.
+#
+# Left alone on purpose:
+# - the docs, which describe the template and are yours to rewrite;
+# - the database role names in .env.example;
+# - the demo realm ("triage", client "triage-web"), which your
+#   organisation's identity provider replaces;
+# - app/triage.py, the AI module a new project rewrites anyway.
+#
+# Run it once, on a fresh copy, then `make setup &amp;&amp; make check`.
+# Portable: GNU and BSD (macOS) sed both accept `sed -i.bak`.</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch19-domain">Replacing the domain, in order</h3>
+  <figure class="fig wide" id="fig-19-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="The order for replacing the domain. A requirements document: what, for whom, how success is measured. The data model: every table holding team data gets a team id, row-level security policies and database tests in the same migration. Routes and queries: every data route takes the signed-in principal, reads go through a visibility query, writes check the role, invisible data is a 404. Eval cases, before the prompt, including isolation cases. The prompt and its context, measured against a real model, with retrieval measured first. The mock's canned answer. The UI, then browser tests. Load tests and drills rerun. Docs: README, runbook sections, decision records.">
+      <rect class="n" x="16" y="16" width="180" height="60" rx="5"/><text class="tb" x="28" y="38">1 Requirements</text><text class="ts" x="28" y="58">what, for whom, success</text>
+      <rect class="n" x="216" y="16" width="190" height="60" rx="5"/><text class="tb" x="228" y="38">2 Data model</text><text class="ts" x="228" y="58">+ RLS and its tests</text>
+      <rect class="n" x="426" y="16" width="180" height="60" rx="5"/><text class="tb" x="438" y="38">3 Routes, queries</text><text class="ts" x="438" y="58">visibility, roles, 404s</text>
+      <rect class="n-acc" x="626" y="16" width="178" height="60" rx="5"/><text class="tb" x="638" y="38">4 Eval cases</text><text class="ts" x="638" y="58">before the prompt</text>
+      <rect class="n" x="626" y="110" width="178" height="60" rx="5"/><text class="tb" x="638" y="132">5 Prompt, context</text><text class="ts" x="638" y="152">retrieval measured first</text>
+      <rect class="n" x="426" y="110" width="180" height="60" rx="5"/><text class="tb" x="438" y="132">6 The mock</text><text class="ts" x="438" y="152">its canned answer</text>
+      <rect class="n" x="216" y="110" width="190" height="60" rx="5"/><text class="tb" x="228" y="132">7 UI, browser tests</text><text class="ts" x="228" y="152">sign-in, streaming, isolation</text>
+      <rect class="n" x="16" y="110" width="180" height="60" rx="5"/><text class="tb" x="28" y="132">8 Load and drills</text><text class="ts" x="28" y="152">rerun on new endpoints</text>
+      <line class="e" x1="197" y1="46" x2="214" y2="46" marker-end="url(#a)"/><line class="e" x1="407" y1="46" x2="424" y2="46" marker-end="url(#a)"/><line class="e" x1="607" y1="46" x2="624" y2="46" marker-end="url(#a)"/>
+      <line class="e" x1="715" y1="77" x2="715" y2="108" marker-end="url(#a)"/>
+      <line class="e" x1="625" y1="140" x2="608" y2="140" marker-end="url(#a)"/><line class="e" x1="425" y1="140" x2="408" y2="140" marker-end="url(#a)"/><line class="e" x1="215" y1="140" x2="198" y2="140" marker-end="url(#a)"/>
+      <rect class="n-soft" x="16" y="196" width="788" height="48" rx="5"/><text class="tb" x="28" y="218">9 Docs</text><text class="ts" x="90" y="218">README and overview; a runbook section per new alert; a decision record for each choice a newcomer would question</text>
+      <text class="ts" x="90" y="236">A prompt cannot fix a document section that was never retrieved: measure retrieval on your own corpus first.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 19.3</span>The order the template's guide prescribes. Eval cases come before the prompt for the same reason tests come before a refactor: they say what good looks like before anyone is tempted to adjust the definition.</figcaption>
+  </figure>
+
+  <h4>What not to change without a decision record</h4>
+  <p>Some rules are what stop copies of a template drifting into different platforms. In the reference template they are the access model (roles, 404 for invisible data, row-level security), the deploy path (rolling deploys, expand-and-contract migrations), the timeout chain, the split between liveness and readiness, and the eval gate for prompt and model changes. Change one only on purpose, and write down why. To take a later fix from the template, add it as a remote and cherry-pick one commit at a time; never merge it wholesale, because the histories are unrelated and it would bring the template's domain back.</p>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0021</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">Trim the template to what a project uses</p>
+    <dl>
+      <dt>Problem</dt><dd>Every copy of the template, and every new engineer, would carry tools added for one investigation: five load-testing tools, a deep-debugging kit, two host rehearsals, three document types.</dd>
+      <dt>Decision</dt><dd>Remove them, with their commands, images and docs. Keep one load tool, the findings in the guides, and the decision records that cite them. Git history keeps the rest.</dd>
+      <dt>See it in</dt><dd>The removal rule in <a href="{{TA}}/TECH_STACK.md">TECH_STACK.md</a> (Chapter 18).</dd>
+    </dl>
+  </aside>
+
+  <h3 id="ch19-team">Team defaults for development</h3>
+  <figure class="fig wide" id="fig-19-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Development databases, ranked: a shared development database, cheap but with collisions and dirty state; a database per developer in Compose, seeded, the default; an ephemeral database per pull request in CI, for integration tests. Production data never reaches development raw: an anonymized snapshot pipeline into staging, synthetic data for load tests, or one minimal row under a documented exception. Credentials: each developer gets their own cloud role, database user and development API keys, from a secrets manager.">
+      <text class="tl" x="16" y="22">DEVELOPMENT DATABASES</text>
+      <rect class="n-soft" x="16" y="34" width="240" height="70" rx="5"/><text class="tb" x="28" y="56">Shared</text><text class="ts" x="28" y="76">cheap; collisions and dirty</text><text class="ts" x="28" y="92">state; temporary at best</text>
+      <rect class="n-good" x="290" y="34" width="240" height="70" rx="5"/><text class="tb" x="302" y="56">Per developer: the default</text><text class="ts" x="302" y="76">in Compose, seeded, schema</text><text class="ts" x="302" y="92">current through migrations</text>
+      <rect class="n" x="564" y="34" width="240" height="70" rx="5"/><text class="tb" x="576" y="56">Per pull request</text><text class="ts" x="576" y="76">created in CI, destroyed after:</text><text class="ts" x="576" y="92">integration tests</text>
+      <line class="e" x1="257" y1="69" x2="288" y2="69" marker-end="url(#a)"/><line class="e" x1="531" y1="69" x2="562" y2="69" marker-end="url(#a)"/>
+      <rect class="n-bad" x="16" y="128" width="788" height="56" rx="5"/><text class="tb tr" x="28" y="150">Production data in development: essentially never, raw</text>
+      <text class="ts" x="28" y="170">an anonymized snapshot into staging, never laptops · synthetic data for load tests · one minimal row under a documented exception</text>
+      <text class="ts" x="16" y="214"><tspan class="tb">Credentials:</tspan> no shared logins. Each developer has their own cloud role, database user and development API keys,</text>
+      <text class="ts" x="16" y="232">pulled from a secrets manager into a local file that Git ignores.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 19.4</span>Development defaults for a team. Cloud development environments earn their cost when laptops cannot run the stack, drift between machines becomes a real problem, or code must never touch a laptop.</figcaption>
+  </figure>
+
+  <p>Review standards matter more, not less, when much of the code is written with AI coding tools. No merge without a human review; CI green is mandatory; tests are the real gate, and untested generated code is as unmergeable as untested human code; pull requests stay small, because generated diffs are large and large diffs get rubber-stamped; and a reviewer must be able to explain why the code works. Watch for the typical failure patterns: invented APIs or parameters, silently swallowed exceptions, clever one-liners, and tests that assert something trivial (Handbook 1, Chapter 18).</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"The first deliverable is a health endpoint deployed by the pipeline; features come after the path to production works."</p>
+    <p>"New services start from the template: we keep the platform, replace the domain and configure the providers, and the rules that keep copies consistent change only with an ADR."</p>
+  </aside>
+
+  <h3 id="ch19-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">Launch slips on cloud access and approvals</td><td data-label="Cause">Requested when needed, not in week one</td><td data-label="Fix">Request every slow approval at the start.</td></tr>
+        <tr><td data-label="Symptom">A secret must be scrubbed from history</td><td data-label="Cause">No secrets strategy before the first commit</td><td data-label="Fix">Decide it first; scan every commit.</td></tr>
+        <tr><td data-label="Symptom">Two local services sign each other out</td><td data-label="Cause">The same cookie names on the same host</td><td data-label="Fix">A per-service cookie prefix.</td></tr>
+        <tr><td data-label="Symptom">A template fix brings back the template's domain</td><td data-label="Cause">Merging the template wholesale</td><td data-label="Fix">Cherry-pick one fix at a time.</td></tr>
+        <tr><td data-label="Symptom">The prompt keeps being tuned and answers do not improve</td><td data-label="Cause">The right document section was never retrieved</td><td data-label="Fix">Measure retrieval first, on your own corpus.</td></tr>
+        <tr><td data-label="Symptom">Branch protection is unavailable on a private repository</td><td data-label="Cause">It needs a paid plan for private repositories</td><td data-label="Fix">Budget for it, or use the organization's plan.</td></tr>
+        <tr><td data-label="Symptom">A team of one cannot merge under required reviews</td><td data-label="Cause">Nobody else can approve</td><td data-label="Fix">An admin merge once every check is green; turn bypassing off when a second person joins.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch19-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What should a new service's first deliverable be, and why?</p>
+      <details class="ans"><summary>Answer</summary><p>A health endpoint built by CI and deployed by CD to the real environment. It proves the whole path (access, networking, TLS, DNS, the pipeline) before any feature depends on it.</p></details>
+    </li>
+    <li>
+      <p>Starting from a template, what is kept, what is replaced, and what is configured?</p>
+      <details class="ans"><summary>Answer</summary><p>Kept: the platform (build, deploy, sign-in, data access, streaming, observability, evals harness, safety controls). Replaced: the domain (data model, routes, prompt, eval cases, UI, tests). Configured: the providers, URLs, secrets, registry and hosts.</p></details>
+    </li>
+    <li>
+      <p>Why do eval cases come before the prompt?</p>
+      <details class="ans"><summary>Answer</summary><p>They define what a good answer looks like before anyone is tempted to adjust the definition to fit the output, the same reason tests come before a refactor.</p></details>
+    </li>
+    <li>
+      <p>What is the default development database for a team, and what never goes into it?</p>
+      <details class="ans"><summary>Answer</summary><p>A database per developer in containers, seeded and migrated. Raw production data never does; use anonymized snapshots in staging, synthetic data, or a minimal row under a documented exception.</p></details>
+    </li>
+  </ol>
+</section>

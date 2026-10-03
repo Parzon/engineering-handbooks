@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 250" role="img" aria-label="Development databases, ranked: a shared development database, cheap but with collisions and dirty state; a database per developer in Compose, seeded, the default; an ephemeral database per pull request in CI, for integration tests. Production data never reaches development raw: an anonymized snapshot pipeline into staging, synthetic data for load tests, or one minimal row under a documented exception. Credentials: each developer gets their own cloud role, database user and development API keys, from a secrets manager."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="250" fill="#ffffff"/>
+      <text class="tl" x="16" y="22">DEVELOPMENT DATABASES</text>
+      <rect class="n-soft" x="16" y="34" width="240" height="70" rx="5"/><text class="tb" x="28" y="56">Shared</text><text class="ts" x="28" y="76">cheap; collisions and dirty</text><text class="ts" x="28" y="92">state; temporary at best</text>
+      <rect class="n-good" x="290" y="34" width="240" height="70" rx="5"/><text class="tb" x="302" y="56">Per developer: the default</text><text class="ts" x="302" y="76">in Compose, seeded, schema</text><text class="ts" x="302" y="92">current through migrations</text>
+      <rect class="n" x="564" y="34" width="240" height="70" rx="5"/><text class="tb" x="576" y="56">Per pull request</text><text class="ts" x="576" y="76">created in CI, destroyed after:</text><text class="ts" x="576" y="92">integration tests</text>
+      <line class="e" x1="257" y1="69" x2="288" y2="69" marker-end="url(#a)"/><line class="e" x1="531" y1="69" x2="562" y2="69" marker-end="url(#a)"/>
+      <rect class="n-bad" x="16" y="128" width="788" height="56" rx="5"/><text class="tb tr" x="28" y="150">Production data in development: essentially never, raw</text>
+      <text class="ts" x="28" y="170">an anonymized snapshot into staging, never laptops · synthetic data for load tests · one minimal row under a documented exception</text>
+      <text class="ts" x="16" y="214"><tspan class="tb">Credentials:</tspan> no shared logins. Each developer has their own cloud role, database user and development API keys,</text>
+      <text class="ts" x="16" y="232">pulled from a secrets manager into a local file that Git ignores.</text>
+    </svg>

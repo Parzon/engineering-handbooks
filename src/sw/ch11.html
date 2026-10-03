@@ -1,0 +1,259 @@
+<section class="chapter" id="ch11">
+  <header class="ch-head">
+    <span class="ch-num">11</span>
+    <p class="eyebrow">Part V · The web tier</p>
+    <h2>The edge: TLS, nginx and proxies</h2>
+    <p class="lede">Between the browser and the application sit one or two proxies that terminate TLS, serve files, route requests and absorb restarts, and nearly every subtle production bug at this layer comes from a default that suits batch traffic but not a streaming web app.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>The edge terminates HTTPS with automatic certificates; behind a cloud load balancer, the load balancer does that job instead.</li>
+      <li>nginx serves the built frontend and forwards <code>/api</code> to the api, with buffering off for streams and errors answered in the api's own JSON shape.</li>
+      <li>The real client address must survive both proxies: the outermost overwrites <code>X-Forwarded-For</code>, and inner ones trust it only from known ranges.</li>
+      <li>Timeouts nest: the side that closes idle connections first must be the proxy, and heartbeats must be more frequent than the shortest idle timeout.</li>
+      <li>A proxy that resolves its upstream's name once, at start, will connect to a dead address forever after a redeploy.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Certificates bought yearly and installed by hand</td><td>Certificates obtained and renewed automatically over ACME</td><td>Free, automated certificates removed the main reason for plain HTTP.</td></tr>
+      <tr><td data-label="Then">Apache serving pages and running application code</td><td>An edge proxy for TLS, nginx for files and routing, an application server behind</td><td>Each layer does one job and can be replaced by a managed service.</td></tr>
+      <tr><td data-label="Then">Short request and response cycles</td><td>Long-lived streams that idle while a model thinks</td><td>Proxy defaults for buffering and idle timeouts now matter.</td></tr>
+      <tr><td data-label="Then">The client IP is the connection's address</td><td>The client IP comes from a forwarded header, trusted only from known proxies</td><td>Behind proxies, every connection comes from the proxy.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch11-path">Two proxies, two jobs</h3>
+  <figure class="fig wide" id="fig-11-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Browser to edge to nginx to api. The edge, Caddy, terminates TLS 1.3 with automatic certificates, speaks HTTP/2 and HTTP/3, redirects plain HTTP, overwrites X-Forwarded-For, passes stream chunks immediately, and holds requests for up to 5 seconds while nginx restarts. nginx serves the built frontend, forwards /api to the api with the prefix stripped, turns buffering off for the chat stream, re-resolves the api's name at runtime, answers its own 502 and 504 in the api's JSON format, refuses internal endpoints, and adds security headers. Behind a cloud load balancer, the edge is not started.">
+      <rect class="n-soft" x="16" y="110" width="100" height="56" rx="5"/><text class="tb" x="66" y="134" text-anchor="middle">Browser</text><text class="ts" x="66" y="152" text-anchor="middle">HTTPS</text>
+      <rect class="n-acc" x="150" y="20" width="250" height="236" rx="6"/>
+      <text class="tb" x="164" y="44">Edge (Caddy)</text>
+      <text class="ts" x="164" y="68">TLS 1.3, certificates over ACME</text>
+      <text class="ts" x="164" y="88">HTTP/2 and HTTP/3; 80 redirects to 443</text>
+      <text class="ts" x="164" y="108">overwrites X-Forwarded-For</text>
+      <text class="ts" x="164" y="128">passes stream chunks at once</text>
+      <text class="ts" x="164" y="148">holds a request up to 5 s while</text>
+      <text class="ts" x="164" y="164">nginx restarts, then retries</text>
+      <text class="ts" x="164" y="188">routes the sign-in pages to the</text>
+      <text class="ts" x="164" y="204">bundled identity provider</text>
+      <text class="ts tmu" x="164" y="236">on a cloud: the load balancer</text>
+      <rect class="n" x="434" y="20" width="230" height="236" rx="6"/>
+      <text class="tb" x="448" y="44">nginx (web)</text>
+      <text class="ts" x="448" y="68">serves the built React app</text>
+      <text class="ts" x="448" y="88">/api/* to the api, prefix stripped</text>
+      <text class="ts" x="448" y="108">the chat stream: buffering off,</text>
+      <text class="ts" x="448" y="124">120 s read timeout</text>
+      <text class="ts" x="448" y="144">re-resolves the api's name</text>
+      <text class="ts" x="448" y="164">its own 502/504 as the api's JSON</text>
+      <text class="ts" x="448" y="184">/metrics, webhook: 404 outside</text>
+      <text class="ts" x="448" y="204">security headers, 1 MB bodies</text>
+      <rect class="n" x="698" y="110" width="106" height="56" rx="5"/><text class="tb" x="751" y="134" text-anchor="middle">api</text><text class="ts" x="751" y="152" text-anchor="middle">gunicorn</text>
+      <line class="e-acc" x1="117" y1="138" x2="148" y2="138" marker-end="url(#a-acc)"/>
+      <line class="e" x1="401" y1="138" x2="432" y2="138" marker-end="url(#a)"/>
+      <line class="e" x1="665" y1="138" x2="696" y2="138" marker-end="url(#a)"/>
+      <text class="ts" x="416" y="280" text-anchor="middle">behind the edge, plain HTTP on a private network</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 11.1</span>The two proxies in front of the reference api. Only the edge is published; nginx listens on a private network. On AWS the load balancer terminates TLS and routes <code>/api</code> itself, so neither the edge nor nginx's proxying is needed there (Handbook 3, Chapter 9).</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/web/nginx/default.conf#L85-L96">apps/web/nginx/default.conf</a><span class="lines">and</span><a href="{{TA}}/tools/edge/Caddyfile#L36-L47">tools/edge/Caddyfile</a></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The settings that make streaming and rolling deploys work through both proxies, each with its reason in a comment.</p>
+        <ul class="notice">
+          <li>nginx buffers responses by default; for the stream it must not, or the whole answer arrives at once at the end.</li>
+          <li>The read timeout is the longest silence allowed between reads, not the total duration; the api's heartbeats keep it from expiring.</li>
+          <li>The edge flushes every chunk immediately and, while nginx is being replaced, holds and retries requests that could not reach it at all, so nothing is sent twice.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/web/nginx/default.conf" data-lines="85-96"><code class="language-nginx"># Streaming (SSE): every event must reach the browser the moment the
+# api writes it. Buffering is on by default in nginx and would deliver
+# the whole answer at once.
+location = /api/chat/stream {
+    proxy_pass http://api_backend/chat/stream;
+    include /etc/nginx/snippets/proxy.conf;
+    proxy_buffering off;
+    proxy_cache off;
+    # Max silence between two reads from the api, not total duration.
+    # The api sends a keep-alive comment while the model is thinking.
+    proxy_read_timeout 120s;
+}</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="tools/edge/Caddyfile" data-lines="36-47"><code class="language-plaintext"># Everything else goes to nginx: the React build, /api, the SSE stream.
+handle {
+	reverse_proxy web:8080 {
+		# Pass every chunk on the moment it arrives: answers stream as SSE.
+		flush_interval -1
+		# While nginx is being replaced (make deploy), hold a request for up
+		# to 5s and retry, instead of failing it. Only requests that could
+		# not reach nginx at all are retried, so nothing is sent twice.
+		lb_try_duration 5s
+		lb_try_interval 250ms
+	}
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch11-ip">The client's address, through two proxies</h3>
+  <p>Behind a proxy, every connection the application sees comes from the proxy. If the application used the connection's address, every user would share one address, and one rate limit. The fix is the <code>X-Forwarded-For</code> header, which is only as trustworthy as the chain that sets it.</p>
+  <p>Proxies differ in what they do with the header. The edge here <strong>overwrites</strong> it with the address it saw. A cloud load balancer <strong>appends</strong> that address to whatever the client sent. Behind an appending proxy, the application must trust only the proxy's addresses and take the right-most entry it does not trust. Trusting every address (<code>*</code>) takes the left-most entry, and the client wrote that one. The reference service's AWS stack had exactly this bug until a review: behind the load balancer, any client could choose its own address, and with it its own sign-in rate limit.</p>
+
+  <figure class="fig wide" id="fig-11-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="A client sends X-Forwarded-For 6.6.6.6 to try to look like someone else. The edge overwrites the header with the address it actually saw. nginx accepts the header only from private ranges and takes the real client from it, then overwrites it again for the api. The api sees exactly one address, the real client, and rate-limits by it. If a proxy appended instead of overwriting, the forged address would survive.">
+      <rect class="n-warn" x="16" y="40" width="170" height="74" rx="5"/><text class="tb" x="28" y="62">Client</text><text class="ts" x="28" y="82">sends a forged header:</text><text class="tm" x="28" y="100">XFF: 6.6.6.6</text>
+      <rect class="n-acc" x="226" y="40" width="170" height="74" rx="5"/><text class="tb" x="238" y="62">Edge</text><text class="ts" x="238" y="82">overwrites it with the</text><text class="ts" x="238" y="98">address it actually saw</text>
+      <rect class="n" x="436" y="40" width="170" height="74" rx="5"/><text class="tb" x="448" y="62">nginx</text><text class="ts" x="448" y="82">trusts XFF only from</text><text class="ts" x="448" y="98">private ranges</text>
+      <rect class="n-good" x="646" y="40" width="158" height="74" rx="5"/><text class="tb" x="658" y="62">api</text><text class="ts" x="658" y="82">one address: the</text><text class="ts" x="658" y="98">real client</text>
+      <line class="e" x1="187" y1="77" x2="224" y2="77" marker-end="url(#a)"/>
+      <line class="e" x1="397" y1="77" x2="434" y2="77" marker-end="url(#a)"/>
+      <line class="e" x1="607" y1="77" x2="644" y2="77" marker-end="url(#a)"/>
+      <rect class="n-bad" x="16" y="150" width="788" height="44" rx="5"/>
+      <text class="tb tr" x="28" y="170">Append instead of overwrite</text><text class="ts" x="230" y="170">and the forged 6.6.6.6 survives to the application: a client picks its own rate-limit bucket.</text>
+      <text class="ts" x="28" y="186">Behind a cloud load balancer, which appends, trust only its subnet and take the rightmost address it added.</text>
+      <text class="ts" x="16" y="224">Measured: a request sent with a forged header reached nginx and the api as the real client, directly and through the edge.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 11.2</span>Overwrite at the edge, trust only known proxies inside. Before this was set up, the api saw the edge's address for every user, which made the per-user rate limit a single global one.</figcaption>
+  </figure>
+
+  <h3 id="ch11-timeouts">Timeouts and keep-alive, in the right order</h3>
+  <figure class="fig wide" id="fig-11-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Three orderings that must hold. Idle keep-alive: nginx closes idle upstream connections at 60 seconds, before gunicorn's 75, so the proxy never reuses a connection the backend just closed. One hop out, the same rule: the TLS edge keeps idle connections 120 seconds and an AWS load balancer 130, so nginx keeps them 140. Streaming: the heartbeat every 15 seconds is shorter than any idle timeout in the path, including a load balancer's 60 seconds and nginx's 120-second read timeout. Request time: the pool wait and query timeouts add up to less than nginx's 30-second read timeout for ordinary requests.">
+      <text class="tb" x="16" y="26">Idle keep-alive: the proxy closes first</text>
+      <line class="rule-strong" x1="200" y1="48" x2="790" y2="48"/>
+      <circle class="fill-acc" cx="500" cy="48" r="6"/><text class="ts" x="500" y="72" text-anchor="middle">nginx 60 s</text>
+      <circle class="dot-muted" cx="575" cy="48" r="6"/><text class="ts" x="575" y="72" text-anchor="middle">gunicorn 75 s</text>
+      <text class="ts" x="16" y="52">otherwise: a reused,</text><text class="ts" x="16" y="68">just-closed connection: 502</text>
+      <text class="ts tmu" x="200" y="94">One hop out, the same rule: edge 120 s and load balancer 130 s, so nginx keeps its own clients 140 s.</text>
+
+      <text class="tb" x="16" y="114">Streaming: heartbeats beat every idle timeout</text>
+      <line class="rule-strong" x1="200" y1="136" x2="790" y2="136"/>
+      <circle class="fill-good" cx="275" cy="136" r="6"/><text class="ts" x="275" y="160" text-anchor="middle">heartbeat 15 s</text>
+      <circle class="dot-muted" cx="500" cy="136" r="6"/><text class="ts" x="500" y="160" text-anchor="middle">load balancer 60 s</text>
+      <circle class="dot-muted" cx="790" cy="136" r="6"/><text class="ts" x="760" y="160" text-anchor="middle">nginx stream 120 s</text>
+
+      <text class="tb" x="16" y="200">A request: the sum stays under the outer timeout</text>
+      <rect class="n-soft" x="200" y="214" width="100" height="24" rx="3"/><text class="ts" x="250" y="230" text-anchor="middle">pool wait 5 s</text>
+      <rect class="n-soft" x="300" y="214" width="200" height="24" rx="3"/><text class="ts" x="400" y="230" text-anchor="middle">query 10 s (on the role)</text>
+      <line class="e-acc" x1="200" y1="248" x2="790" y2="248"/><text class="ts ta" x="790" y="232" text-anchor="end">nginx 30 s</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 11.3</span>Three orderings the reference service keeps, drawn to scale. Break the first and POST requests fail with sporadic 502s; break the second and long thinks end in dropped streams; break the third and nginx gives up on requests the api is still working on.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/web/nginx/default.conf#L20-L49">apps/web/nginx/default.conf</a><span class="lines">resolving, real IPs, keep-alive</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Three more defaults changed for a containerized, streaming service.</p>
+        <ul class="notice">
+          <li>Docker's embedded DNS server, re-queried every 10 seconds: a recreated api container with a new address is found without restarting nginx, and nginx starts even before the api exists.</li>
+          <li>The real client address is taken from the forwarded header only when the connection comes from a private range.</li>
+          <li>The upstream's idle keep-alive is shorter than gunicorn's, so the proxy always closes first. Facing the proxies in front, nginx's own is longer than theirs (140 s), for the same reason.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/web/nginx/default.conf" data-lines="20-49"><code class="language-nginx"># Docker's embedded DNS. `resolve` makes nginx re-resolve `api` at runtime,
+# so a recreated api container (new IP) is picked up without an nginx
+# restart, and nginx starts even if api does not exist yet.
+resolver 127.0.0.11 valid=10s ipv6=off;
+
+# Behind the TLS edge or a cloud load balancer, the connection comes from
+# the proxy: take the client's address from the X-Forwarded-For it sets, or
+# every user shares one address - and one rate limit. Trusted only from
+# private ranges (the Docker network, a VPC); the edge overwrites whatever
+# X-Forwarded-For a client sends, so it cannot be forged through it.
+set_real_ip_from 10.0.0.0/8;
+set_real_ip_from 172.16.0.0/12;
+set_real_ip_from 192.168.0.0/16;
+real_ip_header X-Forwarded-For;
+real_ip_recursive on;
+
+# The scheme the client used: https when the edge terminated TLS.
+map $http_x_forwarded_proto $client_scheme {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+
+upstream api_backend {
+    zone api_backend 64k;
+    server api:8010 resolve;
+    keepalive 16;
+    # Below gunicorn's keepalive (75s): the side that closes idle
+    # connections first must be the proxy, never the backend.
+    keepalive_timeout 60s;
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0012</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">HTTPS terminates at a Caddy edge in front of nginx</p>
+    <dl>
+      <dt>Problem</dt><dd>A single host serving users needed HTTPS with certificates nobody renews by hand, and a front door that survives nginx being replaced.</dd>
+      <dt>Decision</dt><dd>A small Caddy container is the only published service: automatic certificates, HTTP/2 and 3, a fixed forwarded header, and short retries while nginx restarts. Behind a cloud load balancer that terminates TLS, it is simply not started.</dd>
+      <dt>See it in</dt><dd><a href="{{TA}}/tools/edge/Caddyfile">tools/edge/Caddyfile</a>; the rolling deploy through it failed no request.</dd>
+    </dl>
+  </aside>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"TLS terminates at the edge, nginx serves files and routes /api with buffering off for streams. The client IP is overwritten at the edge and trusted only from private ranges inside."</p>
+    <p>"Timeouts nest: the proxy closes idle connections before the app does, and heartbeats beat every idle timeout in the path."</p>
+  </aside>
+
+  <h3 id="ch11-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">nginx keeps connecting to a dead address after the api is recreated</td><td data-label="Cause">It resolved the upstream's name once, at start</td><td data-label="Fix">A runtime resolver and <code>resolve</code> on the upstream server.</td></tr>
+        <tr><td data-label="Symptom">Bursts of 502 on POST requests</td><td data-label="Cause">The backend closed an idle connection the proxy reused, and nginx does not retry a POST</td><td data-label="Fix">The proxy's idle keep-alive shorter than the backend's.</td></tr>
+        <tr><td data-label="Symptom">A request waits 30 seconds when the backend has vanished</td><td data-label="Cause">On an existing keep-alive connection it waits the read timeout, not the 2-second connect timeout</td><td data-label="Fix">Know which timeout applies; keep read timeouts tight on ordinary routes.</td></tr>
+        <tr><td data-label="Symptom">Every user shares one rate limit</td><td data-label="Cause">The application sees the proxy's address</td><td data-label="Fix">Overwrite the forwarded header at the edge; trust it inside only from known proxies.</td></tr>
+        <tr><td data-label="Symptom">Clients can choose their own rate-limit bucket</td><td data-label="Cause">The edge appended to <code>X-Forwarded-For</code> instead of overwriting it</td><td data-label="Fix">Overwrite at the outermost proxy you control.</td></tr>
+        <tr><td data-label="Symptom">Errors from the proxy are HTML pages that clients cannot parse</td><td data-label="Cause">nginx's own 502 and 504 pages</td><td data-label="Fix">An error page that answers in the api's JSON shape, keeping the status and request id.</td></tr>
+        <tr><td data-label="Symptom">Security headers disappear on one route</td><td data-label="Cause">An <code>add_header</code> in a location discards every inherited one</td><td data-label="Fix">Include the shared security headers in every location.</td></tr>
+        <tr><td data-label="Symptom">Absolute URLs lose their port</td><td data-label="Cause"><code>$host</code> drops the port</td><td data-label="Fix">Use <code>$http_host</code> where the port matters.</td></tr>
+        <tr><td data-label="Symptom">Trailing-slash redirects point at the wrong host and port behind a prefix-stripping proxy</td><td data-label="Cause">The framework builds redirects from what it sees</td><td data-label="Fix">Turn off automatic slash redirects.</td></tr>
+        <tr><td data-label="Symptom">The edge container refuses to start with no-new-privileges</td><td data-label="Cause">The official image's binary carries a file capability, which the kernel then refuses</td><td data-label="Fix">Remove the capability; let it bind low ports through the unprivileged-port sysctl.</td></tr>
+        <tr><td data-label="Symptom">nginx advertises its version</td><td data-label="Cause"><code>server_tokens</code> defaults to on</td><td data-label="Fix">Turn it off.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch11-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Why must the proxy close idle keep-alive connections before the backend does?</p>
+      <details class="ans"><summary>Answer</summary><p>If the backend closes first, the proxy may send a new request on a connection that was just closed. nginx does not retry a POST on a reset connection, so the user gets a 502.</p></details>
+    </li>
+    <li>
+      <p>How does the application get the real client address through two proxies, safely?</p>
+      <details class="ans"><summary>Answer</summary><p>The outermost proxy overwrites <code>X-Forwarded-For</code> with the address it actually saw; inner proxies accept the header only from known private ranges and pass on exactly one address.</p></details>
+    </li>
+    <li>
+      <p>What two proxy settings does a streamed answer need?</p>
+      <details class="ans"><summary>Answer</summary><p>Buffering turned off, so each event is passed on immediately, and a read timeout longer than the gaps between events, with heartbeats from the server shorter than every idle timeout in the path.</p></details>
+    </li>
+  </ol>
+</section>

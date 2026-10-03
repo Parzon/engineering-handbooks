@@ -1,0 +1,260 @@
+<section class="chapter" id="ch6">
+  <header class="ch-head">
+    <span class="ch-num">6</span>
+    <p class="eyebrow">Part IV · Getting code onto servers</p>
+    <h2>The deployment ladder, and one VM done properly</h2>
+    <p class="lede">Deployment has climbed from copying files by hand to declaring the desired state and letting a platform converge on it, and a single, well-built virtual machine is still a sound first rung if it keeps the habits that make the next rung easy.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Each rung of the ladder hands one more job to automation: copying, then running, then replacing, then scheduling, then owning the machines.</li>
+      <li>One VM is a good start for a pilot: one host, one script, logs in one place. What matters is that it runs released images, never a checkout.</li>
+      <li>A deploy on one host can drop no requests: start the new version beside the old one, wait until it is healthy, then drain the old one.</li>
+      <li>A proper VM has no SSH key and no open port 22, pulls images with its own role, and is rebuilt from code rather than patched by hand.</li>
+      <li>Keep the rule "CI builds one image per version; deploying means run this version", and moving to a managed platform later is small.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then"><code>git pull</code> and a restart on the server</td><td>The server pulls a released image by version and rolls it in</td><td>A checkout can carry uncommitted edits; an image is exactly what was tested.</td></tr>
+      <tr><td data-label="Then">Servers set up by hand and patched in place</td><td>Servers built from code at first boot, and replaced rather than repaired</td><td>A server you can rebuild in minutes is one you never have to nurse.</td></tr>
+      <tr><td data-label="Then">SSH keys for every operator, port 22 open</td><td>Session Manager and Run Command, authorized and recorded</td><td>No key to leak, no port to attack, every command attributed.</td></tr>
+      <tr><td data-label="Then">A maintenance window for each release</td><td>Rolling deploys that keep serving, even on one host</td><td>Users expect the service to stay up during a release.</td></tr>
+      <tr><td data-label="Then">Logs read on the box</td><td>Logs shipped off the box by the container runtime or an agent</td><td>A replaced or broken host takes its local logs with it.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch6-ladder">The ladder</h3>
+  <figure class="fig wide" id="fig-6-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Six rungs: SSH and copy files; SSH and a deploy script; one server running versioned images; several servers behind a load balancer; an orchestrator that reconciles to a declared state; serverless, where the platform owns the machines. Each rung hands one more job to automation.">
+      <rect class="n-soft" x="16" y="232" width="124" height="52" rx="4"/>
+      <text class="tb" x="78" y="254" text-anchor="middle">0  Copy files</text>
+      <text class="ts" x="78" y="272" text-anchor="middle">SSH, by hand</text>
+      <rect class="n-soft" x="148" y="196" width="124" height="88" rx="4"/>
+      <text class="tb" x="210" y="218" text-anchor="middle">1  A script</text>
+      <text class="ts" x="210" y="236" text-anchor="middle">SSH and deploy.sh</text>
+      <rect class="n" x="280" y="160" width="124" height="124" rx="4"/>
+      <text class="tb" x="342" y="182" text-anchor="middle">2  One server,</text>
+      <text class="tb" x="342" y="198" text-anchor="middle">versioned images</text>
+      <text class="ts" x="342" y="216" text-anchor="middle">reproducible; one box</text>
+      <rect class="n" x="412" y="124" width="124" height="160" rx="4"/>
+      <text class="tb" x="474" y="146" text-anchor="middle">3  Several servers</text>
+      <text class="ts" x="474" y="164" text-anchor="middle">behind a load balancer</text>
+      <rect class="n-acc" x="544" y="88" width="124" height="196" rx="4"/>
+      <text class="tb" x="606" y="110" text-anchor="middle">4  Orchestrator</text>
+      <text class="ts" x="606" y="128" text-anchor="middle">declare N copies of X;</text>
+      <text class="ts" x="606" y="144" text-anchor="middle">it reconciles</text>
+      <rect class="n-acc" x="676" y="52" width="128" height="232" rx="4"/>
+      <text class="tb" x="740" y="74" text-anchor="middle">5  Serverless</text>
+      <text class="ts" x="740" y="92" text-anchor="middle">the platform owns</text>
+      <text class="ts" x="740" y="108" text-anchor="middle">the machines</text>
+
+      <text class="ts tmu" x="342" y="252" text-anchor="middle">the reference VM</text>
+      <text class="ts tmu" x="606" y="252" text-anchor="middle">ECS, Kubernetes</text>
+      <text class="ts tmu" x="740" y="252" text-anchor="middle">Fargate, Cloud Run,</text>
+      <text class="ts tmu" x="740" y="268" text-anchor="middle">Lambda</text>
+      <text class="tl" x="16" y="22">EACH RUNG HANDS ANOTHER JOB TO AUTOMATION</text>
+      <path class="e-acc" d="M40,212 L760,30" marker-end="url(#a-acc)"/>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 6.1</span>The deployment ladder. Higher rungs remove manual work and add capacity and redundancy, at the price of more concepts to learn. SSH survives at the top only as break-glass access.</figcaption>
+  </figure>
+
+  <p>Rungs 0 and 1 are where many teams started: log in, copy, restart. Rung 2 is the first that is reproducible, because the server runs an image built by CI. Rung 3 adds capacity and redundancy but leaves N machines to update without taking the fleet down. Rung 4 is the big change in thinking: instead of running commands, you <strong>declare</strong> what should be running, "two copies of version 0.8.2", and an orchestrator such as Kubernetes or ECS works continuously to make reality match, replacing a few copies at a time. Rung 5 removes the machines from view entirely.</p>
+  <p>"Serverless" does not mean one very reliable server. It means many small, disposable units that the platform replaces when they are unhealthy. Fargate and Cloud Run run your container images; Lambda runs a zip file or an image in lightweight virtual machines. A Python virtual environment isolates packages but not the operating system's libraries or the interpreter build, which is why a platform that wants an image gains nothing from a virtual environment alone.</p>
+
+  <h3 id="ch6-vm">One VM, without ceremony</h3>
+  <p>A single VM is the right first home for a pilot with few users, where a short night-time maintenance window is acceptable and the team is new to operations. Where ECS asks a new team to learn roles, task definitions, load balancers and networking at once, a VM is one box, one script and logs in one place. The reference service ran on a VM before it ran on ECS, with the same images.</p>
+  <ul>
+    <li><strong>The image goes to a registry, not to Git.</strong> The VM pulls it by version, authenticated by its own role on AWS, and never builds anything.</li>
+    <li><strong>The deploy definition matches the version.</strong> The compose file and deploy script must match the images, so they come from the same release: shipped by CI with each deploy, or checked out at the release tag. Never a working copy someone edited.</li>
+    <li><strong>The deploy script does five things:</strong> record the version, pull it, run migrations as a one-off container, start the new version, check its health and go back to the previous version if it fails.</li>
+    <li><strong>Rollback is the same script with the previous version.</strong></li>
+  </ul>
+
+  <figure class="fig wide" id="fig-6-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 292" role="img" aria-label="Two timelines. A plain recreate stops the old container first, so new requests are refused during the drain: 6.7 seconds of 502 errors, and as long as the longest stream. The rolling deploy runs migrations, starts the new api beside the old, waits until it is healthy and resolved by nginx, then drains the old api; only replacing nginx leaves a gap of about 0.3 seconds.">
+      <text class="tb" x="16" y="30">Plain recreate</text>
+      <text class="ts" x="16" y="48">compose up replaces a container by stopping it first</text>
+      <rect class="n" x="16" y="62" width="180" height="30" rx="3"/><text class="ts" x="106" y="82" text-anchor="middle">old api serving</text>
+      <rect class="n-bad" x="196" y="62" width="200" height="30" rx="3"/><text class="ts tr tb" x="296" y="82" text-anchor="middle">nothing accepts: 502</text>
+      <rect class="n-good" x="396" y="62" width="408" height="30" rx="3"/><text class="ts" x="600" y="82" text-anchor="middle">new api serving</text>
+      <text class="ts tr" x="296" y="110" text-anchor="middle">6.7 s, or as long as the longest answer in flight</text>
+
+      <line class="rule" x1="16" y1="130" x2="804" y2="130"/>
+      <text class="tb" x="16" y="156">Rolling deploy on one host</text>
+      <text class="ts" x="16" y="174">the reference deploy script</text>
+      <text class="ts" x="96" y="200" text-anchor="middle">migrate</text>
+      <text class="ts" x="250" y="200" text-anchor="middle">start new</text>
+      <text class="ts" x="380" y="200" text-anchor="middle">healthy</text>
+      <text class="ts" x="446" y="200" text-anchor="start">stop old</text>
+      <line class="e" x1="96" y1="206" x2="96" y2="220"/>
+      <line class="e" x1="250" y1="206" x2="250" y2="252"/>
+      <line class="e" x1="380" y1="206" x2="380" y2="252"/>
+      <line class="e" x1="446" y1="206" x2="446" y2="220"/>
+      <rect class="n" x="16" y="222" width="430" height="26" rx="3"/><text class="ts" x="231" y="240" text-anchor="middle">old api serving, then draining its in-flight requests</text>
+      <rect class="n-good" x="250" y="254" width="554" height="26" rx="3"/><text class="ts" x="527" y="272" text-anchor="middle">new api: started beside the old, healthy, then serving</text>
+      <rect class="n-warn" x="620" y="192" width="12" height="30" rx="2"/>
+      <text class="ts tw" x="640" y="204">nginx replaced:</text>
+      <text class="ts tw" x="640" y="219">about 0.3 s gap</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 6.2</span>Why "recreate" is downtime. The rolling deploy failed no request during the api swap, with every in-flight stream finished. The one remaining gap is the single proxy that owns the port, which only a load balancer in front can remove.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/scripts/deploy.sh#L1-L20">scripts/deploy.sh</a><span class="lines">the rolling deploy for one host</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The deploy script opens with its own design: why the obvious command is not used, and the five steps that replace it. It is about 90 lines of Bash, checked by a linter in CI, and its behavior is measured by a failure drill.</p>
+        <ul class="notice">
+          <li>Migrations run while the old version still serves, which is why they must be backward compatible.</li>
+          <li>The new api is started beside the old one, and nginx must resolve it before the old one stops.</li>
+          <li>Rollback is the same script with the previous version, and the schema is never reversed.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="scripts/deploy.sh" data-lines="1-20"><code class="language-bash">#!/usr/bin/env bash
+# Deploy a release to this host without refusing requests.
+#
+#   make deploy tag=1.4.0          images from $IMAGE_PREFIX (ghcr.io/..., see .env)
+#   PULL=0 make deploy tag=local   images already on this host (local testing)
+#
+# `docker compose up -d` replaces a container by stopping it first: the old
+# api drains its in-flight requests while nothing accepts new ones (measured:
+# 502s for 6.7s, and for as long as the longest answer in flight). Instead:
+#   1. migrate (the old api is still serving: migrations must be backward
+#      compatible - add first, remove in a later release)
+#   2. start the new api NEXT TO the old one and wait until it is healthy
+#   3. wait for nginx to resolve it (resolver valid=10s in default.conf)
+#   4. stop the old api: it finishes its in-flight requests (streams
+#      included, up to graceful_timeout) while nginx sends new ones to the new
+#   5. replace nginx itself - the one step with a gap: one container owns the
+#      published port (measured below; zero only behind a load balancer)
+# Rollback = deploy the previous tag. The database stays as it is (the
+# code rolls back, the schema does not), so the previous tag must be able to
+# run on it: the expand/contract rule.</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch6-proper">The VM done properly</h3>
+  <p>The reference build ran the same stack on an EC2 virtual machine defined in CDK. What makes it acceptable to a platform team, compared with a hand-built server:</p>
+  <ul>
+    <li><strong>No SSH key and no port 22.</strong> Operators use Session Manager and Run Command, which the instance's role allows and CloudTrail records.</li>
+    <li><strong>No registry password.</strong> A credential helper gets ECR credentials from the instance's role.</li>
+    <li><strong>Built from code.</strong> cloud-init installs Docker, creates the deploy user, clones the repository for its compose files and scripts, and generates the <code>.env</code> with random passwords at first boot. Because cloud-init runs only once, a changed recipe replaces the VM rather than editing it.</li>
+    <li><strong>Small surface.</strong> The metadata service accepts only its tokened version (IMDSv2), the disk is encrypted, and the security group admits HTTP and nothing else.</li>
+  </ul>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/vm.py#L78-L90">infra/aws/vm.py</a><span class="lines">the VM's role and its single open port</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The VM's identity and its network surface, in fifteen lines of CDK.</p>
+        <ul class="notice">
+          <li>The role trusts only the EC2 service, and carries one managed policy: the one Session Manager needs.</li>
+          <li>It may pull from the three image repositories, nothing more.</li>
+          <li>The security group's description says it plainly: HTTP in, no SSH.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="78-90"><code class="language-python">role = iam.Role(
+    self,
+    "Role",
+    assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"),
+    managed_policies=[
+        iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSSMManagedInstanceCore")
+    ],
+)
+for repo in repos.values():
+    repo.grant_pull(role)
+
+sg = ec2.SecurityGroup(self, "Sg", vpc=vpc, description="HTTP in; no SSH")
+sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80), "the app")</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p>Results on the VM, with requests flowing throughout: the first start of an older release from ECR brought all six services up healthy; the upgrade to the next release migrated, started the new api beside the old one and drained it; and the rollback, across that migration, said <em>"the database is ahead of 0.8.0: rolling back the code only, no migration"</em>. 139 requests arrived during the rollback, and none failed.</p>
+
+  <h4>Making it boring for a team new to operations</h4>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Concern</th><th>The habit</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Concern">Data</td><td data-label="Habit">A database snapshot before any deploy with a migration; migrations that leave the previous version working; backups copied off the host and a restore rehearsed on a clean one.</td></tr>
+        <tr><td data-label="Concern">Access</td><td data-label="Habit">No SSH open to the internet; a CI credential that can only run the deploy script.</td></tr>
+        <tr><td data-label="Concern">Secrets</td><td data-label="Habit">From a secret store or generated at first boot, into a file only the app can read; never in Git or the image.</td></tr>
+        <tr><td data-label="Concern">HTTPS</td><td data-label="Habit">An edge proxy on the VM with automatic certificates, or a cloud load balancer with a managed certificate.</td></tr>
+        <tr><td data-label="Concern">Staying up</td><td data-label="Habit">Restart policies, automatic security updates, container log rotation (the usual way a disk fills), disk and CPU alarms, an uptime check from outside that emails a person.</td></tr>
+        <tr><td data-label="Concern">Recovery</td><td data-label="Habit">A setup script or image, so losing the VM costs an hour, and a one-page runbook: deploy, roll back, logs, restart, whom to call.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The reference runbook for a demo VM even includes the request to send IT: Ubuntu Server LTS, 4 vCPU, 8 GB of memory and 40 GB of disk, with the reasoning. The full stack with monitoring idles at about 880 MiB but its memory limits add up to about 5 GiB; images take 2.9 GB, logs are capped per container, and two weeks of daily database dumps fit in about 1 GB.</p>
+
+  <h3 id="ch6-agents">Agents on hosts, and immutable infrastructure</h3>
+  <p>A monitoring or log-shipping <strong>agent</strong> is a small background program that works for a remote service; nothing to do with AI agents. It is needed because the container runtime keeps only each container's standard output, and host metrics such as CPU and disk are a separate job. Often the runtime's logging driver is enough on its own, sending container output straight to CloudWatch.</p>
+  <p>How an agent reaches a host depends on the rung. On plain VMs it is baked into a <strong>golden image</strong> built by a tool such as Packer, or installed by the first-boot script. On ECS or Cloud Run it is a setting of the service, with no host to touch. On Kubernetes it is a DaemonSet: one copy per node. In every case the host is rebuilt from a versioned definition, never patched by hand. That is what <strong>immutable infrastructure</strong> means.</p>
+
+  <h3 id="ch6-move">When to climb the next rung</h3>
+  <p>Move off the single VM when there are paying customers, when releases must not drop even the brief gap of replacing the only proxy, or when the VM itself becomes a burden to patch and watch. If the habits of this chapter are kept (CI builds one image per version, and a deploy means "run this version"), the move to ECS in Chapter 9 changes where the images run, not how they are built.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"For the pilot we run one VM: released images, a rolling deploy that drops no requests, no SSH, rebuilt from code. Moving to ECS later changes where it runs, not how it's built."</p>
+  </aside>
+
+  <h3 id="ch6-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">Every deploy causes a burst of 502 errors</td><td data-label="Cause">Recreating the only container stops it before the new one exists</td><td data-label="Fix">Start the new version beside the old, wait for health, then drain the old.</td></tr>
+        <tr><td data-label="Symptom">A script that worked yesterday cannot find the api container</td><td data-label="Cause">A rolling deploy renames containers (<code>api-2</code>, <code>api-3</code>)</td><td data-label="Fix">Never hardcode a container name; ask Compose for the service's container.</td></tr>
+        <tr><td data-label="Symptom">A routine <code>compose up</code> quietly rolled the service back</td><td data-label="Cause">It ran without the deployed version set</td><td data-label="Fix">The deploy records the version in the env file, so every later command uses it.</td></tr>
+        <tr><td data-label="Symptom">The VM boots without Docker or the deploy user, and no error appears</td><td data-label="Cause">One YAML line in the first-boot file failed to parse, and cloud-init ignored the whole file</td><td data-label="Fix">Validate it with <code>cloud-init schema</code> before deploying, in CI.</td></tr>
+        <tr><td data-label="Symptom">A first-boot loop ran as two broken commands</td><td data-label="Cause">In a folded YAML block, a more-indented line keeps its newline</td><td data-label="Fix">Parse the YAML and run the resulting command once in a test.</td></tr>
+        <tr><td data-label="Symptom">The cloud refuses the instance type</td><td data-label="Cause">Account limits: a free-plan account may launch only free-tier-eligible types</td><td data-label="Fix">List the eligible types first and pick one that meets the stack's minimum.</td></tr>
+        <tr><td data-label="Symptom">The backup was lost with the server</td><td data-label="Cause">It was stored on the same disk</td><td data-label="Fix">Copy dumps off the host, and rehearse a restore on a clean one.</td></tr>
+        <tr><td data-label="Symptom">A certificate expired without warning</td><td data-label="Cause">Let's Encrypt no longer sends expiry emails</td><td data-label="Fix">Monitor certificate expiry yourself.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch6-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What changes in your thinking between rung 3 and rung 4 of the ladder?</p>
+      <details class="ans"><summary>Answer</summary><p>You stop running commands against machines and start declaring the state you want, such as two copies of a version. The orchestrator reconciles reality to that declaration continuously, including replacing failed copies.</p></details>
+    </li>
+    <li>
+      <p>Why does recreating a single container cause downtime, and how does a rolling deploy avoid it on one host?</p>
+      <details class="ans"><summary>Answer</summary><p>Recreating stops the old container first, so nothing accepts new requests while it drains. A rolling deploy starts the new version beside the old one, waits until it is healthy and reachable, and only then drains the old one.</p></details>
+    </li>
+    <li>
+      <p>Why should a VM never run <code>git pull</code> and build?</p>
+      <details class="ans"><summary>Answer</summary><p>A checkout can carry edits and drift, and builds on different hosts can differ. Pulling a released image means the host runs exactly what CI tested.</p></details>
+    </li>
+    <li>
+      <p>What makes the reference VM acceptable to a platform team?</p>
+      <details class="ans"><summary>Answer</summary><p>No SSH key or open port 22, access through recorded Session Manager commands, images pulled with the instance's own role, a single open port, IMDSv2 and an encrypted disk, and a host rebuilt from code at first boot.</p></details>
+    </li>
+    <li>
+      <p>When is it time to move from one VM to a managed container platform?</p>
+      <details class="ans"><summary>Answer</summary><p>When there are paying customers, when releases must not drop any requests at all, or when the VM becomes a burden. If CI already builds versioned images and deploys mean "run this version", the move is small.</p></details>
+    </li>
+  </ol>
+</section>

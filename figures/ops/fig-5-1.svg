@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 318" role="img" aria-label="Three lanes: people sign in through the company identity provider and IAM Identity Center to get a role session; CI jobs present a GitHub-signed token to AWS STS to get one-hour credentials; workloads get rotated credentials from the role attached to their compute."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #146b55; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e2f1eb; stroke: #146b55; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #146b55; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #146b55; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #146b55; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="800" height="318" fill="#ffffff"/>
+      <text class="tl" x="86" y="20" text-anchor="middle">WHO</text>
+      <text class="tl" x="289" y="20" text-anchor="middle">PROVES WHO IT IS TO</text>
+      <text class="tl" x="497" y="20" text-anchor="middle">EXCHANGES IT AT</text>
+      <text class="tl" x="705" y="20" text-anchor="middle">GETS</text>
+
+      <rect class="n" x="16" y="34" width="140" height="66" rx="5"/>
+      <text class="tb" x="86" y="62" text-anchor="middle">People</text>
+      <text class="ts" x="86" y="80" text-anchor="middle">engineers, on-call</text>
+      <rect class="n" x="214" y="34" width="150" height="66" rx="5"/>
+      <text class="tb" x="289" y="62" text-anchor="middle">Company identity</text>
+      <text class="ts" x="289" y="80" text-anchor="middle">provider: SSO and MFA</text>
+      <rect class="n" x="422" y="34" width="150" height="66" rx="5"/>
+      <text class="tb" x="497" y="62" text-anchor="middle">IAM Identity Center</text>
+      <text class="ts" x="497" y="80" text-anchor="middle">groups mapped to roles</text>
+      <rect class="n-acc" x="630" y="34" width="150" height="66" rx="5"/>
+      <text class="tb" x="705" y="62" text-anchor="middle">Role session</text>
+      <text class="ts" x="705" y="80" text-anchor="middle">ends after the workday</text>
+      <line class="e" x1="157" y1="67" x2="212" y2="67" marker-end="url(#a)"/>
+      <text class="ts" x="185" y="60" text-anchor="middle">signs in</text>
+      <line class="e" x1="365" y1="67" x2="420" y2="67" marker-end="url(#a)"/>
+      <text class="ts" x="393" y="60" text-anchor="middle">asserts</text>
+      <line class="e-acc" x1="573" y1="67" x2="628" y2="67" marker-end="url(#a-acc)"/>
+      <text class="ts" x="601" y="60" text-anchor="middle">issues</text>
+
+      <rect class="n" x="16" y="126" width="140" height="66" rx="5"/>
+      <text class="tb" x="86" y="154" text-anchor="middle">CI pipelines</text>
+      <text class="ts" x="86" y="172" text-anchor="middle">a GitHub Actions job</text>
+      <rect class="n" x="214" y="126" width="150" height="66" rx="5"/>
+      <text class="tb" x="289" y="154" text-anchor="middle">GitHub's token service</text>
+      <text class="ts" x="289" y="172" text-anchor="middle">signs a token about the job</text>
+      <rect class="n" x="422" y="126" width="150" height="66" rx="5"/>
+      <text class="tb" x="497" y="154" text-anchor="middle">AWS STS</text>
+      <text class="ts" x="497" y="172" text-anchor="middle">checks the trust policy</text>
+      <rect class="n-acc" x="630" y="126" width="150" height="66" rx="5"/>
+      <text class="tb" x="705" y="154" text-anchor="middle">Credentials</text>
+      <text class="ts" x="705" y="172" text-anchor="middle">expire in one hour</text>
+      <line class="e" x1="157" y1="159" x2="212" y2="159" marker-end="url(#a)"/>
+      <text class="ts" x="185" y="152" text-anchor="middle">asks</text>
+      <line class="e" x1="365" y1="159" x2="420" y2="159" marker-end="url(#a)"/>
+      <text class="ts" x="393" y="152" text-anchor="middle">presents</text>
+      <line class="e-acc" x1="573" y1="159" x2="628" y2="159" marker-end="url(#a-acc)"/>
+      <text class="ts" x="601" y="152" text-anchor="middle">issues</text>
+
+      <rect class="n" x="16" y="218" width="140" height="66" rx="5"/>
+      <text class="tb" x="86" y="246" text-anchor="middle">Workloads</text>
+      <text class="ts" x="86" y="264" text-anchor="middle">ECS tasks, EC2 VMs</text>
+      <rect class="n" x="214" y="218" width="150" height="66" rx="5"/>
+      <text class="tb" x="289" y="246" text-anchor="middle">The compute itself</text>
+      <text class="ts" x="289" y="264" text-anchor="middle">a role is attached to it</text>
+      <rect class="n" x="422" y="218" width="150" height="66" rx="5"/>
+      <text class="tb" x="497" y="246" text-anchor="middle">The platform</text>
+      <text class="ts" x="497" y="264" text-anchor="middle">serves the role's credentials</text>
+      <rect class="n-acc" x="630" y="218" width="150" height="66" rx="5"/>
+      <text class="tb" x="705" y="246" text-anchor="middle">Credentials</text>
+      <text class="ts" x="705" y="264" text-anchor="middle">rotated by AWS</text>
+      <line class="e" x1="157" y1="251" x2="212" y2="251" marker-end="url(#a)"/>
+      <text class="ts" x="185" y="244" text-anchor="middle">runs on</text>
+      <line class="e" x1="365" y1="251" x2="420" y2="251" marker-end="url(#a)"/>
+      <text class="ts" x="393" y="244" text-anchor="middle">asks</text>
+      <line class="e-acc" x1="573" y1="251" x2="628" y2="251" marker-end="url(#a-acc)"/>
+      <text class="ts" x="601" y="244" text-anchor="middle">issues</text>
+
+      <text class="ts" x="400" y="310" text-anchor="middle">Every call made with these credentials is recorded in CloudTrail under the caller's identity.</text>
+    </svg>

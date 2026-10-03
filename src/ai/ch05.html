@@ -1,0 +1,187 @@
+<section class="chapter" id="ch5">
+  <header class="ch-head">
+    <span class="ch-num">5</span>
+    <p class="eyebrow">Part III · Building with models</p>
+    <h2>Knowledge graphs and GraphRAG</h2>
+    <p class="lede">A knowledge graph stores facts as typed relationships between entities, and GraphRAG retrieves by following those relationships; it earns its considerable cost only when the relationships themselves are the answer.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Nodes are things, edges are typed relationships; a fact is subject, predicate, object.</li>
+      <li>Vector retrieval finds passages that look like the question; it struggles when the answer is spread across connected facts.</li>
+      <li>In GraphRAG, vectors find the entry points and the graph expands from them.</li>
+      <li>People design the schema from the questions it must answer; machines populate the edges, most trusted sources first.</li>
+      <li>The hard parts are entity resolution, provenance on every fact, and access control at every hop.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Knowledge graphs curated entirely by hand</td><td>Schemas designed by people, edges filled from systems of record and language-model extraction</td><td>Models can read text into candidate facts at scale; people still decide what the facts mean.</td></tr>
+      <tr><td data-label="Then">Graph databases as a separate world</td><td>Graph queries next to the application's data (recursive SQL, graph extensions) until a measurement says otherwise</td><td>Most traversals are shallow; a second database is a second thing to secure.</td></tr>
+      <tr><td data-label="Then">Retrieval by passage similarity only</td><td>Similarity to find entry points, traversal to follow relationships</td><td>Questions about impact and dependency need connected facts, not similar text.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch5-graph">What a knowledge graph is</h3>
+  <figure class="fig wide" id="fig-5-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="An operations knowledge graph. An alert FIRED_ON the Payments API. The Payments API DEPENDS_ON Postgres and is OWNED_BY the Payments team. A runbook COVERS Postgres. A deployment was DEPLOYED_TO the Payments API. An incident INCLUDES the alert and is LIKELY_CAUSED_BY the deployment, with a confidence. Each edge carries provenance: its source, as-of time and confidence.">
+      <g class="ts">
+      <rect class="n-warn" x="16" y="40" width="130" height="44" rx="22"/><text x="81" y="67" text-anchor="middle">Alert: disk 95%</text>
+      <rect class="n-acc" x="300" y="40" width="150" height="44" rx="22"/><text x="375" y="67" text-anchor="middle">Payments API</text>
+      <rect class="n" x="620" y="40" width="130" height="44" rx="22"/><text x="685" y="67" text-anchor="middle">Postgres</text>
+      <rect class="n" x="300" y="200" width="150" height="44" rx="22"/><text x="375" y="227" text-anchor="middle">Payments team</text>
+      <rect class="n-good" x="620" y="200" width="160" height="44" rx="22"/><text x="700" y="227" text-anchor="middle">Runbook: disk full</text>
+      <rect class="n" x="16" y="200" width="150" height="44" rx="22"/><text x="91" y="227" text-anchor="middle">Deployment v2.3</text>
+      <rect class="n-bad" x="16" y="120" width="130" height="44" rx="22"/><text x="81" y="147" text-anchor="middle">Incident 41</text>
+      </g>
+      <g class="tm">
+      <line class="e" x1="147" y1="62" x2="298" y2="62" marker-end="url(#a)"/><text x="222" y="54" text-anchor="middle">FIRED_ON</text>
+      <line class="e" x1="451" y1="62" x2="618" y2="62" marker-end="url(#a)"/><text x="534" y="54" text-anchor="middle">DEPENDS_ON</text>
+      <line class="e" x1="375" y1="85" x2="375" y2="198" marker-end="url(#a)"/><text x="383" y="146">OWNED_BY</text>
+      <line class="e" x1="700" y1="199" x2="690" y2="86" marker-end="url(#a)"/><text x="700" y="146">COVERS</text>
+      <path class="e" d="M167,214 C230,180 260,120 302,84" marker-end="url(#a)"/><text x="256" y="156">DEPLOYED_TO</text>
+      <line class="e" x1="81" y1="119" x2="81" y2="86" marker-end="url(#a)"/><text x="88" y="106">INCLUDES</text>
+      <line class="e dash" x1="81" y1="165" x2="81" y2="198" marker-end="url(#a)"/><text x="88" y="184">LIKELY_CAUSED_BY (0.7)</text>
+      </g>
+      <text class="ts" x="16" y="284">Every edge carries provenance: its source, as-of time, validity period, confidence, and the pipeline version that wrote it.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.1</span>A small knowledge graph for incident triage. The meaning sits in queryable relationships rather than in prose: "which runbooks cover what the failing service depends on?" becomes a traversal.</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Choice</th><th>What it means</th><th>Use it for</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Choice">Property graph</td><td data-label="Means">Nodes and edges with key-value properties; queried with Cypher, GQL or Gremlin</td><td data-label="Use">Application data (Neo4j, Amazon Neptune)</td></tr>
+        <tr><td data-label="Choice">RDF</td><td data-label="Means">Every fact a triple of URIs; queried with SPARQL</td><td data-label="Use">Ontologies and merging sources; publishers' taxonomies</td></tr>
+        <tr><td data-label="Choice">Recursive SQL</td><td data-label="Means">A foreign key is already an edge; each hop is a join, variable depth is <code>WITH RECURSIVE</code></td><td data-label="Use">Shallow, occasional traversals; the place to start</td></tr>
+        <tr><td data-label="Choice">A graph extension in Postgres</td><td data-label="Means">Cypher queries over tables (Apache AGE)</td><td data-label="Use">Graph queries without a second database</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Start in the database you have; move to a graph database when deep traversal or graph algorithms (shortest paths, centrality, communities) are the core workload and a measurement says so. It is the same rule as starting with vectors in Postgres before a dedicated vector store.</p>
+
+  <h3 id="ch5-graphrag">GraphRAG</h3>
+  <figure class="fig wide" id="fig-5-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Vector RAG embeds the question and returns chunks that look like it; it struggles when the answer is in relationships, such as which teams are hit if this database fails. GraphRAG: step one, find the question's entities, often with vector or keyword search; step two, walk their neighbors within a few hops, with the permission filter applied at every hop; step three, give the model those facts and the source chunks they link to. Some variants detect communities and pre-summarize each to answer corpus-wide questions.">
+      <rect class="n" x="16" y="16" width="250" height="110" rx="6"/><text class="tb" x="28" y="40">Vector RAG</text><text class="ts" x="28" y="62">chunks that look like the question</text><text class="ts" x="28" y="86">struggles when the answer is in</text><text class="ts" x="28" y="102">the relationships, or spread over</text><text class="ts" x="28" y="118">several facts</text>
+      <rect class="n-acc" x="296" y="16" width="160" height="70" rx="6"/><text class="tb" x="308" y="40">1 Entry points</text><text class="ts" x="308" y="60">the question's entities,</text><text class="ts" x="308" y="76">by vector or keyword</text>
+      <rect class="n-acc" x="476" y="16" width="160" height="70" rx="6"/><text class="tb" x="488" y="40">2 Traverse</text><text class="ts" x="488" y="60">neighbors within n hops;</text><text class="ts" x="488" y="76">permission at every hop</text>
+      <rect class="n-acc" x="656" y="16" width="148" height="70" rx="6"/><text class="tb" x="668" y="40">3 Context</text><text class="ts" x="668" y="60">the facts, plus the</text><text class="ts" x="668" y="76">chunks they link to</text>
+      <line class="e" x1="457" y1="51" x2="474" y2="51" marker-end="url(#a)"/><line class="e" x1="637" y1="51" x2="654" y2="51" marker-end="url(#a)"/>
+      <rect class="n-soft" x="296" y="106" width="508" height="44" rx="6"/><text class="ts" x="308" y="133">alert → FIRED_ON → service → DEPENDS_ON (up to 2 hops) ← COVERS ← runbook</text>
+      <text class="ts" x="16" y="182"><tspan class="tb">The answer:</tspan> runbooks for the failing service and for what it depends on, which no similarity search would group together.</text>
+      <text class="ts" x="16" y="206"><tspan class="tb">Corpus-wide questions:</tspan> some variants detect communities in the graph and pre-summarize each; those summaries go stale.</text>
+      <text class="ts" x="16" y="230"><tspan class="tb">The graph holds identity and relationships, not text:</tspan> nodes carry chunk ids; the documents stay in the document store.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.2</span>GraphRAG complements vector search rather than replacing it. If the questions are "find the passage that answers this", vector plus keyword search is simpler and usually enough.</figcaption>
+  </figure>
+
+  <h3 id="ch5-worth">Is it worth building?</h3>
+  <figure class="fig wide" id="fig-5-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 240" role="img" aria-label="Start from decisions, not data. One: write 10 to 20 competency questions the graph must answer. Two: apply a value test to each: asked often or costly today, the answer lives in relationships, someone changes an action because of it, and you can name that person. Three: try cheaper tools first: a SQL join, a recursive query, a search index. Four: baseline: does GraphRAG beat vector plus keyword RAG on the eval set? If not, stop. Five: build the smallest slice, one domain and one consumer, 5 to 10 entity types and 10 relationship types. Six: set a kill criterion up front, such as no consumer after a quarter.">
+      <g class="ts">
+      <rect class="n" x="16" y="16" width="250" height="60" rx="5"/><text x="28" y="40" class="tb">1 Competency questions</text><text x="28" y="60">10-20 the graph must answer</text>
+      <rect class="n" x="285" y="16" width="250" height="60" rx="5"/><text x="297" y="40" class="tb">2 Value test, per question</text><text x="297" y="60">asked often; answer in relationships</text>
+      <rect class="n" x="554" y="16" width="250" height="60" rx="5"/><text x="566" y="40" class="tb">3 Cheaper tools first</text><text x="566" y="60">a join, a recursive query, search</text>
+      <rect class="n-warn" x="554" y="100" width="250" height="60" rx="5"/><text x="566" y="124" class="tb">4 Baseline</text><text x="566" y="144">beat vector + keyword RAG, or stop</text>
+      <rect class="n-acc" x="285" y="100" width="250" height="60" rx="5"/><text x="297" y="124" class="tb">5 The smallest slice</text><text x="297" y="144">one domain, one consumer</text>
+      <rect class="n-bad" x="16" y="100" width="250" height="60" rx="5"/><text x="28" y="124" class="tb">6 A kill criterion</text><text x="28" y="144">no consumer after a quarter: stop</text>
+      </g>
+      <line class="e" x1="267" y1="46" x2="283" y2="46" marker-end="url(#a)"/><line class="e" x1="536" y1="46" x2="552" y2="46" marker-end="url(#a)"/><line class="e" x1="679" y1="77" x2="679" y2="98" marker-end="url(#a)"/><line class="e" x1="553" y1="130" x2="537" y2="130" marker-end="url(#a)"/><line class="e" x1="284" y1="130" x2="268" y2="130" marker-end="url(#a)"/>
+      <text class="ts" x="16" y="196">The value test: the question is asked often or is costly to answer today; the answer lives in the relationships; someone changes</text>
+      <text class="ts" x="16" y="214">an action because of it; and you can name that person. The failure to avoid: an enterprise-wide program with no user.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.3</span>Deciding whether to build a knowledge graph. Value shows up in weeks with one consumer, or it does not.</figcaption>
+  </figure>
+
+  <h3 id="ch5-fill">Who fills it, and the schema</h3>
+  <figure class="fig wide" id="fig-5-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 240" role="img" aria-label="People design: the schema driven by the questions, which source is trusted for which fact, identity rules, and a sampled review; a domain expert and an engineer. Machines populate, in order of trust: pipelines from systems of record such as a service catalog, ticketing, an org chart or code dependencies; curated sources such as editors' taxonomy tags; language-model extraction from text with a reviewed sample and low-confidence facts routed to a person; and unreviewed extraction only for low-stakes uses with measured precision. Schema-free extraction is an experiment, not a foundation.">
+      <rect class="n-acc" x="16" y="16" width="260" height="190" rx="6"/><text class="tb" x="28" y="40">People design</text>
+      <g class="ts"><text x="28" y="66">the schema, from the questions</text><text x="28" y="88">which source is trusted for which fact</text><text x="28" y="110">identity rules: "PG" = "Postgres"</text><text x="28" y="132">a sampled review</text><text x="28" y="166">a domain expert and an engineer</text></g>
+      <text class="tl" x="300" y="30">MACHINES POPULATE, MOST TRUSTED FIRST</text>
+      <rect class="n-good" x="300" y="42" width="504" height="34" rx="4"/><text class="ts" x="312" y="64"><tspan class="tb">1</tspan> pipelines from systems of record: catalog, ticketing, org chart, code</text>
+      <rect class="n" x="300" y="82" width="504" height="34" rx="4"/><text class="ts" x="312" y="104"><tspan class="tb">2</tspan> curated sources: editors' taxonomy tags</text>
+      <rect class="n-warn" x="300" y="122" width="504" height="34" rx="4"/><text class="ts" x="312" y="144"><tspan class="tb">3</tspan> model extraction: a reviewed sample; low confidence to a person</text>
+      <rect class="n-bad" x="300" y="162" width="504" height="34" rx="4"/><text class="ts" x="312" y="184"><tspan class="tb">4</tspan> unreviewed extraction: low-stakes only, precision measured</text>
+      <text class="ts" x="16" y="228">Schema-free extraction ("find the entities") gives many names for one thing and dozens of near-identical relationship types.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.4</span>Who fills the graph. Entity resolution, deciding that two names are one thing or one name is two, is the hard part of every knowledge-graph project.</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Edge</th><th>From → to</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Edge">OWNED_BY</td><td data-label="From → to">Service → Team</td><td data-label="Source">service catalog</td></tr>
+        <tr><td data-label="Edge">DEPENDS_ON (sync, async, data)</td><td data-label="From → to">Service → Service</td><td data-label="Source">catalog, tracing, infrastructure code</td></tr>
+        <tr><td data-label="Edge">COVERS</td><td data-label="From → to">Runbook → Service</td><td data-label="Source">runbook metadata, or extracted</td></tr>
+        <tr><td data-label="Edge">FIRED_ON</td><td data-label="From → to">Alert → Service</td><td data-label="Source">alert labels</td></tr>
+        <tr><td data-label="Edge">DEPLOYED_TO</td><td data-label="From → to">Deployment → Service</td><td data-label="Source">CI/CD</td></tr>
+        <tr><td data-label="Edge">LIKELY_CAUSED_BY (confidence)</td><td data-label="From → to">Incident → Deployment</td><td data-label="Source">a rule, or a person</td></tr>
+        <tr><td data-label="Edge">SUPERSEDES</td><td data-label="From → to">Runbook → Runbook</td><td data-label="Source">runbook metadata</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Constraints keep the graph honest: a unique stable id per node, and each edge type allowing only certain endpoint types (COVERS only from a runbook to a service). A service depending on itself is an error, while cycles between services can be real. The same shape fits other domains: a legal research product, for example, would have cases, statutes and topics as nodes, with CITES, OVERRULES, AMENDS and TAGGED_WITH as edges, and jurisdiction, court, date and status as properties.</p>
+
+  <h3 id="ch5-current">Keeping it current</h3>
+  <ul>
+    <li><strong>Incremental, coupled by identity.</strong> New facts are added without a rebuild, but a new document may show two nodes are one (merge) or one is two (split), which ripples through their edges.</li>
+    <li><strong>Derived layers go stale:</strong> node embeddings, graph-algorithm results, and community summaries, which are often the costly part to recompute.</li>
+    <li><strong>Changed extraction is a migration.</strong> A new prompt, model or schema leaves earlier facts inconsistent: re-extract, or record which version wrote each fact.</li>
+    <li><strong>Deletion needs provenance.</strong> Removing a document's contribution is only possible if every fact records where it came from.</li>
+    <li><strong>Access control at every hop.</strong> A traversal can reach nodes the asker may not see; the permission filter must hold on each step, the graph form of the tenant-filter trap in Chapter 4.</li>
+  </ul>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"We'd start with ten to twenty competency questions and check that plain vector-plus-keyword retrieval can't answer them before building a graph."</p>
+    <p>"People own the schema and identity rules; systems of record fill most edges; model extraction is reviewed by sample, and every fact carries provenance so we can audit and delete it."</p>
+  </aside>
+
+  <h3 id="ch5-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">The graph has many names for one thing</td><td data-label="Cause">No entity resolution, or schema-free extraction</td><td data-label="Fix">Identity rules owned by people; resolve new facts against the existing graph.</td></tr>
+        <tr><td data-label="Symptom">A wrong answer cannot be traced or removed</td><td data-label="Cause">Facts without provenance</td><td data-label="Fix">Source, time, confidence and pipeline version on every edge.</td></tr>
+        <tr><td data-label="Symptom">Answers reveal entities the asker may not see</td><td data-label="Cause">Permissions checked at the entry point only</td><td data-label="Fix">Filter at every hop.</td></tr>
+        <tr><td data-label="Symptom">A graph program delivers nothing after months</td><td data-label="Cause">Built enterprise-wide, for no specific question or user</td><td data-label="Fix">Competency questions, one consumer, a kill criterion.</td></tr>
+        <tr><td data-label="Symptom">GraphRAG is no better than plain retrieval</td><td data-label="Cause">The questions were about passages, not relationships</td><td data-label="Fix">Baseline against vector plus keyword search first.</td></tr>
+        <tr><td data-label="Symptom">The ontology no longer matches reality</td><td data-label="Cause">No owner</td><td data-label="Fix">Name an owner; treat schema changes as migrations.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch5-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>When does GraphRAG beat plain vector retrieval, and when is it overkill?</p>
+      <details class="ans"><summary>Answer</summary><p>When the answer lives in relationships or is spread over connected facts, such as the impact of a dependency failing. It is overkill when the questions are "find the passage that answers this", where vector plus keyword search is simpler and usually enough.</p></details>
+    </li>
+    <li>
+      <p>What do people decide, and what do machines fill, in a knowledge graph?</p>
+      <details class="ans"><summary>Answer</summary><p>People decide the schema from the questions, which source is trusted for which fact, the identity rules and the review. Machines fill edges from systems of record first, then curated sources, then reviewed model extraction.</p></details>
+    </li>
+    <li>
+      <p>Why must every fact carry provenance?</p>
+      <details class="ans"><summary>Answer</summary><p>To audit a wrong answer, to re-extract facts written by an older pipeline version, and to delete a document's contribution when the document is removed.</p></details>
+    </li>
+  </ol>
+</section>

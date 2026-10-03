@@ -1,0 +1,270 @@
+<section class="chapter" id="ch6">
+  <header class="ch-head">
+    <span class="ch-num">6</span>
+    <p class="eyebrow">Part III · Data</p>
+    <h2>Postgres: schema changes and indexes</h2>
+    <p class="lede">Schema changes are versioned migrations that every database applies in the same order, written so the running release keeps working while they run, and indexes are chosen from slow queries measured under realistic load, because a query plan on an idle database tells you very little.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>A migration is a script that changes the schema. Each database records which ones it has run and applies only the missing ones, in order, so every database converges on the same schema.</li>
+      <li>Generating a migration and applying it are separate steps. Read what the generator wrote: it turns renames into a drop plus an add, and never writes data migrations.</li>
+      <li>On a live table: a lock timeout on every migration, concurrent index builds, foreign keys added unvalidated and validated later.</li>
+      <li>An index is a separate ordered structure that costs disk, memory and write speed. Add one for a measured slow query, not just in case.</li>
+      <li>Transactional databases use indexes to jump to a few rows; analytical warehouses use their storage layout to skip past almost all of them.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">A DBA runs SQL scripts by hand in each environment</td><td>Migrations in the repository, applied by the pipeline to every database</td><td>Every environment converges on the same schema, recorded and reviewable.</td></tr>
+      <tr><td data-label="Then">Numbered migration files that collide across branches</td><td>Random revision IDs linked to their parent</td><td>Two branches can each add a migration without a numbering clash.</td></tr>
+      <tr><td data-label="Then">The application creates its tables at startup</td><td>The migration history is the source of truth; nothing runs at startup</td><td>Startup cannot alter a schema behind the team's back.</td></tr>
+      <tr><td data-label="Then">Schema changes in a maintenance window</td><td>Online changes: expand and contract, lock timeouts, concurrent builds</td><td>The old release keeps serving while a migration runs.</td></tr>
+      <tr><td data-label="Then">Indexes added in case they help</td><td>Indexes chosen from measured slow queries, under load, with their write cost weighed</td><td>Every index slows every write and takes memory.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch6-migrations">Migrations: a history every database replays</h3>
+  <p>Code and database must agree, and there are many databases: each developer's, CI's throwaway one, staging, production. A migration framework (Alembic for SQLAlchemy here) keeps them aligned. Each migration file has a random identifier and names its parent, so the history is a linked list, not a numbered sequence. Each database stores the revision it is at, and an upgrade runs only the files after it.</p>
+
+  <figure class="fig wide" id="fig-6-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="A chain of migrations, each naming its parent: create alerts, add an external id, index by time, teams and users, row-level security, runbooks. Three databases record different positions: a developer's is at the newest revision, CI's throwaway database starts empty and replays all of them, production is two behind. Upgrading production runs only the two missing migrations, in order.">
+      <rect class="n" x="16" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="26" y="60">39b0de02</text><text class="ts" x="26" y="78">create alerts</text>
+      <rect class="n" x="150" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="160" y="60">75397b87</text><text class="ts" x="160" y="78">external id</text>
+      <rect class="n" x="284" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="294" y="60">51ef9f54</text><text class="ts" x="294" y="78">index by time</text>
+      <rect class="n" x="418" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="428" y="60">3713e568</text><text class="ts" x="428" y="78">teams and users</text>
+      <rect class="n-acc" x="552" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="562" y="60">ce83ff21</text><text class="ts" x="562" y="78">row-level security</text>
+      <rect class="n-acc" x="686" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="696" y="60">9c9fd881</text><text class="ts" x="696" y="78">runbooks</text>
+      <line class="e" x1="149" y1="69" x2="136" y2="69" marker-end="url(#a)"/>
+      <line class="e" x1="283" y1="69" x2="270" y2="69" marker-end="url(#a)"/>
+      <line class="e" x1="417" y1="69" x2="404" y2="69" marker-end="url(#a)"/>
+      <line class="e" x1="551" y1="69" x2="538" y2="69" marker-end="url(#a)"/>
+      <line class="e" x1="685" y1="69" x2="672" y2="69" marker-end="url(#a)"/>
+      <text class="ts" x="16" y="26">each file names its parent (down_revision); the dates in file names are labels for humans</text>
+
+      <rect class="n-soft" x="16" y="140" width="250" height="40" rx="5"/><text class="ts" x="28" y="165">production records 3713e568: two behind</text>
+      <path class="e-acc" d="M141,139 V120 H611 V100" marker-end="url(#a-acc)"/>
+      <path class="e-acc" d="M141,139 V120 H745 V100" marker-end="url(#a-acc)"/>
+      <text class="ts ta" x="300" y="146">an upgrade runs only the two it is missing, in order</text>
+      <rect class="n-soft" x="290" y="196" width="250" height="40" rx="5"/><text class="ts" x="302" y="221">CI starts empty and replays all six</text>
+      <rect class="n-soft" x="556" y="196" width="248" height="40" rx="5"/><text class="ts" x="568" y="221">"heads" must print exactly one</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 6.1</span>Six real revisions of the reference schema. Random identifiers never collide when two branches each add a migration; if two branches do, the tool reports two "heads", and the team merges them.</figcaption>
+  </figure>
+
+  <figure class="fig wide" id="fig-6-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 200" role="img" aria-label="Generating and applying are separate. Edit the model, a Python description of the schema. Autogenerate compares the models with a live database and writes a migration file, changing nothing. A person reads and fixes it: renames, data migrations, concurrent indexes. Upgrade runs the DDL and records the new revision. In CI, a check fails if the models changed without a migration.">
+      <rect class="n" x="16" y="40" width="150" height="74" rx="5"/><text class="tb" x="28" y="62">1  Edit the model</text><text class="ts" x="28" y="82">a declaration only;</text><text class="ts" x="28" y="98">nothing changes yet</text>
+      <rect class="n" x="190" y="40" width="150" height="74" rx="5"/><text class="tb" x="202" y="62">2  Autogenerate</text><text class="ts" x="202" y="82">diffs models against a</text><text class="ts" x="202" y="98">database; writes a file</text>
+      <rect class="n-warn" x="364" y="40" width="150" height="74" rx="5"/><text class="tb" x="376" y="62">3  Read and fix it</text><text class="ts" x="376" y="82">renames, data, locks,</text><text class="ts" x="376" y="98">concurrent indexes</text>
+      <rect class="n-acc" x="538" y="40" width="130" height="74" rx="5"/><text class="tb" x="550" y="62">4  Upgrade</text><text class="ts" x="550" y="82">runs the DDL once;</text><text class="ts" x="550" y="98">records the revision</text>
+      <rect class="n-good" x="692" y="40" width="112" height="74" rx="5"/><text class="tb" x="704" y="62">5  CI check</text><text class="ts" x="704" y="82">models and</text><text class="ts" x="704" y="98">history agree</text>
+      <line class="e" x1="167" y1="77" x2="188" y2="77" marker-end="url(#a)"/>
+      <line class="e" x1="341" y1="77" x2="362" y2="77" marker-end="url(#a)"/>
+      <line class="e" x1="515" y1="77" x2="536" y2="77" marker-end="url(#a)"/>
+      <line class="e" x1="669" y1="77" x2="690" y2="77" marker-end="url(#a)"/>
+      <text class="ts tr" x="364" y="140">The generator guesses from a diff:</text>
+      <text class="ts" x="364" y="158">a rename looks like a drop plus an add, and the data is lost;</text>
+      <text class="ts" x="364" y="176">data migrations are never generated; an index comes out as a blocking CREATE INDEX.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 6.2</span>Generating and applying are separate steps. The application never runs migrations at startup and never builds its schema from the models: the migration history is the source of truth, and CI fails if the two disagree.</figcaption>
+  </figure>
+
+  <h3 id="ch6-live">Changing a table that is in use</h3>
+  <p>During a deploy the old release keeps serving while migrations run, so a migration must not break it and must not block it. Three techniques do most of the work, and the reference repository has a migration that uses each.</p>
+
+  <figure class="fig wide" id="fig-6-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 262" role="img" aria-label="Lock queueing. A long-running query holds a lock on a table. An ALTER TABLE waits for an exclusive lock behind it. Every new query on that table now queues behind the waiting ALTER, so users see 503s after 10 seconds. With a lock timeout of 5 seconds, the ALTER gives up, the queue clears, and the migration is retried off-peak.">
+      <text class="tb" x="16" y="24">Without a lock timeout</text>
+      <rect class="n" x="16" y="38" width="300" height="28" rx="3"/><text class="ts" x="26" y="57">a long query holds a lock on the table</text>
+      <rect class="n-warn" x="130" y="72" width="300" height="28" rx="3"/><text class="ts" x="140" y="91">ALTER TABLE waits for an exclusive lock</text>
+      <rect class="n-bad" x="250" y="106" width="300" height="28" rx="3"/><text class="ts" x="260" y="125">every new query queues behind the ALTER</text>
+      <text class="ts tr" x="570" y="125">users get 503 after 10 s</text>
+      <line class="rule" x1="16" y1="150" x2="804" y2="150"/>
+      <text class="tb" x="16" y="176">With <tspan class="tm">lock_timeout = 5s</tspan> on every migration</text>
+      <rect class="n" x="16" y="190" width="300" height="28" rx="3"/><text class="ts" x="26" y="209">the long query holds its lock</text>
+      <rect class="n-good" x="130" y="224" width="160" height="28" rx="3"/><text class="ts" x="140" y="243">ALTER gives up at 5 s</text>
+      <text class="ts" x="310" y="243">new queries are never blocked; retry the migration off-peak</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 6.3</span>Why a migration needs a lock timeout. A schema change waiting for a lock makes every later query on the table wait behind it. Measured on the reference stack: users got 503 errors after 10 seconds.</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>Add, don't change.</strong> A nullable column, or one with a default, is instant (metadata only). Renames and type changes become expand and contract across releases (Handbook 3, Chapter 13).</li>
+    <li><strong>Build indexes concurrently.</strong> A plain <code>CREATE INDEX</code> blocks writes for the whole build. <code>CONCURRENTLY</code> does not, but cannot run inside a transaction, and if it fails midway it leaves an invalid index to drop before retrying.</li>
+    <li><strong>Add foreign keys in two steps.</strong> <code>NOT VALID</code> is instant and applies to new rows; <code>VALIDATE CONSTRAINT</code> in its own transaction then checks existing rows without blocking writes. The reference teams migration used all three patterns on 2 million rows in 1.5 seconds under load, with no failed request.</li>
+    <li><strong>Name every constraint</strong>, or the tool cannot write a downgrade that drops it.</li>
+    <li><strong>Migrations run as the schema owner, directly</strong> against Postgres. The application's own role can read and write rows but cannot change the schema.</li>
+    <li><strong>One run at a time.</strong> Where every copy of the service migrates as it starts (an init container per task), two can start together, and two runs at once collided: one failed, three times in three. The fix is an advisory lock, and the first two versions failed in instructive ways. A transaction lock is released when a <code>CONCURRENTLY</code> migration commits midway. A blocking session lock makes the waiting run hold a snapshot that <code>CREATE INDEX CONCURRENTLY</code> waits for, and Postgres reports a deadlock. What works is a session lock on a separate connection, polled, so the waiting run holds nothing.</li>
+  </ul>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/migrations/versions/20260922_75397b875fb5_add_alert_external_id.py#L1-L35">migrations/versions/…_add_alert_external_id.py</a><span class="lines">the pattern to copy</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>A column and a unique index added to a table in use, without blocking writes. The docstring explains the pattern so the next migration can copy it.</p>
+        <ul class="notice">
+          <li>The column is nullable, so adding it touches only metadata.</li>
+          <li>The index is built <code>CONCURRENTLY</code>, inside an autocommit block because it cannot run in a transaction.</li>
+          <li>The downgrade reverses both, also concurrently.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/migrations/versions/20260922_75397b875fb5_add_alert_external_id.py" data-lines="1-8"><code class="language-python">"""add alert external id
+
+Zero-downtime shape, the pattern for any index on a table in use:
+- ADD COLUMN ... NULL is instant (metadata only, no table rewrite).
+- A plain CREATE INDEX blocks every INSERT/UPDATE/DELETE until it
+  finishes; CONCURRENTLY builds without blocking writes, but cannot run
+  inside a transaction - hence the autocommit block. If it fails midway
+  it leaves an INVALID index that must be dropped before retrying.</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/migrations/versions/20260922_75397b875fb5_add_alert_external_id.py" data-lines="26-35"><code class="language-python">def upgrade() -&gt; None:
+    op.add_column("alerts", sa.Column("external_id", sa.Text(), nullable=True))
+    with op.get_context().autocommit_block():
+        op.create_index(
+            "uq_alerts_external_id",
+            "alerts",
+            ["external_id"],
+            unique=True,
+            postgresql_concurrently=True,
+        )</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch6-indexes">Indexes</h3>
+  <p>An index is a separate, ordered structure that lets the database find rows without reading the whole table. It costs disk and memory and slows every insert and update, so the right number is the smallest set that meets a measured need. <code>EXPLAIN</code> shows whether a query uses one.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Index type</th><th>For</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Type">B-tree, the default</td><td data-label="For">Equality, ranges and sorting: almost every index</td></tr>
+        <tr><td data-label="Type">Composite <code>(a, b)</code></td><td data-label="For">Column order matters: it serves <code>a</code> and <code>a, b</code>, not <code>b</code> alone</td></tr>
+        <tr><td data-label="Type">Unique</td><td data-label="For">A B-tree that also forbids duplicates</td></tr>
+        <tr><td data-label="Type">Partial</td><td data-label="For">Only rows matching a <code>WHERE</code>: small, such as open alerts only</td></tr>
+        <tr><td data-label="Type">Covering (<code>INCLUDE</code>)</td><td data-label="For">Extra columns stored in the index, so a query never touches the table</td></tr>
+        <tr><td data-label="Type">Expression</td><td data-label="For">A computed value, such as <code>lower(email)</code></td></tr>
+        <tr><td data-label="Type">GIN</td><td data-label="For">Many values per row: arrays, JSONB, full-text search</td></tr>
+        <tr><td data-label="Type">GiST, SP-GiST</td><td data-label="For">Geometry, ranges and other special types</td></tr>
+        <tr><td data-label="Type">BRIN</td><td data-label="For">Tiny, a minimum and maximum per block range; only for data stored in order, such as append-only time series</td></tr>
+        <tr><td data-label="Type">HNSW, IVFFlat (pgvector)</td><td data-label="For">Approximate nearest-neighbor vector search (Handbook 1, Chapter 4)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>The first bottleneck was a missing index</h4>
+  <p>Under a load test of only 40 requests a second, the dashboard's two alert queries reached a 95th-percentile latency of 7 seconds, and 45% of requests failed: every database connection was busy with a slow query, and the connection pool timed out. The query statistics showed two queries averaging over a second and a half; their plans were parallel sequential scans of 2 million rows, reading about 235 MB each. On an idle database the same plans said 43 ms and 152 ms, which looks harmless. Forty copies at once, each scanning the whole table, is a different workload.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Index</th><th class="num">Newest first</th><th class="num">By severity</th><th class="num">Size</th><th class="num">Insert cost, 200k rows</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Index">none</td><td class="num" data-label="Newest">152 ms</td><td class="num" data-label="Severity">43 ms</td><td class="num" data-label="Size">none</td><td class="num" data-label="Insert">244 ms</td></tr>
+        <tr><td data-label="Index"><code>(created_at, id)</code>, shipped</td><td class="num" data-label="Newest">0.125 ms</td><td class="num" data-label="Severity">3.8 ms</td><td class="num" data-label="Size">60 MB</td><td class="num" data-label="Insert">369 ms</td></tr>
+        <tr><td data-label="Index">plus <code>(severity, created_at, id)</code></td><td class="num" data-label="Newest">0.125 ms</td><td class="num" data-label="Severity">0.063 ms</td><td class="num" data-label="Size">+78 MB</td><td class="num" data-label="Insert">726 ms</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>One index shipped. It met the target fifty times over, and the second would have doubled the write cost for a query that was already fast. Its trigger was written down instead: add it when the severity query shows up in the slow-request alert. After the fix, under the same load: a 95th percentile of 4.07 ms and no failures.</p>
+
+  <h4>The planner can choose badly as the data grows</h4>
+  <p>Reading the newest alerts across a user's teams looks like a simple <code>WHERE team_id = ANY(...)</code>. Measured on 2.5 million rows, the planner sometimes walked the global time index and filtered, which cost 13 ms when one of the user's teams was large but quiet (103,036 rows read and discarded), and the bad case grows with the table. Reading each team through its own index and merging the results bounds the cost, whatever the data: 0.05 to 0.1 ms in every case.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/queries.py#L20-L38">apps/api/app/queries.py</a><span class="lines">a bounded read, with its measurement</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The shared query behind both the alert list and the assistant's context. Its docstring records why it is written as a LATERAL join, with the numbers.</p>
+        <ul class="notice">
+          <li>One shared query means the list and the assistant apply exactly the same visibility rule.</li>
+          <li>Paging uses a keyset cursor (the last row's time and id), not an offset, so deep pages stay fast.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/queries.py" data-lines="20-38"><code class="language-python">async def newest_alerts(
+    db: AsyncSession,
+    team_ids: Sequence[int] | None,
+    *,
+    limit: int,
+    severity: Severity | None = None,
+    before: tuple[datetime, int] | None = None,
+) -&gt; list[AlertOut]:
+    """Newest first among `team_ids` (None: every team), optionally only one
+    severity, optionally only older than a keyset cursor.
+
+    Several teams are read one team at a time and merged - a LATERAL join,
+    each team through the (team_id, created_at, id) index - so the cost is
+    bounded by teams x limit index entries whatever the data looks like.
+    The obvious `WHERE team_id = ANY(...)` lets the planner walk the global
+    time index and filter instead, which depends on the data: measured on
+    2.5M rows, 0.015ms to 13ms (103k rows filtered out when one of the
+    user's teams is large but quiet), against 0.05-0.1ms here in every case.
+    """</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h4>Analytical databases do it differently</h4>
+  <p>Warehouses such as Snowflake, BigQuery and ClickHouse scan huge tables and mostly do without B-trees. Their main "index" is <strong>columnar storage</strong>: each column stored and compressed separately, so a query reads only the columns it names. <strong>Zone maps</strong> keep a minimum and maximum per block so blocks that cannot match are skipped; <strong>partitioning or clustering</strong> by a date or tenant skips whole files; <strong>sort keys</strong> make range filters and joins cheap; bitmap indexes and Bloom filters help with low-cardinality columns and "definitely not here" checks; materialized views trade storage for precomputed results. A transactional index jumps to a few rows; an analytical layout skips past almost all of them.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Migrations are in the repo and replayed in CI from empty on every push. On live tables we use lock timeouts, concurrent indexes and two-step foreign keys, so the running release is never blocked."</p>
+    <p>"We add an index for a slow query measured under load, and we weigh its write cost; an idle EXPLAIN isn't evidence."</p>
+  </aside>
+
+  <h3 id="ch6-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A renamed column lost its data</td><td data-label="Cause">Autogenerate wrote the rename as a drop plus an add</td><td data-label="Fix">Read every generated migration; write renames explicitly, or as expand and contract.</td></tr>
+        <tr><td data-label="Symptom">A migration logged success but changed nothing</td><td data-label="Cause">A <code>SET</code> before the migration's transaction began opened a transaction that was then rolled back</td><td data-label="Fix">Use <code>SET LOCAL</code> inside the migration's transaction.</td></tr>
+        <tr><td data-label="Symptom">Writes stall during a deploy</td><td data-label="Cause">A plain <code>CREATE INDEX</code>, or a validated foreign key added in one step</td><td data-label="Fix">Build indexes concurrently; add foreign keys <code>NOT VALID</code>, then validate.</td></tr>
+        <tr><td data-label="Symptom">Every query on a table waits during a migration</td><td data-label="Cause">A schema change queued for a lock, and later queries queued behind it</td><td data-label="Fix">A lock timeout on every migration; retry off-peak.</td></tr>
+        <tr><td data-label="Symptom">A query that was fast in testing is slow in production</td><td data-label="Cause">An idle <code>EXPLAIN</code> on small data</td><td data-label="Fix">Measure under realistic load with production-sized data.</td></tr>
+        <tr><td data-label="Symptom">A copied table lost its auto-increment</td><td data-label="Cause"><code>LIKE … INCLUDING DEFAULTS</code> does not copy identity columns</td><td data-label="Fix">Add <code>INCLUDING IDENTITY</code>.</td></tr>
+        <tr><td data-label="Symptom">A command defaults to a database named after the user</td><td data-label="Cause">libpq uses the user name when no database is given</td><td data-label="Fix">Always pass the database name explicitly.</td></tr>
+        <tr><td data-label="Symptom">An upgraded Postgres container refuses its data directory</td><td data-label="Cause">A major version cannot read an older version's files</td><td data-label="Fix">Dump and restore, or <code>pg_upgrade</code>; never just change the image tag.</td></tr>
+        <tr><td data-label="Symptom">Monitoring itself used a quarter of the database's time</td><td data-label="Cause">The exporter's statistics query on an otherwise idle database</td><td data-label="Fix">Measure what monitoring costs, and tune its queries and interval.</td></tr>
+        <tr><td data-label="Symptom">Parallel queries fail in a container</td><td data-label="Cause">Docker's default 64 MB of shared memory</td><td data-label="Fix">Raise <code>shm_size</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch6-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Why do migration tools use random identifiers linked to a parent rather than sequential numbers?</p>
+      <details class="ans"><summary>Answer</summary><p>So two branches can each add a migration without colliding. If both are merged, the tool reports two heads, and a small merge migration joins them.</p></details>
+    </li>
+    <li>
+      <p>What does autogenerate get wrong that a person must fix?</p>
+      <details class="ans"><summary>Answer</summary><p>Renames, which it writes as a drop plus an add and so loses data; data migrations, which it never writes; some constraint and default changes; and index builds, which it writes as blocking statements.</p></details>
+    </li>
+    <li>
+      <p>Why does a migration need a lock timeout?</p>
+      <details class="ans"><summary>Answer</summary><p>A schema change waiting for a lock makes every later query on the table queue behind it, so a short wait becomes an outage. With a timeout the change gives up and can be retried.</p></details>
+    </li>
+    <li>
+      <p>The severity query was 3.8 ms after the first index. Why not add a second index that made it 0.063 ms?</p>
+      <details class="ans"><summary>Answer</summary><p>The query already met its target, and the second index would have roughly doubled the cost of every insert and added 78 MB. The trigger for adding it was written down instead.</p></details>
+    </li>
+  </ol>
+</section>

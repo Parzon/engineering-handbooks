@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="Keep the platform: Compose, Makefile, Dockerfiles, CI and release workflows; sign-in, sessions and roles; database access, pools, timeouts and row-level security plumbing; rate limits, streaming, errors, logs and metrics; the model seam and the mock; the eval harness; redaction; the audit trail, off switch and retention; production's refusals and the scans; deploys, backups, drills and monitoring. Replace the domain: the data model and migrations; routes, visibility queries and schemas; the prompt and its context; eval cases and baselines; the retrieval benchmark; the mock's canned answer; the UI; browser tests and load scripts. Configure: the model provider, identity provider, public URL and secrets; the registry and hosts. Rewrite: the personal-data inventory."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="300" fill="#ffffff"/>
+      <rect class="n-good" x="16" y="16" width="300" height="268" rx="6"/><text class="tb" x="28" y="40">Keep: the platform</text>
+      <g class="ts"><text x="28" y="64">Compose, Makefile, Dockerfiles, CI, releases</text><text x="28" y="86">sign-in, sessions, roles</text><text x="28" y="108">database access, pools, timeouts, RLS</text><text x="28" y="130">rate limits, streaming, errors, logs, metrics</text><text x="28" y="152">the model seam and the mock</text><text x="28" y="174">the eval harness; redaction</text><text x="28" y="196">audit trail, off switch, retention</text><text x="28" y="218">production's refusals; the scans</text><text x="28" y="240">deploys, backups, drills, monitoring</text></g>
+      <rect class="n-acc" x="330" y="16" width="270" height="268" rx="6"/><text class="tb" x="342" y="40">Replace: the domain</text>
+      <g class="ts"><text x="342" y="64">the data model and its migrations</text><text x="342" y="86">routes, visibility queries, schemas</text><text x="342" y="108">the prompt and its context</text><text x="342" y="130">eval cases, judge answers, baseline</text><text x="342" y="152">the retrieval benchmark</text><text x="342" y="174">the mock's canned answer</text><text x="342" y="196">the UI</text><text x="342" y="218">browser tests, load scripts</text></g>
+      <rect class="n-warn" x="614" y="16" width="190" height="150" rx="6"/><text class="tb" x="626" y="40">Configure</text>
+      <g class="ts"><text x="626" y="64">the model provider</text><text x="626" y="86">the identity provider</text><text x="626" y="108">the public URL, secrets</text><text x="626" y="130">the registry and hosts</text></g>
+      <rect class="n" x="614" y="180" width="190" height="104" rx="6"/><text class="tb" x="626" y="204">Rewrite</text>
+      <g class="ts"><text x="626" y="228">the personal-data</text><text x="626" y="246">inventory, for your</text><text x="626" y="264">own tables</text></g>
+    </svg>

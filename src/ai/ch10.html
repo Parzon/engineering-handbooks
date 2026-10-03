@@ -1,0 +1,178 @@
+<section class="chapter" id="ch10">
+  <header class="ch-head">
+    <span class="ch-num">10</span>
+    <p class="eyebrow">Part VI · Running it</p>
+    <h2>Cost and performance</h2>
+    <p class="lede">A model's bill is requests × tokens per request × price per token; knowing which factor moved explains every cost jump, and each lever that lowers it has a quality cost that only evals can measure.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Output costs five to eight times more per token than input, and hidden reasoning is output; yet in retrieval-heavy services the prompt is usually most of the bill.</li>
+      <li>Context size is the first lever; a cheaper model is the biggest one; both need evals before and after.</li>
+      <li>Provider prompt caching needs a long, stable prefix; semantic caching of answers is wrong when answers depend on live data or on who asks.</li>
+      <li>Self-hosting is cheaper per token only when the GPU stays busy.</li>
+      <li>Alert on each factor separately: a jump in tokens per request is invisible to an alert on request volume.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Cost per server, fixed per month</td><td>Cost per request, varying with context and output length</td><td>Hosted models are billed per token.</td></tr>
+      <tr><td data-label="Then">Caching responses as a free win</td><td>Caching only what is safe to share: stable prefixes, not answers</td><td>An answer built from one user's data, or from live data, is wrong for the next request.</td></tr>
+      <tr><td data-label="Then">Capacity planning in CPUs</td><td>Capacity planning in a provider's tokens-per-minute quota</td><td>The quota binds long before the service's own CPUs.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch10-model">The cost model</h3>
+  <figure class="fig wide" id="fig-10-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 270" role="img" aria-label="Cost equals requests times tokens per request times price per token. Tokens split into input, the prompt, and output, the answer plus hidden reasoning, priced five to eight times higher. Then the costs that are not tokens: embeddings for every question and every saved section; the vector store and storage; the observability stack; GPU hours when self-hosting, busy or idle; and the people who run it. Measured per question in the reference service: 1,318 prompt tokens and 172 answer tokens at the median. On Claude Haiku 4.5, the prompt is 1.32 dollars of the 2.16 dollars per 1,000 questions.">
+      <rect class="n" x="16" y="20" width="160" height="60" rx="6"/><text class="tb" x="96" y="46" text-anchor="middle">requests</text><text class="ts" x="96" y="66" text-anchor="middle">volume, retries, loops</text>
+      <text class="tb" x="190" y="56">×</text>
+      <rect class="n-acc" x="210" y="20" width="250" height="60" rx="6"/><text class="tb" x="335" y="46" text-anchor="middle">tokens per request</text><text class="ts" x="335" y="66" text-anchor="middle">input + output (reasoning included)</text>
+      <text class="tb" x="474" y="56">×</text>
+      <rect class="n" x="494" y="20" width="160" height="60" rx="6"/><text class="tb" x="574" y="46" text-anchor="middle">price per token</text><text class="ts" x="574" y="66" text-anchor="middle">model, provider, cache</text>
+      <text class="ts" x="670" y="46">output: 5-8×</text><text class="ts" x="670" y="62">the input price</text>
+      <text class="tl" x="16" y="114">THE MEASURED QUESTION ON CLAUDE HAIKU 4.5, PER 1,000 QUESTIONS</text>
+      <rect class="n-acc" x="16" y="124" width="477" height="34" rx="3"/><text class="ts" x="254" y="146" text-anchor="middle">prompt: 1,322 tokens → $1.32</text>
+      <rect class="n-warn" x="493" y="124" width="301" height="34" rx="3"/><text class="ts" x="643" y="146" text-anchor="middle">answer: 168 tokens → $0.84</text>
+      <text class="ts" x="16" y="180">Output is five times the price per token here, but the prompt has eight times the tokens: the prompt is most of the bill.</text>
+      <text class="tl" x="16" y="214">AND WHAT IS NOT TOKENS</text>
+      <text class="ts" x="16" y="238">embeddings for each question and every saved section · the vector store · observability · GPU hours if self-hosted,</text>
+      <text class="ts" x="16" y="256">busy or idle · the people who run it</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 10.1</span>The cost model, with the reference service's measured question (mean tokens billed) priced on Claude Haiku 4.5 ($1 input, $5 output per million tokens). The bar is drawn to scale: $2.16 per 1,000 questions.</figcaption>
+  </figure>
+
+  <figure class="fig wide" id="fig-10-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 200" role="img" aria-label="Per 1,000 questions and per month at 33,000 questions: GPT-5 mini 0.67 dollars, about 22 dollars a month; Claude Haiku 4.5 2.16 dollars, about 71; Claude Sonnet 5 4.33 dollars, about 143. At that volume, one engineer-day costs more than a month of the model.">
+      <text class="tl" x="16" y="22">300 PEOPLE × 5 QUESTIONS A WORKING DAY = 33,000 A MONTH</text>
+      <line class="rule" x1="170" y1="34" x2="170" y2="140"/>
+      <text class="ts" x="16" y="56">GPT-5 mini</text><rect class="fill-good" x="170" y="44" width="62" height="18"/><text class="ts" x="240" y="58">$0.67 per 1,000 · ~$22 a month</text>
+      <text class="ts" x="16" y="92">Claude Haiku 4.5</text><rect class="fill-acc" x="170" y="80" width="200" height="18"/><text class="ts" x="378" y="94">$2.16 · ~$71 a month</text>
+      <text class="ts" x="16" y="128">Claude Sonnet 5</text><rect class="fill-acc" x="170" y="116" width="400" height="18"/><text class="ts" x="578" y="130">$4.33 · ~$143 a month</text>
+      <text class="ts" x="16" y="170"><tspan class="tb">At this volume the model bill is small:</tspan> one engineer-day costs more than a month of the mid-priced model. It becomes a</text>
+      <text class="ts" x="16" y="188">design problem with volume, with agents (many calls per task) and with long contexts.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 10.2</span>The same measured question at three list prices, drawn to scale. The cheapest model is a sixfold saving over the most capable one, which is why a model change is the biggest price lever, and why it needs evals first.</figcaption>
+  </figure>
+
+  <h3 id="ch10-levers">The levers</h3>
+  <figure class="fig wide" id="fig-10-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 340" role="img" aria-label="Levers and whether they apply to the reference service. Context size: yes, the biggest; fewer alerts saves tokens and can lose the deploy that started an incident; measure with evals. Output cap and reasoning effort: yes; high effort billed 4.1 times the answer tokens and left 13 of 22 questions unanswered. A smaller model: the biggest price lever, from 4.33 to 0.67 dollars per 1,000, only with evals. Provider prompt caching: no; the stable part is about 400 tokens, under the 1,024-token minimum, and alerts change with every new alert. Semantic caching of answers: wrong here; the closest pair of benchmark questions needed different answers, and answers depend on live alerts and on who asks. Batch APIs: half price for work that can wait, not interactive chat. Self-hosting: only when the GPU stays busy.">
+      <g class="ts">
+      <text x="16" y="22" class="tl">LEVER</text><text x="250" y="22" class="tl">HERE</text>
+      <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
+      <rect class="n-good" x="16" y="40" width="220" height="30" rx="4"/><text x="28" y="60" class="tb">context size</text><text x="250" y="60">the biggest: fewer alerts and sections; can lose the deploy that started it</text>
+      <rect class="n-good" x="16" y="78" width="220" height="30" rx="4"/><text x="28" y="98" class="tb">output cap, reasoning</text><text x="250" y="98">high effort: 4.1× the answer tokens, and 13 of 22 questions unanswered</text>
+      <rect class="n-good" x="16" y="116" width="220" height="30" rx="4"/><text x="28" y="136" class="tb">a smaller model</text><text x="250" y="136">the biggest price lever ($4.33 to $0.67 per 1,000), only with evals</text>
+      <rect class="n-bad" x="16" y="154" width="220" height="30" rx="4"/><text x="28" y="174" class="tb">prompt caching</text><text x="250" y="174">no: the stable part is ~400 tokens, under the 1,024 minimum</text>
+      <rect class="n-bad" x="16" y="192" width="220" height="30" rx="4"/><text x="28" y="212" class="tb">semantic answer cache</text><text x="250" y="212">wrong: answers depend on live alerts and on who asks</text>
+      <rect class="n-soft" x="16" y="230" width="220" height="30" rx="4"/><text x="28" y="250" class="tb">batch APIs</text><text x="250" y="250">half price for work that can wait: re-embedding, nightly summaries</text>
+      <rect class="n-soft" x="16" y="268" width="220" height="30" rx="4"/><text x="28" y="288" class="tb">self-hosting</text><text x="250" y="288">only when busy: 60× the small hosted model at this volume</text>
+      <rect class="n-soft" x="16" y="306" width="220" height="30" rx="4"/><text x="28" y="326" class="tb">token budgets</text><text x="250" y="326">per user or team: bound a runaway client in tokens, not just requests</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 10.3</span>Cost levers, judged for the reference service. Green: worth using, with evals. Red: does not apply to this prompt or is unsafe here. Gray: applies elsewhere, or later.</figcaption>
+  </figure>
+
+  <p><strong>Prompt caching</strong> charges about a tenth for input the provider has seen recently, if it is a long, identical prefix: at least 1,024 tokens on most models (4,096 on some), with static content first. It pays for a large system prompt, a document asked about many times, or a long conversation; it does not pay when the stable part is short and variable context sits early. <strong>Semantic caching</strong> reuses an answer for a similar question. In the reference benchmark, the closest pair of questions (distance 0.261) was a question and its follow-up, which needed the next step; and since answers are built from the asker's teams' live alerts, a cached answer is either stale or another team's. A cache key including the access scope and the context's version leaves almost nothing to hit.</p>
+
+  <h3 id="ch10-jump">When the bill jumps</h3>
+  <figure class="fig wide" id="fig-10-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="A drill: reasoning effort raised from low to high. Requests did not move. Prompt tokens per request did not move. Answer tokens per request rose from 168 to 694, 4.1 times. Empty-answer failures went from none to 13 of 22. Cost per 1,000 on Claude Haiku 4.5 rose from 2.16 to 4.79 dollars. A cost alert on request volume stays silent. Method: which factor moved, what changed in it, then the lowest-risk fix: revert, cap, then optimize with evals.">
+      <text class="tl" x="16" y="22">THE BILL DOUBLED: REASONING EFFORT RAISED FROM LOW TO HIGH</text>
+      <g class="ts">
+      <text x="16" y="52">requests</text><text x="250" y="52" class="tg">unchanged</text>
+      <text x="16" y="78">prompt tokens per request</text><text x="250" y="78" class="tg">unchanged</text>
+      <text x="16" y="104">answer tokens per request</text><text x="250" y="104" class="tb tr">168 → 694 (4.1×)</text>
+      <text x="16" y="130">empty answers</text><text x="250" y="130" class="tb tr">0 → 13 of 22</text>
+      <text x="16" y="156">per 1,000 questions</text><text x="250" y="156" class="tb tr">$2.16 → $4.79</text>
+      </g>
+      <rect class="n-warn" x="470" y="36" width="334" height="128" rx="6"/><text class="tb" x="482" y="60">A volume alert stays silent</text><text class="ts" x="482" y="82">requests and prompt tokens did not move;</text><text class="ts" x="482" y="98">only tokens per answer and empty answers</text><text class="ts" x="482" y="114">did. Alert on each factor, against last week.</text><text class="ts" x="482" y="146">The empty answers were billed too.</text>
+      <text class="tl" x="16" y="196">THE METHOD</text>
+      <rect class="n" x="16" y="206" width="250" height="40" rx="5"/><text class="ts" x="28" y="230"><tspan class="tb">1</tspan> which factor moved?</text>
+      <rect class="n" x="285" y="206" width="250" height="40" rx="5"/><text class="ts" x="297" y="230"><tspan class="tb">2</tspan> what changed in it? (versions)</text>
+      <rect class="n-good" x="554" y="206" width="250" height="40" rx="5"/><text class="ts" x="566" y="230"><tspan class="tb">3</tspan> revert, cap, then optimize</text>
+      <line class="e" x1="267" y1="226" x2="283" y2="226" marker-end="url(#a)"/><line class="e" x1="536" y1="226" x2="552" y2="226" marker-end="url(#a)"/>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 10.4</span>A cost drill in the reference project. The causes by factor: requests (a client in a loop, retries), tokens per request (context settings, a prompt change, reasoning effort, the output limit), price (the model or provider, a cache that stopped hitting, a batch job moved to real time).</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/observability/grafana/build_dashboard.py#L115-L121">infra/observability/grafana/build_dashboard.py</a><span class="lines">a cost panel, in code</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The dashboard's token and cost panels, generated from Python like the rest of the dashboard (Handbook 2, Chapter 14).</p>
+        <ul class="notice">
+          <li>Tokens are counted by kind, so prompt and completion move separately on the panel, as they do on the bill.</li>
+          <li>Prices are dashboard variables, set to the model's price list, rather than hard-coded.</li>
+          <li>Not yet built, and named as such: prices as settings, a cost metric alerts can use, and per-user token budgets; worth building when the bill is large enough to matter.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/observability/grafana/build_dashboard.py" data-lines="115-121"><code class="language-python">add("timeseries", "Output tokens / s",
+    [('sum(rate(llm_tokens_total{kind="completion"}[1m]))', "completion"),
+     ('sum(rate(llm_tokens_total{kind="prompt"}[1m]))', "prompt")], 8, 7, 0, unit="short")
+add("stat", "Estimated model cost / hour",
+    [('3600 * (sum(rate(llm_tokens_total{kind="prompt"}[5m])) * $usd_per_1m_input + sum(rate(llm_tokens_total{kind="completion"}[5m])) * $usd_per_1m_output) / 1e6', "")],
+    8, 7, 8, unit="currencyUSD", decimals=2,
+    description="Token rate x the per-million-token prices in the dashboard variables. Set them to your model's price list.")</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch10-perf">Performance, briefly</h3>
+  <p>The latency levers follow from how models run (Chapter 2): a shorter prompt shortens the time to first token; streaming makes the user wait for the first token rather than the whole answer; an output cap bounds the worst case; and reasoning effort trades quality for tokens and seconds. In the reference service, adding four runbook sections raised the median time to first token from 0.21 to 0.28 seconds, retrieval included, and hybrid search alone took about 10 milliseconds. For a self-hosted model, batching halved the cost per output token ($2.93 to $1.41 per million) and halved each stream's speed. Capacity with a hosted provider is planned from its tokens-per-minute quota, which binds long before the service's own CPUs (Handbook 2, Chapter 16).</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Cost is requests times tokens per request times price. Here the prompt is most of the bill, so context size is the first lever; a smaller model is the biggest, and both go through evals."</p>
+    <p>"We don't cache answers: they depend on live alerts and on who's asking. Prompt caching doesn't apply either, because our stable prefix is under the minimum."</p>
+  </aside>
+
+  <h3 id="ch10-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">The bill doubled and no volume alert fired</td><td data-label="Cause">Tokens per request rose (reasoning effort, context, output limit)</td><td data-label="Fix">Alert on each factor separately.</td></tr>
+        <tr><td data-label="Symptom">Failed answers still cost money</td><td data-label="Cause">Hidden reasoning used the output budget; providers bill it</td><td data-label="Fix">Lower the effort; count empty answers.</td></tr>
+        <tr><td data-label="Symptom">Prompt caching saves nothing</td><td data-label="Cause">The stable prefix is under the minimum, or variable content comes first</td><td data-label="Fix">Static content first; cache only long, stable prefixes.</td></tr>
+        <tr><td data-label="Symptom">A cached answer showed another team's data</td><td data-label="Cause">A semantic cache keyed on the question alone</td><td data-label="Fix">Do not cache answers built from per-user or live context.</td></tr>
+        <tr><td data-label="Symptom">A cheaper model quietly lowered quality</td><td data-label="Cause">Switched without evals</td><td data-label="Fix">Run the suite against the new model and give it its own baseline.</td></tr>
+        <tr><td data-label="Symptom">A self-hosted GPU costs more per answer than an API</td><td data-label="Cause">It is idle most of the day</td><td data-label="Fix">Self-host for sustained load or data residency, and batch.</td></tr>
+        <tr><td data-label="Symptom">One client ran up the bill</td><td data-label="Cause">Limits counted requests, not tokens</td><td data-label="Fix">Token budgets per user or team.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch10-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Output tokens cost more than input tokens. Why can the prompt still be most of the bill?</p>
+      <details class="ans"><summary>Answer</summary><p>Because there are many more of them: in the reference service about 1,300 prompt tokens against about 170 answer tokens, so eight times the tokens outweigh five times the price.</p></details>
+    </li>
+    <li>
+      <p>The bill doubled overnight. How do you find out why?</p>
+      <details class="ans"><summary>Answer</summary><p>Split cost into requests, tokens per request (prompt and completion apart) and price per token; find which moved; look at what changed in it (deploys, settings, the versions metric); then revert, cap the damage, and only then optimize with evals.</p></details>
+    </li>
+    <li>
+      <p>When does provider prompt caching help, and when does a semantic answer cache hurt?</p>
+      <details class="ans"><summary>Answer</summary><p>Prompt caching helps when a long, identical prefix is reused often. A semantic answer cache hurts when answers depend on live data or on who asks: a similar question can need a different answer, and a cached one can be stale or another user's.</p></details>
+    </li>
+  </ol>
+</section>

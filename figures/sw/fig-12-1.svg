@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="Layer caching. A Dockerfile's instructions become layers stacked on the base image: the base, system packages, the dependency manifests, installing dependencies, then the code. A change to the code rebuilds only the last layer; a change to the manifests rebuilds from the install onward. Copying the code before installing dependencies would make every code change reinstall everything. On the right: image versus container versus tag versus digest."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="300" fill="#ffffff"/>
+      <text class="tl" x="16" y="24">LAYERS, BOTTOM UP</text>
+      <rect class="n-soft" x="16" y="232" width="330" height="36" rx="4"/><text class="ts" x="28" y="255">FROM python:3.13-slim@sha256:… (pinned)</text>
+      <rect class="n-soft" x="16" y="190" width="330" height="36" rx="4"/><text class="ts" x="28" y="213">system packages, users</text>
+      <rect class="n-soft" x="16" y="148" width="330" height="36" rx="4"/><text class="ts" x="28" y="171">COPY pyproject.toml uv.lock</text>
+      <rect class="n-soft" x="16" y="106" width="330" height="36" rx="4"/><text class="ts" x="28" y="129">install dependencies (slow)</text>
+      <rect class="n-acc" x="16" y="64" width="330" height="36" rx="4"/><text class="ts" x="28" y="87">COPY app/ (changes on every commit)</text>
+      <path class="e-acc" d="M352,82 L380,82" marker-end="url(#a-acc)"/><text class="ts ta" x="386" y="86">a code change rebuilds only this</text>
+      <path class="e" d="M352,166 C368,166 368,124 352,124"/><text class="ts" x="386" y="148">a dependency change rebuilds</text><text class="ts" x="386" y="164">from the install upward</text>
+      <text class="ts tr" x="16" y="290">Copy the code before installing, and every commit reinstalls every dependency.</text>
+
+      <text class="tl" x="600" y="24">FOUR WORDS</text>
+      <text class="ts" x="600" y="50"><tspan class="tb">image</tspan>: the immutable build</text>
+      <text class="ts" x="600" y="66">output, like a class</text>
+      <text class="ts" x="600" y="96"><tspan class="tb">container</tspan>: a running process</text>
+      <text class="ts" x="600" y="112">from it, like an object</text>
+      <text class="ts" x="600" y="142"><tspan class="tb">tag</tspan>: a movable name, like</text>
+      <text class="ts" x="600" y="158">a branch; a rebuild moves it</text>
+      <text class="ts" x="600" y="188"><tspan class="tb">digest</tspan>: sha256 of the</text>
+      <text class="ts" x="600" y="204">content; the real identity</text>
+      <text class="ts tmu" x="600" y="236">logs, exec, stop: containers</text>
+      <text class="ts tmu" x="600" y="252">run, push, tag: images</text>
+    </svg>

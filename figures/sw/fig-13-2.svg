@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 320" role="img" aria-label="Which layer caught which bug. Integration tests: a pooler that could not authenticate to Postgres while its health check stayed green; a migration that logged success and was rolled back. Image checks: a production image that could not start because a runtime dependency was installed only for development. End-to-end tests: Stop re-submitting the question, which the component test passed before and after the fix. Load tests: a missing index, p95 7 seconds at 40 requests per second, under 152 milliseconds alone; a sign-in design that collapsed at 1,000 requests per second. Failure drills: leaked connections after Postgres froze under load; an identity-provider outage invisible to every request. Repeated evals: a prompt that printed its own instructions 5 times in 200 runs."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="320" fill="#ffffff"/>
+      <text class="tl" x="16" y="22">LAYER</text><text class="tl" x="200" y="22">A BUG ONLY IT CAUGHT</text>
+      <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
+      <text class="tb" x="16" y="54">Integration</text><text class="ts" x="200" y="54">the pooler could not authenticate to Postgres; its own health check stayed green</text>
+      <line class="rule" x1="16" y1="68" x2="804" y2="68"/>
+      <text class="tb" x="16" y="92">Image check</text><text class="ts" x="200" y="92">production image crash-looped: a runtime library was installed only as a dev dependency</text>
+      <line class="rule" x1="16" y1="106" x2="804" y2="106"/>
+      <text class="tb" x="16" y="130">End to end</text><text class="ts" x="200" y="130">Stop re-submitted the question; the component test passed before and after the fix</text>
+      <line class="rule" x1="16" y1="144" x2="804" y2="144"/>
+      <text class="tb" x="16" y="168">Load test</text><text class="ts" x="200" y="168">a missing index: p95 7 s at 40 requests per second, 43–152 ms when tested alone</text>
+      <text class="ts" x="200" y="186">a sign-in design that doubled CPU per request and collapsed at 1,000 per second</text>
+      <line class="rule" x1="16" y1="200" x2="804" y2="200"/>
+      <text class="tb" x="16" y="224">Failure drill</text><text class="ts" x="200" y="224">13 of 40 pool slots leaked forever after Postgres froze under load</text>
+      <text class="ts" x="200" y="242">an identity-provider outage that no request noticed (metadata was cached)</text>
+      <line class="rule" x1="16" y1="256" x2="804" y2="256"/>
+      <text class="tb" x="16" y="280">Repeated evals</text><text class="ts" x="200" y="280">a prompt printed its own instructions 5 times in 200 runs; 110 calls had all passed</text>
+      <line class="rule" x1="16" y1="294" x2="804" y2="294"/>
+    </svg>

@@ -1,0 +1,190 @@
+<section class="chapter" id="ch13">
+  <header class="ch-head">
+    <span class="ch-num">13</span>
+    <p class="eyebrow">Part VII · The data platform</p>
+    <h2>Warehouses, lakehouses and streams</h2>
+    <p class="lede">The modern data platform keeps the ideas of the classic warehouse (staging, cleansing, star schemas) but separates storage from compute, loads raw data before transforming it, and stores tables in open formats that several engines can read.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Each tool lives in one layer: storage, file format, table format, catalog, compute, or movement. Knowing the layer explains the tool.</li>
+      <li>Parquet lays bytes out by column; Iceberg turns a folder of Parquet files into a table with atomic commits, schema evolution and time travel.</li>
+      <li>Change data capture reads a database's write-ahead log and publishes every change as an event, with almost no load on the source.</li>
+      <li>Bronze, silver and gold are the new names for staging, the conformed layer and the star schema.</li>
+      <li>Start with a warehouse and dbt; add a streaming log, a lakehouse table format or a dataflow tool only for a specific pain.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">ETL: transform before loading</td><td>ELT: load raw, transform inside the engine</td><td>Storage became cheap and compute elastic; raw data kept lets every later layer be rebuilt.</td></tr>
+      <tr><td data-label="Then">Storage and compute in one database server</td><td>Object storage, with compute engines that scale separately</td><td>Pay for compute only while queries run; several engines can share one copy.</td></tr>
+      <tr><td data-label="Then">Nightly extracts by modified date</td><td>Change data capture from the database log</td><td>Near-real-time, captures deletes, and puts almost no load on the source.</td></tr>
+      <tr><td data-label="Then">Proprietary table storage</td><td>Open formats: Parquet files, Iceberg tables</td><td>Less lock-in; Spark, Trino, Snowflake and DuckDB read the same table.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch13-layers">The layers</h3>
+  <figure class="fig wide" id="fig-13-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 290" role="img" aria-label="Layers from the bottom. Storage: object storage such as S3, just files. File format: Parquet, how bytes are laid out in one file, by column. Table format: Iceberg, which files make up the table at which version. Catalog: where table X is, Hive Metastore, AWS Glue, Polaris. Query and compute: Spark, Trino, Snowflake, DuckDB. Movement, beside them: Kafka, an event log; NiFi or Openflow, moving data between systems; managed connectors such as Airbyte or Fivetran. Transformation on top: dbt.">
+      <g class="ts">
+      <rect class="n-soft" x="16" y="232" width="560" height="38" rx="4"/><text x="28" y="256"><tspan class="tb">Storage</tspan>: object storage (S3): just files</text>
+      <rect class="n" x="16" y="188" width="560" height="38" rx="4"/><text x="28" y="212"><tspan class="tb">File format</tspan>: Parquet, columns stored together, with per-block statistics</text>
+      <rect class="n-acc" x="16" y="144" width="560" height="38" rx="4"/><text x="28" y="168"><tspan class="tb">Table format</tspan>: Iceberg, which files make up the table, at which version</text>
+      <rect class="n" x="16" y="100" width="560" height="38" rx="4"/><text x="28" y="124"><tspan class="tb">Catalog</tspan>: where is table X? Hive Metastore, AWS Glue, Polaris</text>
+      <rect class="n" x="16" y="56" width="560" height="38" rx="4"/><text x="28" y="80"><tspan class="tb">Query and compute</tspan>: Spark, Trino, Snowflake, DuckDB</text>
+      <rect class="n-good" x="16" y="12" width="560" height="38" rx="4"/><text x="28" y="36"><tspan class="tb">Transformation</tspan>: dbt, SQL models in Git, with tests</text>
+      <rect class="n-warn" x="600" y="12" width="204" height="258" rx="6"/><text x="612" y="36" class="tb">Movement</text>
+      <text x="612" y="62">Kafka: a durable,</text><text x="612" y="78">replayable event log</text>
+      <text x="612" y="108">NiFi, Openflow: move</text><text x="612" y="124">data between systems,</text><text x="612" y="140">with lineage</text>
+      <text x="612" y="170">managed connectors:</text><text x="612" y="186">Airbyte, Fivetran</text>
+      <text x="612" y="216">CDC: Debezium reads</text><text x="612" y="232">the database's log</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.1</span>The lakehouse stack, layer by layer. Because storage and table format are separate from the engine, several engines can read one copy of the data; a warehouse such as Snowflake keeps the same mental model with managed storage, and can also read Iceberg tables.</figcaption>
+  </figure>
+
+  <figure class="fig wide" id="fig-13-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="How an Iceberg table commits. The catalog holds a pointer to the current metadata file, which records the schema and snapshots; it points to a manifest list, which points to manifests listing data files with per-column statistics, which point to Parquet files. A write creates new data files and new metadata, then atomically swaps the catalog's pointer. Readers see the old version or the new one, never a mix: ACID. Every old pointer is a snapshot, so time travel comes free. Columns are tracked by id, so renames are safe.">
+      <g class="ts">
+      <rect class="n-acc" x="16" y="30" width="120" height="50" rx="5"/><text x="76" y="52" text-anchor="middle" class="tb">catalog</text><text x="76" y="68" text-anchor="middle">pointer</text>
+      <rect class="n" x="166" y="30" width="140" height="50" rx="5"/><text x="236" y="52" text-anchor="middle" class="tb">metadata</text><text x="236" y="68" text-anchor="middle">schema, snapshots</text>
+      <rect class="n" x="336" y="30" width="130" height="50" rx="5"/><text x="401" y="52" text-anchor="middle" class="tb">manifest list</text><text x="401" y="68" text-anchor="middle">per snapshot</text>
+      <rect class="n" x="496" y="30" width="140" height="50" rx="5"/><text x="566" y="52" text-anchor="middle" class="tb">manifests</text><text x="566" y="68" text-anchor="middle">files + column stats</text>
+      <rect class="n-soft" x="666" y="30" width="138" height="50" rx="5"/><text x="735" y="52" text-anchor="middle" class="tb">Parquet files</text><text x="735" y="68" text-anchor="middle">the data</text>
+      </g>
+      <g class="e"><line x1="137" y1="55" x2="164" y2="55" marker-end="url(#a)"/><line x1="307" y1="55" x2="334" y2="55" marker-end="url(#a)"/><line x1="467" y1="55" x2="494" y2="55" marker-end="url(#a)"/><line x1="637" y1="55" x2="664" y2="55" marker-end="url(#a)"/></g>
+      <rect class="n-good" x="16" y="110" width="788" height="100" rx="6"/>
+      <text class="tb" x="28" y="134">A write: new files, new metadata, then one atomic swap of the catalog's pointer</text>
+      <text class="ts" x="28" y="158">readers see the old version or the new one, never a mix: ACID on plain object storage</text>
+      <text class="ts" x="28" y="178">every old pointer is a snapshot: time travel and rollback come free</text>
+      <text class="ts" x="28" y="198">columns are tracked by id, so renaming and reordering are safe; engines skip files using the column statistics</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.2</span>Why a table format exists: a folder of Parquet files has no atomic commit, so readers could see half-written data, and schema changes and deletes were painful. The catalog's essential job, for Iceberg, is that atomic pointer swap.</figcaption>
+  </figure>
+
+  <h3 id="ch13-cdc">Change data capture and streams</h3>
+  <figure class="fig wide" id="fig-13-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="A change-data-capture pipeline. Postgres writes every insert, update and delete to its write-ahead log before applying it. Debezium reads the log and publishes one event per change, with the operation and the old and new rows, to Kafka, one topic per table. NiFi or Spark reads the events and writes Iceberg tables on S3, cataloged in Glue. Snowflake, Trino or Spark query them, and dbt builds the analytics tables. Compared with a nightly extract by modified date: almost no load on the source, near-real-time, captures deletes, replayable.">
+      <g class="ts">
+      <rect class="n" x="16" y="30" width="110" height="60" rx="5"/><text x="71" y="54" text-anchor="middle" class="tb">Postgres</text><text x="71" y="72" text-anchor="middle">write-ahead log</text>
+      <rect class="n" x="146" y="30" width="110" height="60" rx="5"/><text x="201" y="54" text-anchor="middle" class="tb">Debezium</text><text x="201" y="72" text-anchor="middle">one event/change</text>
+      <rect class="n-warn" x="276" y="30" width="110" height="60" rx="5"/><text x="331" y="54" text-anchor="middle" class="tb">Kafka</text><text x="331" y="72" text-anchor="middle">topic per table</text>
+      <rect class="n" x="406" y="30" width="110" height="60" rx="5"/><text x="461" y="54" text-anchor="middle" class="tb">NiFi, Spark</text><text x="461" y="72" text-anchor="middle">write tables</text>
+      <rect class="n-acc" x="536" y="30" width="130" height="60" rx="5"/><text x="601" y="54" text-anchor="middle" class="tb">Iceberg on S3</text><text x="601" y="72" text-anchor="middle">cataloged</text>
+      <rect class="n-good" x="686" y="30" width="118" height="60" rx="5"/><text x="745" y="54" text-anchor="middle" class="tb">engines, dbt</text><text x="745" y="72" text-anchor="middle">gold tables</text>
+      </g>
+      <g class="e"><line x1="127" y1="60" x2="144" y2="60" marker-end="url(#a)"/><line x1="257" y1="60" x2="274" y2="60" marker-end="url(#a)"/><line x1="387" y1="60" x2="404" y2="60" marker-end="url(#a)"/><line x1="517" y1="60" x2="534" y2="60" marker-end="url(#a)"/><line x1="667" y1="60" x2="684" y2="60" marker-end="url(#a)"/></g>
+      <rect class="n-soft" x="16" y="118" width="384" height="94" rx="6"/><text class="tb" x="28" y="140">Kafka</text><text class="ts" x="28" y="162">topics split into partitions, replicated across</text><text class="ts" x="28" y="178">brokers; consumers read at their own offset;</text><text class="ts" x="28" y="194">messages kept for replay, not deleted on read</text>
+      <rect class="n-soft" x="420" y="118" width="384" height="94" rx="6"/><text class="tb" x="432" y="140">NiFi</text><text class="ts" x="432" y="162">processors joined by queues with backpressure;</text><text class="ts" x="432" y="178">provenance for every record; written to disk</text><text class="ts" x="432" y="194">before acknowledged; moves, not analyzes</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.3</span>A change-data-capture pipeline from an application database to analytics. Kafka stores events durably; NiFi moves data between systems; Kafka no longer needs ZooKeeper, which consensus inside Kafka (KRaft) replaced.</figcaption>
+  </figure>
+
+  <h3 id="ch13-kimball">The classic warehouse, renamed</h3>
+  <figure class="fig wide" id="fig-13-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Classic SQL Server warehousing mapped to the lakehouse. Source OLTP stays the same. An SSIS extract becomes CDC or batch ingestion. The staging database becomes bronze: raw, as is, kept. The cleansing and conformed layer becomes silver: cleaned, deduplicated, typed. The star schema of facts and dimensions becomes gold, the Kimball model. Data files become Parquet on S3; system tables become the catalog; the SQL Server engine becomes Spark, Trino or Snowflake; SSIS packages become dbt plus an orchestrator; SQL Server Agent becomes Airflow or Snowflake Tasks.">
+      <text class="tl" x="16" y="22">TRADITIONAL WAREHOUSE</text><text class="tl" x="440" y="22">LAKEHOUSE</text>
+      <g class="ts">
+      <text x="16" y="50">SSIS extract</text><text x="440" y="50">CDC or batch ingestion (Kafka, NiFi, Airbyte, Fivetran)</text>
+      <text x="16" y="76">staging database</text><rect class="n-warn" x="440" y="62" width="364" height="22" rx="3"/><text x="452" y="78"><tspan class="tb">bronze</tspan>: raw, as is, kept</text>
+      <text x="16" y="102">cleansing, conformed layer</text><rect class="n-soft" x="440" y="88" width="364" height="22" rx="3"/><text x="452" y="104"><tspan class="tb">silver</tspan>: cleaned, deduplicated, typed</text>
+      <text x="16" y="128">star schema: facts, dimensions</text><rect class="n-acc" x="440" y="114" width="364" height="22" rx="3"/><text x="452" y="130"><tspan class="tb">gold</tspan>: the Kimball model</text>
+      <text x="16" y="160">database data files</text><text x="440" y="160">Parquet files on object storage</text>
+      <text x="16" y="186">system tables</text><text x="440" y="186">the catalog (Hive Metastore, Glue)</text>
+      <text x="16" y="212">the database engine</text><text x="440" y="212">Spark, Trino, Snowflake</text>
+      <text x="16" y="238">SSIS packages</text><text x="440" y="238">dbt (SQL transforms) and an orchestrator</text>
+      <text x="16" y="264">SQL Server Agent</text><text x="440" y="264">Airflow, or the warehouse's own tasks</text>
+      </g>
+      <g class="e"><line x1="260" y1="46" x2="430" y2="46" marker-end="url(#a)"/><line x1="260" y1="72" x2="430" y2="72" marker-end="url(#a)"/><line x1="260" y1="98" x2="430" y2="98" marker-end="url(#a)"/><line x1="260" y1="124" x2="430" y2="124" marker-end="url(#a)"/><line x1="260" y1="156" x2="430" y2="156" marker-end="url(#a)"/><line x1="260" y1="182" x2="430" y2="182" marker-end="url(#a)"/><line x1="260" y1="208" x2="430" y2="208" marker-end="url(#a)"/><line x1="260" y1="234" x2="430" y2="234" marker-end="url(#a)"/><line x1="260" y1="260" x2="430" y2="260" marker-end="url(#a)"/></g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.4</span>The same ideas, new names. What actually changed: storage and compute are separate; ELT instead of ETL; raw data is kept so silver and gold can be rebuilt; schema-on-read for raw data and an enforced schema in gold; open formats let several engines share one copy.</figcaption>
+  </figure>
+
+  <p><strong>Schema on write</strong> (Postgres) defines columns first and validates data as it loads. <strong>Schema on read</strong> (a semi-structured column holding JSON, queried by path) loads raw data and applies structure at query time: flexible and fast to ingest, with no enforcement and looser queries. <strong>dbt</strong> is the transformation layer: each model is a <code>SELECT</code> in Git, compiled into tables or views inside the warehouse in dependency order, with tests and documentation; it neither moves data nor schedules itself.</p>
+
+  <h3 id="ch13-snowflake">A cloud warehouse's features, in one table</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Feature</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Feature">AI functions, analyst, search, agents</td><td data-label="What">Snowflake's AI suite inside its governed perimeter: model calls from SQL, natural language to SQL over a semantic model, managed retrieval, and a managed agent over both</td></tr>
+        <tr><td data-label="Feature">Snowpark</td><td data-label="What">A DataFrame API translated to SQL and run on warehouse compute: the code goes to the data. Separate from running arbitrary containers inside the platform</td></tr>
+        <tr><td data-label="Feature">Hybrid tables</td><td data-label="What">Row storage with indexes, enforced keys and row-level locking beside columnar analytics: transactional and analytical work in one system; check the limits</td></tr>
+        <tr><td data-label="Feature">Time Travel, Fail-safe</td><td data-label="What">Query, clone or restore data as it was within a retention window; then a fixed period recoverable only by the vendor. Not version control for code</td></tr>
+        <tr><td data-label="Feature">Scale up, scale out</td><td data-label="What">A bigger warehouse makes one big query faster; more clusters of the same size serve more concurrent users</td></tr>
+        <tr><td data-label="Feature">Customer-managed key</td><td data-label="What">A composite encryption key with a part in your own key service: revoke it and the vendor can no longer decrypt the data</td></tr>
+        <tr><td data-label="Feature">Tasks and streams</td><td data-label="What">A built-in scheduler running SQL or procedures on a schedule or after an upstream task, often with change capture for incremental loads</td></tr>
+        <tr><td data-label="Feature">UDFs, procedures, external functions</td><td data-label="What">A UDF computes a value per row inside SQL; a procedure performs actions; an external function calls an HTTPS endpoint per batch of rows, so data leaves the platform</td></tr>
+        <tr><td data-label="Feature">Managed dataflow</td><td data-label="What">A managed NiFi service with connectors for streams and database change capture</td></tr>
+        <tr><td data-label="Feature">Objects as code</td><td data-label="What">Versioned migration scripts, dbt, a Terraform provider, native Git integration and a CLI in CI; zero-copy clones for cheap test copies</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Warehouse vendors rename and add features often: check names and editions against current documentation before relying on them.</p>
+
+  <h3 id="ch13-simple">When it is overcomplicated</h3>
+  <figure class="fig wide" id="fig-13-5">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 214" role="img" aria-label="Start with a warehouse and dbt. Add a piece only for its pain: near-real-time changes without loading production, add CDC and Kafka; many sources and formats with lineage, add NiFi or a managed connector; data too big for one database, cheap storage, several engines or less lock-in, add Iceberg on object storage with a catalog. Red flags: Kafka for a nightly batch; Iceberg with only one engine; Spark under about 100 GB; NiFi where a Python script would do.">
+      <rect class="n-good" x="16" y="16" width="200" height="70" rx="6"/><text class="tb" x="28" y="42">Start here</text><text class="ts" x="28" y="62">a warehouse and dbt</text>
+      <g class="ts">
+      <rect class="n" x="240" y="16" width="564" height="22" rx="3"/><text x="250" y="32">near-real-time changes without loading production → CDC and Kafka</text>
+      <rect class="n" x="240" y="42" width="564" height="22" rx="3"/><text x="250" y="58">many sources and formats, with lineage → NiFi, or a managed connector</text>
+      <rect class="n" x="240" y="68" width="564" height="22" rx="3"/><text x="250" y="84">too big for one database, several engines, less lock-in → Iceberg and a catalog</text>
+      </g>
+      <rect class="n-bad" x="16" y="116" width="788" height="84" rx="6"/><text class="tb tr" x="28" y="140">Red flags</text>
+      <g class="ts"><text x="28" y="164">Kafka for a nightly batch</text><text x="28" y="186">Iceberg with only one engine reading it</text><text x="420" y="164">Spark for under about 100 GB</text><text x="420" y="186">NiFi where a short script would do</text></g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.5</span>The complexity dial applied to data platforms: each piece is added for a pain you can name, the same rule as for application architecture (Chapter 16).</figcaption>
+  </figure>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"It's the Kimball warehouse with storage and compute separated: raw data in bronze, cleaned in silver, star schemas in gold, transformed with dbt inside the engine."</p>
+    <p>"We'd start with the warehouse and dbt, and add CDC and Kafka only for near-real-time needs, or Iceberg only when several engines must share one copy."</p>
+  </aside>
+
+  <h3 id="ch13-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">Readers see half-written data in the lake</td><td data-label="Cause">A folder of files with no table format</td><td data-label="Fix">A table format with atomic commits.</td></tr>
+        <tr><td data-label="Symptom">Deleted rows linger in analytics</td><td data-label="Cause">Extracts by modified date cannot see deletes</td><td data-label="Fix">Change data capture from the log.</td></tr>
+        <tr><td data-label="Symptom">A rebuild of the gold layer is impossible</td><td data-label="Cause">Raw data was transformed and discarded</td><td data-label="Fix">Keep bronze; transform after loading.</td></tr>
+        <tr><td data-label="Symptom">Production changes made by hand cannot be reproduced</td><td data-label="Cause">Warehouse objects edited in the UI</td><td data-label="Fix">Objects as code, deployed from CI.</td></tr>
+        <tr><td data-label="Symptom">The platform costs more than the questions it answers</td><td data-label="Cause">Streaming, lakehouse and dataflow tools added before any pain</td><td data-label="Fix">A warehouse and dbt first; add pieces for named needs.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch13-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What problem does a table format such as Iceberg solve?</p>
+      <details class="ans"><summary>Answer</summary><p>A folder of Parquet files has no atomic commit, so readers can see partial writes and schema changes are painful. Iceberg's metadata layer and an atomic swap of the catalog's pointer give ACID commits, snapshots for time travel, and safe schema evolution.</p></details>
+    </li>
+    <li>
+      <p>Why is change data capture usually better than a nightly extract by modified date?</p>
+      <details class="ans"><summary>Answer</summary><p>It reads the database's log rather than querying tables, so it adds almost no load, is near-real-time, captures deletes, and the events can be replayed.</p></details>
+    </li>
+    <li>
+      <p>Map staging, the conformed layer and the star schema to their lakehouse names.</p>
+      <details class="ans"><summary>Answer</summary><p>Bronze (raw, kept), silver (cleaned, deduplicated, typed) and gold (the Kimball model of facts and dimensions).</p></details>
+    </li>
+  </ol>
+</section>

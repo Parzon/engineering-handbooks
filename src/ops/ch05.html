@@ -1,0 +1,655 @@
+<section class="chapter" id="ch5">
+  <header class="ch-head">
+    <span class="ch-num">5</span>
+    <p class="eyebrow">Part III · Identity</p>
+    <h2>Identity without keys</h2>
+    <p class="lede">People, pipelines and running services each prove who they are to a trusted identity provider and receive credentials that expire on their own, so there is no permanent key anywhere to leak.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Three kinds of caller need cloud access: <strong>people</strong>, <strong>CI pipelines</strong> and <strong>workloads</strong>. Each now gets temporary credentials, by a different route.</li>
+      <li>People sign in once a day through single sign-on with MFA. Their sessions end by themselves.</li>
+      <li>Pipelines use <strong>OIDC federation</strong>: the CI platform signs a token that says which job is running, and the cloud exchanges it for credentials that last an hour.</li>
+      <li>Workloads use a role attached to the compute. The platform hands out and rotates the credentials.</li>
+      <li>The <strong>trust policy</strong> is the security boundary. It is an exact match on claims, so write it from the token you actually receive, not from an example.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">An IAM user per developer, with access keys in <code>~/.aws/credentials</code></td><td>Single sign-on behind the company identity provider, with role sessions that expire</td><td>A key on a laptop leaks with the laptop. A session dies on its own.</td></tr>
+      <tr><td data-label="Then">Access keys stored as CI secrets</td><td>OIDC federation: the job's signed token is exchanged for one-hour credentials</td><td>Stored CI keys are the classic leak, and someone has to rotate them.</td></tr>
+      <tr><td data-label="Then">Keys in a config file or baked into a server image</td><td>A role attached to the VM or container; credentials served by the platform and rotated</td><td>A server that holds no secret cannot leak one.</td></tr>
+      <tr><td data-label="Then">SSH keys and port 22 for operators</td><td>Session Manager and Run Command, authorized by IAM and recorded</td><td>No open port, and every command is attributed to a person.</td></tr>
+      <tr><td data-label="Then">A shared admin account for deploys</td><td>Pipelines deploy; people are read-only in production and request elevated access when needed</td><td>Every production change goes through a reviewed, recorded path.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch5-routes">Three callers, three routes</h3>
+  <p>The old model gave every caller a long-lived secret: a password, an access key, an SSH key. Each one had to be stored somewhere, rotated by someone, and revoked when a person left. The modern model replaces all of them with the same pattern. A caller proves who it is to a system that already knows it, and receives credentials with a short, fixed lifetime.</p>
+
+  <figure class="fig" id="fig-5-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 800 318" role="img" aria-label="Three lanes: people sign in through the company identity provider and IAM Identity Center to get a role session; CI jobs present a GitHub-signed token to AWS STS to get one-hour credentials; workloads get rotated credentials from the role attached to their compute.">
+      <text class="tl" x="86" y="20" text-anchor="middle">WHO</text>
+      <text class="tl" x="289" y="20" text-anchor="middle">PROVES WHO IT IS TO</text>
+      <text class="tl" x="497" y="20" text-anchor="middle">EXCHANGES IT AT</text>
+      <text class="tl" x="705" y="20" text-anchor="middle">GETS</text>
+
+      <rect class="n" x="16" y="34" width="140" height="66" rx="5"/>
+      <text class="tb" x="86" y="62" text-anchor="middle">People</text>
+      <text class="ts" x="86" y="80" text-anchor="middle">engineers, on-call</text>
+      <rect class="n" x="214" y="34" width="150" height="66" rx="5"/>
+      <text class="tb" x="289" y="62" text-anchor="middle">Company identity</text>
+      <text class="ts" x="289" y="80" text-anchor="middle">provider: SSO and MFA</text>
+      <rect class="n" x="422" y="34" width="150" height="66" rx="5"/>
+      <text class="tb" x="497" y="62" text-anchor="middle">IAM Identity Center</text>
+      <text class="ts" x="497" y="80" text-anchor="middle">groups mapped to roles</text>
+      <rect class="n-acc" x="630" y="34" width="150" height="66" rx="5"/>
+      <text class="tb" x="705" y="62" text-anchor="middle">Role session</text>
+      <text class="ts" x="705" y="80" text-anchor="middle">ends after the workday</text>
+      <line class="e" x1="157" y1="67" x2="212" y2="67" marker-end="url(#a)"/>
+      <text class="ts" x="185" y="60" text-anchor="middle">signs in</text>
+      <line class="e" x1="365" y1="67" x2="420" y2="67" marker-end="url(#a)"/>
+      <text class="ts" x="393" y="60" text-anchor="middle">asserts</text>
+      <line class="e-acc" x1="573" y1="67" x2="628" y2="67" marker-end="url(#a-acc)"/>
+      <text class="ts" x="601" y="60" text-anchor="middle">issues</text>
+
+      <rect class="n" x="16" y="126" width="140" height="66" rx="5"/>
+      <text class="tb" x="86" y="154" text-anchor="middle">CI pipelines</text>
+      <text class="ts" x="86" y="172" text-anchor="middle">a GitHub Actions job</text>
+      <rect class="n" x="214" y="126" width="150" height="66" rx="5"/>
+      <text class="tb" x="289" y="154" text-anchor="middle">GitHub's token service</text>
+      <text class="ts" x="289" y="172" text-anchor="middle">signs a token about the job</text>
+      <rect class="n" x="422" y="126" width="150" height="66" rx="5"/>
+      <text class="tb" x="497" y="154" text-anchor="middle">AWS STS</text>
+      <text class="ts" x="497" y="172" text-anchor="middle">checks the trust policy</text>
+      <rect class="n-acc" x="630" y="126" width="150" height="66" rx="5"/>
+      <text class="tb" x="705" y="154" text-anchor="middle">Credentials</text>
+      <text class="ts" x="705" y="172" text-anchor="middle">expire in one hour</text>
+      <line class="e" x1="157" y1="159" x2="212" y2="159" marker-end="url(#a)"/>
+      <text class="ts" x="185" y="152" text-anchor="middle">asks</text>
+      <line class="e" x1="365" y1="159" x2="420" y2="159" marker-end="url(#a)"/>
+      <text class="ts" x="393" y="152" text-anchor="middle">presents</text>
+      <line class="e-acc" x1="573" y1="159" x2="628" y2="159" marker-end="url(#a-acc)"/>
+      <text class="ts" x="601" y="152" text-anchor="middle">issues</text>
+
+      <rect class="n" x="16" y="218" width="140" height="66" rx="5"/>
+      <text class="tb" x="86" y="246" text-anchor="middle">Workloads</text>
+      <text class="ts" x="86" y="264" text-anchor="middle">ECS tasks, EC2 VMs</text>
+      <rect class="n" x="214" y="218" width="150" height="66" rx="5"/>
+      <text class="tb" x="289" y="246" text-anchor="middle">The compute itself</text>
+      <text class="ts" x="289" y="264" text-anchor="middle">a role is attached to it</text>
+      <rect class="n" x="422" y="218" width="150" height="66" rx="5"/>
+      <text class="tb" x="497" y="246" text-anchor="middle">The platform</text>
+      <text class="ts" x="497" y="264" text-anchor="middle">serves the role's credentials</text>
+      <rect class="n-acc" x="630" y="218" width="150" height="66" rx="5"/>
+      <text class="tb" x="705" y="246" text-anchor="middle">Credentials</text>
+      <text class="ts" x="705" y="264" text-anchor="middle">rotated by AWS</text>
+      <line class="e" x1="157" y1="251" x2="212" y2="251" marker-end="url(#a)"/>
+      <text class="ts" x="185" y="244" text-anchor="middle">runs on</text>
+      <line class="e" x1="365" y1="251" x2="420" y2="251" marker-end="url(#a)"/>
+      <text class="ts" x="393" y="244" text-anchor="middle">asks</text>
+      <line class="e-acc" x1="573" y1="251" x2="628" y2="251" marker-end="url(#a-acc)"/>
+      <text class="ts" x="601" y="244" text-anchor="middle">issues</text>
+
+      <text class="ts" x="400" y="310" text-anchor="middle">Every call made with these credentials is recorded in CloudTrail under the caller's identity.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.1</span>Three kinds of caller, three routes to the same result: credentials that expire on their own. No route stores a permanent key.</figcaption>
+  </figure>
+
+  <p>The rest of this chapter takes each lane in turn. Pipelines get the most space, because that is where the change is newest and where the configuration is easiest to get subtly wrong.</p>
+
+  <h3 id="ch5-people">People: single sign-on, and no standing access to production</h3>
+  <p>An engineer signs in once a day through the company's identity provider (Okta, Microsoft Entra ID and others), with MFA. AWS IAM Identity Center maps the groups that provider asserts to roles in each account: development, staging, production. The command-line tools then fetch short-lived role credentials as needed. When the sign-in session ends, usually after a working day, everything stops working until the person signs in again. A stolen laptop's credentials die on their own.</p>
+  <p>Production adds one more rule: people do not deploy by hand. The pipeline deploys through its own role. People are read-only by default and get elevated access only on request, for a fixed time, and every use of it is recorded. This is often called break-glass or just-in-time access.</p>
+  <p>The reference build used a single throwaway account, so it signed in with the simpler <code>aws login</code>. The idea is the same: a browser sign-in that yields temporary credentials, and no access keys on disk. Root user access keys were never created.</p>
+
+  <h3 id="ch5-oidc">Pipelines: OIDC federation</h3>
+  <p>A CI job is the caller with the most power and the least supervision: it runs automatically, on shared infrastructure, and can push images or change infrastructure. It also cannot type a password. The old answer was an access key stored in the CI system's secrets. The modern answer is <strong>OpenID Connect (OIDC) federation</strong>: the CI platform vouches for the job, and the cloud decides whether to trust that.</p>
+
+  <figure class="fig wide" id="fig-5-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 416" role="img" aria-label="Sequence: the job requests an ID token from GitHub, presents it to AWS STS, STS verifies the signature and checks aud and sub against the role's trust policy, returns one-hour credentials, and the job uses them to push images to ECR. A mismatch returns AccessDenied.">
+      <rect class="n" x="20" y="14" width="140" height="46" rx="5"/>
+      <text class="tb" x="90" y="34" text-anchor="middle">GitHub Actions job</text>
+      <text class="ts" x="90" y="51" text-anchor="middle">the release workflow</text>
+      <rect class="n" x="200" y="14" width="140" height="46" rx="5"/>
+      <text class="tb" x="270" y="34" text-anchor="middle">GitHub token service</text>
+      <text class="ts" x="270" y="51" text-anchor="middle">the OIDC issuer</text>
+      <rect class="n" x="380" y="14" width="140" height="46" rx="5"/>
+      <text class="tb" x="450" y="34" text-anchor="middle">AWS STS</text>
+      <text class="ts" x="450" y="51" text-anchor="middle">security token service</text>
+      <rect class="n" x="550" y="14" width="140" height="46" rx="5"/>
+      <text class="tb" x="620" y="34" text-anchor="middle">IAM role</text>
+      <text class="ts" x="620" y="51" text-anchor="middle">its trust policy</text>
+      <rect class="n" x="710" y="14" width="100" height="46" rx="5"/>
+      <text class="tb" x="760" y="34" text-anchor="middle">Amazon ECR</text>
+      <text class="ts" x="760" y="51" text-anchor="middle">the registry</text>
+
+      <line class="rule dash" x1="90" y1="60" x2="90" y2="404"/>
+      <line class="rule dash" x1="270" y1="60" x2="270" y2="404"/>
+      <line class="rule dash" x1="450" y1="60" x2="450" y2="404"/>
+      <line class="rule dash" x1="620" y1="60" x2="620" y2="404"/>
+      <line class="rule dash" x1="760" y1="60" x2="760" y2="404"/>
+
+      <line class="e" x1="90" y1="96" x2="268" y2="96" marker-end="url(#a)"/>
+      <text class="ts" x="180" y="88" text-anchor="middle">1  request an ID token</text>
+      <line class="e dash" x1="270" y1="134" x2="92" y2="134" marker-end="url(#a)"/>
+      <text class="ts" x="180" y="126" text-anchor="middle">2  signed JWT: iss, aud, sub</text>
+      <line class="e" x1="90" y1="176" x2="448" y2="176" marker-end="url(#a)"/>
+      <text class="ts" x="270" y="168" text-anchor="middle">3  AssumeRoleWithWebIdentity(role, JWT)</text>
+      <path class="e" d="M450,200 h28 v20 h-26" marker-end="url(#a)"/>
+      <text class="ts" x="486" y="208">4  verify the signature</text>
+      <text class="ts" x="486" y="223">with the issuer's keys</text>
+      <line class="e" x1="450" y1="262" x2="618" y2="262" marker-end="url(#a)"/>
+      <text class="ts" x="535" y="254" text-anchor="middle">5  do aud and sub match?</text>
+      <line class="e-good dash" x1="620" y1="294" x2="452" y2="294" marker-end="url(#a-good)"/>
+      <text class="ts" x="535" y="286" text-anchor="middle">6  yes</text>
+      <line class="e-acc dash" x1="450" y1="334" x2="92" y2="334" marker-end="url(#a-acc)"/>
+      <text class="ts" x="270" y="326" text-anchor="middle">7  temporary credentials, valid for one hour</text>
+      <line class="e" x1="90" y1="384" x2="758" y2="384" marker-end="url(#a)"/>
+      <text class="ts" x="424" y="376" text-anchor="middle">8  push the images, as the role</text>
+
+      <rect class="n-bad" x="638" y="300" width="174" height="46" rx="5"/>
+      <text class="ts" x="650" y="318">if aud or sub differ:</text>
+      <text class="tb tr" x="650" y="336">AccessDenied</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.2</span>OIDC federation, step by step. GitHub vouches for the job, AWS checks that claim against the role's trust policy, and the job gets credentials that last an hour. Nothing secret is stored in the repository or in CI.</figcaption>
+  </figure>
+
+  <p>Four pieces make it work:</p>
+  <ol>
+    <li><strong>The job asks for a token.</strong> GitHub signs a JSON Web Token (JWT) for each job that has <code>permissions: id-token: write</code>. Without that line, no token is issued.</li>
+    <li><strong>The token describes the job.</strong> Its <code>iss</code> (issuer) is GitHub's token service, its <code>aud</code> (audience) is <code>sts.amazonaws.com</code>, and its <code>sub</code> (subject) names the repository and either the git ref that triggered the job or the GitHub environment the job runs in.</li>
+    <li><strong>AWS trusts the issuer once per account.</strong> An IAM OIDC provider entry tells AWS to accept tokens signed by GitHub's published keys.</li>
+    <li><strong>A role decides which jobs it will serve.</strong> Its trust policy allows <code>sts:AssumeRoleWithWebIdentity</code> only when <code>aud</code> and <code>sub</code> match. A different repository, branch, tag or environment is refused.</li>
+  </ol>
+
+  <figure class="fig wide" id="fig-5-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 314" role="img" aria-label="Each claim in the token is compared with a condition in the trust policy. Issuer, audience and subject match. A subject copied from documentation in the classic repo:owner/name form does not match this repository's tokens, which embed numeric owner and repository IDs.">
+      <text class="tl" x="20" y="18">CLAIM</text>
+      <text class="tl" x="130" y="18">WHAT THE TOKEN SAYS, AND WHAT THE POLICY REQUIRES</text>
+      <text class="tl" x="800" y="18" text-anchor="end">RESULT</text>
+      <line class="rule-strong" x1="20" y1="26" x2="800" y2="26"/>
+
+      <text class="tb" x="20" y="54">Issuer</text>
+      <text class="ts" x="130" y="50">token</text>
+      <text class="tm" x="180" y="50">https://token.actions.githubusercontent.com</text>
+      <text class="ts" x="130" y="72">policy</text>
+      <text class="tm" x="180" y="72">the OIDC provider for that issuer</text>
+      <rect class="n-good" x="716" y="44" width="84" height="22" rx="11"/>
+      <text class="ts tg tb" x="758" y="59" text-anchor="middle">match</text>
+      <line class="rule" x1="20" y1="88" x2="800" y2="88"/>
+
+      <text class="tb" x="20" y="116">Audience</text>
+      <text class="ts" x="130" y="112">token</text>
+      <text class="tm" x="180" y="112">sts.amazonaws.com</text>
+      <text class="ts" x="130" y="134">policy</text>
+      <text class="tm" x="180" y="134">StringEquals  aud = sts.amazonaws.com</text>
+      <rect class="n-good" x="716" y="106" width="84" height="22" rx="11"/>
+      <text class="ts tg tb" x="758" y="121" text-anchor="middle">match</text>
+      <line class="rule" x1="20" y1="150" x2="800" y2="150"/>
+
+      <text class="tb" x="20" y="178">Subject</text>
+      <text class="ts" x="130" y="174">token</text>
+      <text class="tm" x="180" y="174">repo:Parzon@124113141/triage-assistant@1381921470:ref:refs/tags/v0.8.2</text>
+      <text class="ts" x="130" y="196">policy</text>
+      <text class="tm" x="180" y="196">StringLike    sub = repo:Parzon@124113141/triage-assistant@1381921470:ref:refs/tags/v*</text>
+      <rect class="n-good" x="716" y="168" width="84" height="22" rx="11"/>
+      <text class="ts tg tb" x="758" y="183" text-anchor="middle">match</text>
+      <line class="rule" x1="20" y1="240" x2="800" y2="240"/>
+
+      <text class="tb tr" x="20" y="268">Subject</text>
+      <text class="ts" x="20" y="285">as in most examples</text>
+      <text class="ts" x="130" y="264">policy</text>
+      <text class="tm" x="180" y="264">StringLike    sub = repo:Parzon/triage-assistant:ref:refs/tags/v*</text>
+      <text class="ts" x="180" y="286">This repository issues its subject with the numeric owner and repository IDs embedded.</text>
+      <rect class="n-bad" x="716" y="258" width="84" height="22" rx="11"/>
+      <text class="ts tr tb" x="758" y="273" text-anchor="middle">no match</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.3</span>The trust policy is a string match against the token's claims. The last row is the policy most examples would lead you to write. It never matches this repository's tokens, and nothing in the error says which condition failed.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/cicd.py#L14-L49">infra/aws/cicd.py</a><span class="lines">the OIDC provider and the image-push role</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>This CDK stack (Python that becomes CloudFormation) creates the account's one OIDC provider for GitHub and the role the release workflow uses to copy images into Amazon ECR.</p>
+        <ul class="notice">
+          <li><code>SUB_PREFIX</code> is the subject read from the repository's own OIDC setting, not typed from an example. The comment says how to read it.</li>
+          <li>The audience must be exactly <code>sts.amazonaws.com</code>.</li>
+          <li>The subject must be a version tag of this repository. A pull request, a branch push or a fork produces a different subject and gets nothing.</li>
+          <li>Sessions last at most one hour.</li>
+          <li>Push and pull are granted on the three image repositories only. <code>ecr:GetAuthorizationToken</code> cannot be scoped to a repository, so it is the one permission on <code>*</code>, and the code says why.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/cicd.py" data-lines="14-20"><code class="language-python"># This repo issues GitHub's "immutable subject" claim, which embeds the numeric owner and repo IDs
+# (survives renames, blocks a re-created repo of the same name). Read it with:
+#   gh api repos/Parzon/triage-assistant/actions/oidc/customization/sub
+# A copy of this template has other ids: put its own prefix here (the same command, on its repo),
+# or no role can be assumed. scripts/new-project.sh renames the repo, not these numbers.
+SUB_PREFIX = "repo:Parzon@124113141/triage-assistant@1381921470"
+ISSUER = "token.actions.githubusercontent.com"</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/cicd.py" data-lines="26-49"><code class="language-python"># AWS trusts GitHub's signed tokens (one provider per account).
+provider = iam.OpenIdConnectProvider(
+    self, "GitHub", url=f"https://{ISSUER}", client_ids=["sts.amazonaws.com"]
+)
+role = iam.Role(
+    self,
+    "EcrPush",
+    role_name="triage-gha-ecr-push",
+    max_session_duration=Duration.hours(1),
+    assumed_by=iam.WebIdentityPrincipal(
+        provider.open_id_connect_provider_arn,
+        conditions={
+            "StringEquals": {f"{ISSUER}:aud": "sts.amazonaws.com"},
+            # Only a release tag of this repo: not a PR, not a branch, not a fork.
+            "StringLike": {f"{ISSUER}:sub": f"{SUB_PREFIX}:ref:refs/tags/v*"},
+        },
+    ),
+)
+for repo in repos.values():
+    repo.grant_pull_push(role)  # scoped to these repos, not ecr:*
+# GetAuthorizationToken cannot be scoped to a repository.
+role.add_to_policy(
+    iam.PolicyStatement(actions=["ecr:GetAuthorizationToken"], resources=["*"])
+)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch5-roles">One role per job, gated where the risk is</h3>
+  <p>The reference build has two pipelines that touch AWS, and each has its own role. Copying images is low risk and happens on every release, so its role trusts any version tag. Deploying changes production, so its role trusts only jobs that run inside a <strong>GitHub environment</strong> named <code>aws-demo</code>.</p>
+  <p>That choice moves the approval rules out of the trust policy and into GitHub. When a job names an environment, its token's subject ends in <code>:environment:aws-demo</code> instead of the git ref. The environment's own protection rules then decide which jobs may run in it: here, only those from protected branches, and only after a required reviewer approves. That reviewer is what turns continuous deployment into deploy-on-approval, and adding or removing one never touches AWS.</p>
+
+  <figure class="fig wide" id="fig-5-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 262" role="img" aria-label="Two lanes. The release workflow's ecr job, on a version tag, presents a token that the ecr-push role trusts, and may push and pull three ECR repositories. The deploy workflow, inside the aws-demo environment, presents a token the deploy role trusts, and may only assume the CDK bootstrap roles.">
+      <text class="tl" x="106" y="18" text-anchor="middle">THE JOB</text>
+      <text class="tl" x="336" y="18" text-anchor="middle">THE ROLE TRUSTS ONLY</text>
+      <text class="tl" x="551" y="18" text-anchor="middle">THE ROLE</text>
+      <text class="tl" x="736" y="18" text-anchor="middle">AND MAY ONLY</text>
+
+      <rect class="n" x="16" y="32" width="180" height="70" rx="5"/>
+      <text class="tb" x="106" y="60" text-anchor="middle">Release workflow</text>
+      <text class="ts" x="106" y="79" text-anchor="middle">job ecr, on a v* tag</text>
+      <rect class="n-soft" x="236" y="32" width="200" height="70" rx="5"/>
+      <text class="ts" x="336" y="58" text-anchor="middle">a subject ending in</text>
+      <text class="tm" x="336" y="79" text-anchor="middle">:ref:refs/tags/v*</text>
+      <rect class="n-acc" x="476" y="32" width="150" height="70" rx="5"/>
+      <text class="tm tb" x="551" y="60" text-anchor="middle">triage-gha-ecr-push</text>
+      <text class="ts" x="551" y="79" text-anchor="middle">one-hour sessions</text>
+      <rect class="n" x="666" y="32" width="140" height="70" rx="5"/>
+      <text class="tb" x="736" y="60" text-anchor="middle">push and pull</text>
+      <text class="ts" x="736" y="79" text-anchor="middle">three image repositories</text>
+      <line class="e" x1="197" y1="67" x2="234" y2="67" marker-end="url(#a)"/>
+      <line class="e" x1="437" y1="67" x2="474" y2="67" marker-end="url(#a)"/>
+      <line class="e-acc" x1="627" y1="67" x2="664" y2="67" marker-end="url(#a-acc)"/>
+
+      <rect class="n" x="16" y="146" width="180" height="70" rx="5"/>
+      <text class="tb" x="106" y="174" text-anchor="middle">Deploy workflow</text>
+      <text class="ts" x="106" y="193" text-anchor="middle">in environment aws-demo</text>
+      <rect class="n-soft" x="236" y="146" width="200" height="70" rx="5"/>
+      <text class="ts" x="336" y="172" text-anchor="middle">a subject ending in</text>
+      <text class="tm" x="336" y="193" text-anchor="middle">:environment:aws-demo</text>
+      <rect class="n-acc" x="476" y="146" width="150" height="70" rx="5"/>
+      <text class="tm tb" x="551" y="174" text-anchor="middle">triage-gha-deploy</text>
+      <text class="ts" x="551" y="193" text-anchor="middle">one-hour sessions</text>
+      <rect class="n" x="666" y="146" width="140" height="70" rx="5"/>
+      <text class="tb" x="736" y="174" text-anchor="middle">assume CDK's</text>
+      <text class="ts" x="736" y="193" text-anchor="middle">deployment roles</text>
+      <line class="e" x1="197" y1="181" x2="234" y2="181" marker-end="url(#a)"/>
+      <line class="e" x1="437" y1="181" x2="474" y2="181" marker-end="url(#a)"/>
+      <line class="e-acc" x1="627" y1="181" x2="664" y2="181" marker-end="url(#a-acc)"/>
+
+      <text class="ts" x="16" y="246">GitHub decides which jobs may run in the environment: protected branches only, after a required reviewer approves.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.4</span>Two jobs, two roles. The deploy role trusts an environment rather than a ref, so GitHub's environment rules become the gate in front of production.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/.github/workflows/deploy.yml#L31-L77">.github/workflows/deploy.yml</a><span class="lines">and the deploy role in</span><a href="{{TA}}/infra/aws/cicd.py#L52-L75">infra/aws/cicd.py</a></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The deploy job names the environment and asks for a token. Then one action exchanges the token for credentials. The role ARN is a repository secret. It grants nothing on its own, but it names the AWS account, and GitHub masks only secrets in public logs: a variable is printed with every step's inputs. A job's <code>if</code> cannot read secrets, so a first job reads it and answers yes or no. While it is unset, nothing deploys, so a copy of the template works without an AWS account.</p>
+        <ul class="notice">
+          <li><code>environment: name: aws-demo</code> is what changes the token's subject.</li>
+          <li><code>id-token: write</code> is granted to this job only, not to the whole workflow.</li>
+          <li><code>mask-aws-account-id</code> hides the account id where the action and CDK print it.</li>
+          <li>The deploy role may assume only the roles that <code>cdk bootstrap</code> created. CloudFormation does the actual work with its own execution role.</li>
+          <li>Here the subject is matched with <code>StringEquals</code>, because there is no wildcard to allow.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path=".github/workflows/deploy.yml" data-lines="31-55"><code class="language-yaml">jobs:
+  # A job's `if` cannot read secrets: this one reads the secret and answers yes or no.
+  enabled:
+    if: &gt;-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &amp;&amp; github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-24.04
+    outputs:
+      deploy: ${{ steps.check.outputs.deploy }}
+    steps:
+      - id: check
+        env:
+          CONFIGURED: ${{ secrets.AWS_DEPLOY_ROLE_ARN != '' }}
+        run: echo "deploy=$CONFIGURED" &gt;&gt; "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: enabled
+    if: needs.enabled.outputs.deploy == 'true'
+    runs-on: ubuntu-24.04
+    environment:
+      name: aws-demo
+      url: ${{ steps.smoke.outputs.url }}
+    permissions:
+      contents: read
+      id-token: write</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path=".github/workflows/deploy.yml" data-lines="72-77"><code class="language-yaml">- uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+  with:
+    role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+    aws-region: ap-south-1
+    # The account id also appears in what follows (CDK's output, resource ARNs).
+    mask-aws-account-id: true</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/cicd.py" data-lines="52-75"><code class="language-python">deploy = iam.Role(
+    self,
+    "Deploy",
+    role_name="triage-gha-deploy",
+    max_session_duration=Duration.hours(1),
+    assumed_by=iam.WebIdentityPrincipal(
+        provider.open_id_connect_provider_arn,
+        conditions={
+            "StringEquals": {
+                f"{ISSUER}:aud": "sts.amazonaws.com",
+                # A job that names an environment gets this subject instead of its ref.
+                f"{ISSUER}:sub": f"{SUB_PREFIX}:environment:aws-demo",
+            },
+        },
+    ),
+)
+deploy.add_to_policy(
+    iam.PolicyStatement(
+        actions=["sts:AssumeRole", "sts:TagSession"],
+        resources=[
+            f"arn:aws:iam::{self.account}:role/cdk-hnb659fds-*-{self.account}-{self.region}"
+        ],
+    )
+)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch5-workloads">Workloads: roles attached to the compute</h3>
+  <p>A running service should never hold a key either. On AWS, a role is attached to the compute itself: a <strong>task role</strong> for an ECS task, an <strong>instance profile</strong> for an EC2 VM. The platform serves that role's credentials to the code at runtime and rotates them. Your code, using the standard AWS SDK, picks them up without any configuration.</p>
+  <p>ECS has two roles per task, and mixing them up is a common mistake. The <strong>task execution role</strong> is used by ECS itself, before your code runs, to pull the image and inject secrets. The <strong>task role</strong> is what your code may call once it is running, such as S3 or a queue. A service that needs no AWS API at runtime needs no task role at all.</p>
+
+  <figure class="fig wide" id="fig-5-5">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Left: on ECS, the execution role lets ECS pull the image from ECR and inject secrets from Secrets Manager at task start; the task role is what the code calls AWS with. Right: on EC2, the instance profile lets the ECR credential helper pull images without a password, and operators reach the VM through Session Manager rather than SSH; port 22 is closed.">
+      <text class="tl" x="20" y="18">ECS TASK ON FARGATE</text>
+      <text class="tl" x="440" y="18">EC2 VIRTUAL MACHINE</text>
+      <line class="rule" x1="420" y1="10" x2="420" y2="290"/>
+
+      <rect class="n" x="20" y="36" width="150" height="48" rx="5"/>
+      <text class="tb" x="95" y="56" text-anchor="middle">Secrets Manager</text>
+      <text class="ts" x="95" y="73" text-anchor="middle">generated secrets</text>
+      <rect class="n" x="20" y="116" width="150" height="48" rx="5"/>
+      <text class="tb" x="95" y="136" text-anchor="middle">Amazon ECR</text>
+      <text class="ts" x="95" y="153" text-anchor="middle">release images</text>
+      <rect class="n-acc" x="240" y="36" width="160" height="128" rx="5"/>
+      <text class="tb" x="320" y="58" text-anchor="middle">The task</text>
+      <rect class="n" x="262" y="72" width="116" height="26" rx="4"/>
+      <text class="tm" x="320" y="89" text-anchor="middle">api</text>
+      <rect class="n" x="262" y="104" width="116" height="26" rx="4"/>
+      <text class="tm" x="320" y="121" text-anchor="middle">migrate</text>
+      <text class="ts" x="320" y="150" text-anchor="middle">env vars from secrets</text>
+      <line class="e" x1="171" y1="60" x2="238" y2="60" marker-end="url(#a)"/>
+      <text class="ts" x="205" y="52" text-anchor="middle">injected</text>
+      <line class="e" x1="171" y1="140" x2="238" y2="140" marker-end="url(#a)"/>
+      <text class="ts" x="205" y="132" text-anchor="middle">pulled</text>
+      <text class="ts" x="95" y="190" text-anchor="middle">both done by ECS, before your</text>
+      <text class="ts" x="95" y="205" text-anchor="middle">code runs: the execution role</text>
+      <rect class="n" x="240" y="228" width="160" height="48" rx="5"/>
+      <text class="tb" x="320" y="248" text-anchor="middle">S3, SQS, Bedrock</text>
+      <text class="ts" x="320" y="265" text-anchor="middle">what the code calls</text>
+      <line class="e-acc" x1="320" y1="165" x2="320" y2="226" marker-end="url(#a-acc)"/>
+      <text class="ts" x="330" y="200">as the task role</text>
+
+      <rect class="n" x="440" y="36" width="140" height="48" rx="5"/>
+      <text class="tb" x="510" y="56" text-anchor="middle">Amazon ECR</text>
+      <text class="ts" x="510" y="73" text-anchor="middle">release images</text>
+      <rect class="n" x="440" y="128" width="140" height="48" rx="5"/>
+      <text class="tb" x="510" y="148" text-anchor="middle">Session Manager</text>
+      <text class="ts" x="510" y="165" text-anchor="middle">and Run Command</text>
+      <rect class="n-acc" x="640" y="66" width="160" height="96" rx="5"/>
+      <text class="tb" x="720" y="94" text-anchor="middle">The VM</text>
+      <text class="ts" x="720" y="114" text-anchor="middle">instance profile attached</text>
+      <text class="ts" x="720" y="131" text-anchor="middle">IMDSv2 only</text>
+      <line class="e" x1="581" y1="60" x2="638" y2="84" marker-end="url(#a)"/>
+      <text class="ts" x="610" y="56" text-anchor="middle">pulled</text>
+      <line class="e" x1="581" y1="152" x2="638" y2="136" marker-end="url(#a)"/>
+      <text class="ts" x="610" y="168" text-anchor="middle">commands</text>
+      <text class="ts" x="510" y="206" text-anchor="middle">no registry password: a credential</text>
+      <text class="ts" x="510" y="221" text-anchor="middle">helper uses the instance profile</text>
+      <rect class="n-bad" x="640" y="196" width="160" height="40" rx="5"/>
+      <text class="tb tr" x="720" y="214" text-anchor="middle">SSH, port 22</text>
+      <text class="ts" x="720" y="229" text-anchor="middle">closed; no key exists</text>
+      <text class="ts" x="440" y="270">Every operator command is recorded in CloudTrail.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.5</span>Workload identity on the two AWS compute types used in the reference build. Neither holds a key: the role is attached to the compute, and the platform supplies the credentials.</figcaption>
+  </figure>
+
+  <p>Application secrets that are not AWS credentials, such as a database password or a model provider's API key, follow the same principle. They are generated by Secrets Manager, read by ECS when the task starts, and handed to the container as environment variables. They never appear in the image, the task definition, the CloudFormation template or the repository.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L85-L104">infra/aws/service.py</a><span class="lines">and</span><a href="{{TA}}/infra/aws/vm.py#L1-L10">infra/aws/vm.py</a></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Two helpers in the ECS stack: one asks Secrets Manager to generate a secret, the other tells ECS to inject a field of it into a container at start. The VM stack's docstring lists what makes a single VM acceptable to a platform team.</p>
+        <ul class="notice">
+          <li>Secrets are generated by AWS. Nobody types or sees them.</li>
+          <li>The comment on <code>exclude_punctuation</code> records a real constraint: the api builds a database URL from the password.</li>
+          <li>In this throwaway account a secret is deleted with the stack; the <code>production:</code> comment says to keep it (<code>RETAIN</code>), since the database it opens may outlive the stack.</li>
+          <li>The VM has no SSH key and no port 22. Images come from ECR through the instance role, so no registry password exists anywhere.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="85-104"><code class="language-python">def generated_secret(scope: Construct, cid: str, username: str | None = None) -&gt; sm.Secret:
+    # No punctuation: the api builds a URL from these, and @ : / % would need encoding.
+    return sm.Secret(
+        scope,
+        cid,
+        generate_secret_string=sm.SecretStringGenerator(
+            secret_string_template=json.dumps({"username": username} if username else {}),
+            generate_string_key="password",
+            exclude_punctuation=True,
+            password_length=32,
+        ),
+        # Throwaway account: deleted with the stack. production: RETAIN (a destroyed secret
+        # cannot be read back, and the database it opens may outlive the stack).
+        removal_policy=RemovalPolicy.DESTROY,
+    )
+
+
+def secret(s: sm.ISecret, field: str) -&gt; ecs.Secret:
+    # Injected by ECS at start from Secrets Manager: never in the task definition or the template.
+    return ecs.Secret.from_secrets_manager(s, field)</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="1-10"><code class="language-python">"""Stage 3: the one-VM deployment, done the way a platform team would accept it.
+
+Compared with a hand-built VM:
+- no SSH key and no port 22: operators use SSM Session Manager / Run Command, which the
+  instance role allows and CloudTrail records (who ran what, when);
+- images come from ECR, authenticated by the instance role through the ECR credential helper,
+  so no registry password exists anywhere;
+- IMDSv2 only, encrypted disk, a security group that admits HTTP and nothing else;
+- the host is built by cloud-init from code (adapted from infra/vm/cloud-init.yaml in the repo),
+  so a replacement VM is one `cdk deploy` away.</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch5-case">A case from the reference build: the test that proved nothing</h3>
+  <p>When the image-push role was first set up, the plan was to prove the trust policy worked by breaking it on purpose. The policy was edited to name the wrong repository, a release tag was pushed, and the job failed with <code>Not authorized to perform sts:AssumeRoleWithWebIdentity</code>, as expected. Then the correct repository name was restored and only the failed jobs were re-run. They failed again.</p>
+
+  <figure class="fig wide" id="fig-5-6">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Four steps: breaking the policy on purpose failed as expected; restoring the name failed again; reading the real subject showed it embeds owner and repository IDs; fixing the prefix made all three image copies pass with matching digests.">
+      <rect class="n-warn" x="16" y="30" width="182" height="130" rx="6"/>
+      <rect class="fill-surface" x="28" y="42" width="120" height="20" rx="10"/>
+      <text class="ts tw tb" x="88" y="56" text-anchor="middle">failed, as expected</text>
+      <text class="tb" x="28" y="88">1  Break it on purpose</text>
+      <text class="ts" x="28" y="108">policy names the wrong</text>
+      <text class="ts" x="28" y="124">repository; a release tag</text>
+      <text class="ts" x="28" y="140">is pushed</text>
+
+      <rect class="n-bad" x="222" y="30" width="182" height="130" rx="6"/>
+      <rect class="fill-surface" x="234" y="42" width="96" height="20" rx="10"/>
+      <text class="ts tr tb" x="282" y="56" text-anchor="middle">failed again</text>
+      <text class="tb" x="234" y="88">2  Restore the name</text>
+      <text class="ts" x="234" y="108">re-run only the failed</text>
+      <text class="ts" x="234" y="124">jobs, no new release</text>
+
+      <rect class="n-acc" x="428" y="30" width="182" height="130" rx="6"/>
+      <rect class="fill-surface" x="440" y="42" width="80" height="20" rx="10"/>
+      <text class="ts ta tb" x="480" y="56" text-anchor="middle">the cause</text>
+      <text class="tb" x="440" y="88">3  Read the real subject</text>
+      <text class="ts" x="440" y="108">the repository's OIDC</text>
+      <text class="ts" x="440" y="124">setting: owner and repo</text>
+      <text class="ts" x="440" y="140">IDs are embedded</text>
+
+      <rect class="n-good" x="634" y="30" width="170" height="130" rx="6"/>
+      <rect class="fill-surface" x="646" y="42" width="64" height="20" rx="10"/>
+      <text class="ts tg tb" x="678" y="56" text-anchor="middle">passed</text>
+      <text class="tb" x="646" y="88">4  Fix and re-run</text>
+      <text class="ts" x="646" y="108">all three image copies</text>
+      <text class="ts" x="646" y="124">succeed; digests match</text>
+      <text class="ts" x="646" y="140">the originals</text>
+
+      <line class="e" x1="199" y1="95" x2="220" y2="95" marker-end="url(#a)"/>
+      <line class="e" x1="405" y1="95" x2="426" y2="95" marker-end="url(#a)"/>
+      <line class="e" x1="611" y1="95" x2="632" y2="95" marker-end="url(#a)"/>
+
+      <text class="ts" x="410" y="196" text-anchor="middle">Step 1 failed for the wrong reason: the policy had never matched at all.</text>
+      <text class="ts" x="410" y="214" text-anchor="middle">A negative test proves a check works only after a positive test has passed.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 5.6</span>The deliberate break looked like proof that the policy worked. It failed only because the policy had been wrong from the start.</figcaption>
+  </figure>
+
+  <p>The policy had been written in the subject format most documentation shows, <code>repo:owner/name:…</code>. This repository's tokens use a form that embeds the numeric owner and repository IDs, which survives renames and stops a deleted-and-recreated repository with the same name from inheriting the trust. Reading the repository's OIDC subject setting showed the real value. With the prefix fixed, all three image copies succeeded, and the digests in ECR matched the ones published to GitHub's registry: the same bytes in a second place.</p>
+  <p>Two habits come out of this. Check the real claims first, before blaming anything else, because the error never says which condition failed. And re-run failed jobs rather than cutting a new release: it is faster, and it tests exactly the same thing.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Our pipelines don't hold cloud keys. Each job gets a token from GitHub, AWS trades it for one-hour credentials, and the role only trusts a release tag or the production environment."</p>
+    <p>"Workloads use the role attached to their compute, and people use SSO. If a laptop or a CI log leaks, there is no long-lived credential in it."</p>
+  </aside>
+
+  <h3 id="ch5-defaults">Defaults, and when to choose otherwise</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Caller</th><th>Default today</th><th>Avoid</th><th>Choose otherwise when</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Caller">People</td><td data-label="Default">SSO with MFA through the company identity provider; role sessions per account</td><td data-label="Avoid">IAM users with access keys</td><td data-label="When">A break-glass account for when SSO itself is down: kept offline, alarmed on use</td></tr>
+        <tr><td data-label="Caller">CI pipelines</td><td data-label="Default">OIDC federation, one role per job purpose, trust scoped by tag or environment</td><td data-label="Avoid">Stored access keys; one powerful role for every job</td><td data-label="When">A CI system that cannot issue OIDC tokens: then short-lived keys with automated rotation</td></tr>
+        <tr><td data-label="Caller">Workloads</td><td data-label="Default">Task role, instance profile, or on Kubernetes IRSA or EKS Pod Identity</td><td data-label="Avoid">Keys in environment variables or in images</td><td data-label="When">Code outside AWS that must call it: IAM Roles Anywhere, or OIDC from that platform</td></tr>
+        <tr><td data-label="Caller">Operators on hosts</td><td data-label="Default">Session Manager and Run Command</td><td data-label="Avoid">SSH keys and an open port 22</td><td data-label="When">Never by default; SSH only as a documented, temporary exception</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h4>The same idea on Azure and Google Cloud</h4>
+  <p>The names change; the mechanism does not. Each cloud trusts the CI platform's OIDC tokens and attaches identities to compute.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Concern</th><th>AWS</th><th>Azure</th><th>Google Cloud</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Concern">People's sign-in</td><td data-label="AWS">IAM Identity Center: <code>aws sso login</code></td><td data-label="Azure">Entra ID: <code>az login</code></td><td data-label="Google Cloud"><code>gcloud auth login</code></td></tr>
+        <tr><td data-label="Concern">CI without keys</td><td data-label="AWS">IAM OIDC provider and a role</td><td data-label="Azure">Entra ID federated credential (<code>azure/login</code>)</td><td data-label="Google Cloud">Workload Identity Federation (<code>google-github-actions/auth</code>)</td></tr>
+        <tr><td data-label="Concern">A workload's identity</td><td data-label="AWS">IAM role: task role, instance profile</td><td data-label="Azure">Managed identity</td><td data-label="Google Cloud">Service account</td></tr>
+        <tr><td data-label="Concern">Secrets</td><td data-label="AWS">Secrets Manager, SSM Parameter Store</td><td data-label="Azure">Key Vault</td><td data-label="Google Cloud">Secret Manager</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch5-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">The job fails with <code>Not authorized to perform sts:AssumeRoleWithWebIdentity</code>, and the policy looks right</td><td data-label="Cause">The subject in the policy is not the one the token carries. The error never says which condition failed.</td><td data-label="Fix">Read the real subject from the repository's OIDC setting, or print the token's claims in a test job, and match on that.</td></tr>
+        <tr><td data-label="Symptom">No token is issued at all</td><td data-label="Cause">The job lacks <code>permissions: id-token: write</code></td><td data-label="Fix">Grant it on the job that needs it, not the whole workflow.</td></tr>
+        <tr><td data-label="Symptom">A deploy job that worked on tags is refused after you add an environment</td><td data-label="Cause">A job that names an environment gets <code>…:environment:NAME</code> as its subject, not its ref</td><td data-label="Fix">Trust the environment in the deploy role. It is the better gate anyway.</td></tr>
+        <tr><td data-label="Symptom">A deliberate break of the policy fails, so the policy seems proven</td><td data-label="Cause">The policy may never have matched</td><td data-label="Fix">Run the passing case first, then the failing one.</td></tr>
+        <tr><td data-label="Symptom">You cannot scope the registry login permission to one repository</td><td data-label="Cause"><code>ecr:GetAuthorizationToken</code> is account-wide by design</td><td data-label="Fix">Grant it on <code>*</code>, scope push and pull to the repositories, and say why in a comment.</td></tr>
+        <tr><td data-label="Symptom">The CDK deploy role can do anything in the account</td><td data-label="Cause">The bootstrap's CloudFormation execution policy is AdministratorAccess by default</td><td data-label="Fix">Narrow the execution policy before production use.</td></tr>
+        <tr><td data-label="Symptom">A workflow input runs as shell code</td><td data-label="Cause">An input interpolated with <code>${{ }}</code> directly inside <code>run:</code></td><td data-label="Fix">Pass inputs through <code>env:</code> and quote them, as <code>deploy.yml</code> does.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <details class="deep">
+    <summary><span class="label">Going deeper</span> What a trust policy can and cannot see</summary>
+    <div class="deep-body">
+      <p>GitHub's token carries many claims: the repository and its owner, the ref, the commit, the workflow file, the environment, the event that triggered the run. AWS IAM can write conditions on only a few of them, chiefly <code>aud</code> and <code>sub</code>. That is why the subject's format matters so much, and why GitHub lets a repository or organization customize which claims are combined into the subject. Including the workflow file in the subject, for example, lets a role trust one specific workflow rather than any job in the repository.</p>
+      <p>The same customization setting is what produced the immutable form seen in the case above. Reading it, rather than assuming the default, is the reliable way to know what the policy must match.</p>
+      <p><code>StringLike</code> allows the wildcards <code>*</code> and <code>?</code>; <code>StringEquals</code> does not. Use the exact form wherever there is nothing variable to allow, as the deploy role does, so a typo cannot widen the trust.</p>
+      <p>One OIDC provider entry per issuer is allowed in each account. Several roles can trust the same provider, each with its own conditions, which is how one account serves several repositories and environments.</p>
+    </div>
+  </details>
+
+  <h3 id="ch5-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What does a CI job need before it can obtain cloud credentials through OIDC, and what does it receive?</p>
+      <details class="ans"><summary>Answer</summary><p>The job needs <code>permissions: id-token: write</code>, so the CI platform will sign a token for it, and the cloud account needs an OIDC provider entry that trusts that platform. It presents the token to AWS STS and receives temporary credentials for a role, valid here for at most one hour.</p></details>
+    </li>
+    <li>
+      <p>Why does the deploy role trust a GitHub environment rather than a tag or branch?</p>
+      <details class="ans"><summary>Answer</summary><p>A job that names an environment gets a subject ending in <code>:environment:NAME</code>. Trusting that subject means GitHub's environment protection rules, such as allowed branches and required reviewers, decide which jobs can reach production. Approvals can then change without editing AWS.</p></details>
+    </li>
+    <li>
+      <p>You break a trust policy on purpose and the job fails. What must you check before concluding that the policy works?</p>
+      <details class="ans"><summary>Answer</summary><p>That the correct policy actually passes. A failure only proves something if a success was seen first. Otherwise the policy may never have matched, as in the case in this chapter.</p></details>
+    </li>
+    <li>
+      <p>What is the difference between an ECS task execution role and a task role?</p>
+      <details class="ans"><summary>Answer</summary><p>The execution role is used by ECS before your code runs: to pull the image and to inject secrets. The task role is the identity your code uses to call AWS services while it runs. A task that calls no AWS API at runtime needs no task role.</p></details>
+    </li>
+    <li>
+      <p>Why is removing SSH access a security improvement rather than only an inconvenience?</p>
+      <details class="ans"><summary>Answer</summary><p>There is no key to leak, no open port to attack, and every command run through Session Manager or Run Command is authorized by IAM and recorded in CloudTrail against a named person.</p></details>
+    </li>
+    <li>
+      <p>Which permission in the image-push role cannot be limited to the three repositories, and how is that handled?</p>
+      <details class="ans"><summary>Answer</summary><p><code>ecr:GetAuthorizationToken</code>, which is account-wide by design. It is granted on <code>*</code> with a comment saying why, while push and pull are granted only on the three repositories.</p></details>
+    </li>
+  </ol>
+</section>

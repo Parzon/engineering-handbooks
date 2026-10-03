@@ -1,0 +1,189 @@
+<section class="chapter" id="ch17">
+  <header class="ch-head">
+    <span class="ch-num">17</span>
+    <p class="eyebrow">Part VIII · Running it</p>
+    <h2>Incidents, runbooks and service levels</h2>
+    <p class="lede">Service level objectives turn "is it working?" into numbers with a budget, runbooks turn an alert into a first action, an off switch turns the riskiest feature into something one person can stop in seconds, and every incident ends in a change that makes the next one shorter.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>An SLO is a target on a measured signal users feel, over a window; the error budget is what is left to spend.</li>
+      <li>While budget remains, ship; when it is spent, reliability work comes first. Agree that with the product owner before the first incident.</li>
+      <li>Every alert links to a runbook section: what users see, what to check first, what caused it before.</li>
+      <li>Severity is decided by user impact, not by cause. One person leads; a timeline is written as you go.</li>
+      <li>Blameless reviews end in a drill, an alert or a runbook fix, each with an owner.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">"Five nines" in a contract, measured by nobody</td><td>SLOs on real signals, with an error budget the team spends deliberately</td><td>A number nobody measures cannot guide a decision.</td></tr>
+      <tr><td data-label="Then">Threshold alerts on hosts</td><td>Burn-rate alerts on the SLO</td><td>Page on what users feel, and not on blips.</td></tr>
+      <tr><td data-label="Then">A wiki of procedures, out of date</td><td>A runbook section per alert, linked from the alert itself, fixed the same day it fails</td><td>The runbook is read at 3 a.m.; it has to be right and one click away.</td></tr>
+      <tr><td data-label="Then">Post-mortems that find who to blame</td><td>Blameless reviews that find why the system allowed it</td><td>People hide what they will be blamed for; systems can be fixed.</td></tr>
+      <tr><td data-label="Then">Disable a feature by deploying</td><td>A switch that takes effect in seconds, on every server</td><td>An AI feature can start doing harm without any code change.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch17-slo">Service levels and error budgets</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>SLO</th><th>Measured as</th><th>Proposed target, 30 days</th></tr></thead>
+      <tbody>
+        <tr><td data-label="SLO">Availability</td><td data-label="Measured as">the share of api requests not answered 5xx</td><td data-label="Target">99.5%: a budget of 3.6 hours of errors a month</td></tr>
+        <tr><td data-label="SLO">Read latency</td><td data-label="Measured as">p95 of the alert list's request duration</td><td data-label="Target">under 300 ms</td></tr>
+        <tr><td data-label="SLO">Time to first word</td><td data-label="Measured as">p95 of the model's time to first token</td><td data-label="Target">under 3 s</td></tr>
+        <tr><td data-label="SLO">Answers completed</td><td data-label="Measured as">model calls ending ok or truncated, among those not cancelled</td><td data-label="Target">99%</td></tr>
+        <tr><td data-label="SLO">Answer quality</td><td data-label="Measured as">the eval suite on the production model, per release</td><td data-label="Target">the gate passes; safety cases 100%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure class="fig wide" id="fig-17-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 280" role="img" aria-label="An error budget over 30 days. At 99.5 percent availability, the budget is 3.6 hours of errors a month. Burn rate is how fast it is being spent relative to plan. A fast burn of 14.4 times over one hour, confirmed over five minutes, spends 2 percent of the month's budget in an hour: page someone. A slow burn of 1 times over three days: open a ticket. While budget remains, ship; when it is spent, reliability work comes before features.">
+      <text class="tl" x="16" y="22">BUDGET REMAINING OVER 30 DAYS</text>
+      <line class="rule-strong" x1="60" y1="40" x2="60" y2="200"/><line class="rule-strong" x1="60" y1="200" x2="790" y2="200"/>
+      <text class="ts" x="54" y="46" text-anchor="end">100%</text><text class="ts" x="54" y="204" text-anchor="end">0</text>
+      <line class="rule dash" x1="60" y1="40" x2="790" y2="200"/><text class="ts tmu" x="560" y="128">spent exactly on plan: burn rate 1</text>
+      <path class="e-acc" d="M60,40 L200,52 L330,62 L360,110 L470,126 L600,140 L790,160"/>
+      <circle class="fill-bad" cx="345" cy="86" r="6"/>
+      <rect class="n-bad" x="380" y="54" width="250" height="44" rx="4"/><text class="ts" x="392" y="72">fast burn: 14.4× over 1 hour, and 5 min</text><text class="ts" x="392" y="90">2% of the month in an hour: page</text>
+      <text class="ts" x="80" y="228"><tspan class="tb">Budget left:</tspan> ship features.</text>
+      <text class="ts" x="330" y="228"><tspan class="tb">Budget spent:</tspan> reliability work first, until it recovers.</text>
+      <text class="ts" x="80" y="252"><tspan class="tb">Slow burn:</tspan> 1× over 3 days opens a ticket, not a page.</text>
+      <text class="ts" x="80" y="270">A deliberate "off" is not an outage: switched-off refusals are left out of the availability SLO.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 17.1</span>An error budget and multi-window burn-rate alerts. The reference service still uses threshold alerts (5% errors for 5 minutes); its production guide proposes these targets and the burn-rate alerts that replace thresholds once the targets are agreed.</figcaption>
+  </figure>
+
+  <h3 id="ch17-runbooks">Runbooks</h3>
+  <p>The reference repository has three kinds of runbook. The <strong>alert runbook</strong> has one section per alert rule, and each rule's <code>runbook_url</code> links straight to it. An <strong>operational runbook</strong> covers a procedure, such as setting up and running a demo host. A <strong>situation runbook</strong> covers a decision under pressure, such as turning the assistant off. Every section answers three questions in the same order, because the reader is under stress and needs the first action first.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/docs/runbooks/alerts.md#L76-L87">docs/runbooks/alerts.md</a><span class="lines">one alert's section</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The section an alert links to: short, specific, and built from what happened before.</p>
+        <ul class="notice">
+          <li><strong>Users</strong>: what they experience, which sets the urgency.</li>
+          <li><strong>Check</strong>: the first two things to look at, with the exact panel and command.</li>
+          <li><strong>Seen before</strong>: past causes, each pointing to its own alert or fix. This list grows after every incident and game day.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="docs/runbooks/alerts.md" data-lines="76-87"><code class="language-markdown">## HighErrorRate
+
+**Users:** more than 5% of requests fail with 5xx.
+**Check:** the dashboard's "Requests / s by route and status" (which
+route, which status), then `make trace id=&lt;id&gt;` on one failing request.
+**Seen before:**
+- 503 `database_unavailable`: see PostgresDown / PgBouncerDown.
+- 502/504 `upstream_unavailable` from nginx: the api is down or stuck
+  (ApiDown, EventLoopLagHigh).
+- Bursts of 502 on POSTs under load came from gunicorn worker recycling
+  (now off).</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch17-off">An off switch for the riskiest feature</h3>
+  <figure class="fig wide" id="fig-17-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Turning the assistant off. Triggers: harmful advice, a provider breach or changed terms, a runaway bill. An org admin switches it off in the app with a reason, or an operator does it from the host if the identity provider is down. It takes effect in seconds on every server, without a deploy. Questions get a 503 with the reason; alerts and runbooks keep working; refusals are counted but excluded from the error-rate alert, so nobody is paged. While off: the audit trail shows what the model was given for each question. Back on only after the cause is fixed and the evals pass.">
+      <rect class="n-warn" x="16" y="16" width="200" height="110" rx="6"/><text class="tb" x="28" y="40">When</text><text class="ts" x="28" y="62">harmful advice</text><text class="ts" x="28" y="80">a provider breach or</text><text class="ts" x="28" y="96">changed terms</text><text class="ts" x="28" y="114">a runaway bill</text>
+      <rect class="n-acc" x="256" y="16" width="250" height="110" rx="6"/><text class="tb" x="268" y="40">Switch off, with a reason</text><text class="ts" x="268" y="62">an org admin, in the app; or an</text><text class="ts" x="268" y="78">operator on the host when sign-in</text><text class="ts" x="268" y="94">itself is down</text><text class="ts tb" x="268" y="116">seconds, every server, no deploy</text>
+      <rect class="n" x="546" y="16" width="258" height="110" rx="6"/><text class="tb" x="558" y="40">What users see</text><text class="ts" x="558" y="62">questions: 503 with the reason</text><text class="ts" x="558" y="80">alerts and runbooks: working</text><text class="ts" x="558" y="98">refusals counted, not paged:</text><text class="ts" x="558" y="114">left out of the error-rate alert</text>
+      <line class="e" x1="217" y1="71" x2="254" y2="71" marker-end="url(#a)"/><line class="e" x1="507" y1="71" x2="544" y2="71" marker-end="url(#a)"/>
+      <rect class="n" x="16" y="156" width="490" height="76" rx="6"/><text class="tb" x="28" y="180">While it is off</text><text class="ts" x="28" y="200">the audit trail shows what the model was given for each question,</text><text class="ts" x="28" y="216">by hash, and who wrote each runbook section it saw</text>
+      <rect class="n-good" x="546" y="156" width="258" height="76" rx="6"/><text class="tb" x="558" y="180">Back on</text><text class="ts" x="558" y="200">after the cause is fixed and</text><text class="ts" x="558" y="216">the evals pass; both flips audited</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 17.2</span>The reference service's situation runbook for its AI feature. When in doubt, turn it off first and investigate after: nothing else in the service depends on it.</figcaption>
+  </figure>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0024</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">An off switch for the assistant</p>
+    <dl>
+      <dt>Problem</dt><dd>An AI feature can start doing harm without any code change: a poisoned document, a model update at the provider. A deploy is too slow to stop it.</dd>
+      <dt>Decision</dt><dd>A switch stored in the database and read by every worker, flipped by an org admin with a reason; every path that calls a model checks it first; refusals are counted and excluded from error alerts.</dd>
+      <dt>See it in</dt><dd><a href="{{TA}}/apps/api/app/switch.py">switch.py</a> and the <a href="{{TA}}/docs/runbooks/turn-the-assistant-off.md">turn-the-assistant-off runbook</a>.</dd>
+    </dl>
+  </aside>
+
+  <h3 id="ch17-incidents">Incidents and game days</h3>
+  <figure class="fig wide" id="fig-17-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="The incident loop. Detect, from an alert or a person. Declare a severity by user impact: SEV1 nobody can use it, SEV2 a core flow broken for some, SEV3 degraded with a workaround. One incident lead decides and communicates; others fix. Write the timeline as you go, using request ids, dashboards and the audit trail. Mitigate first, then fix. A blameless review within a week for SEV1 and SEV2. Action items as issues with owners: a new drill, an alert, or a runbook line, which feed back into detection.">
+      <rect class="n" x="16" y="30" width="130" height="64" rx="6"/><text class="tb" x="28" y="54">Detect</text><text class="ts" x="28" y="74">an alert, or a</text><text class="ts" x="28" y="88">person noticed</text>
+      <rect class="n" x="176" y="30" width="150" height="64" rx="6"/><text class="tb" x="188" y="54">Declare</text><text class="ts" x="188" y="74">severity by impact;</text><text class="ts" x="188" y="88">one incident lead</text>
+      <rect class="n-acc" x="356" y="30" width="150" height="64" rx="6"/><text class="tb" x="368" y="54">Mitigate</text><text class="ts" x="368" y="74">roll back, switch off,</text><text class="ts" x="368" y="88">fail over; fix later</text>
+      <rect class="n" x="536" y="30" width="130" height="64" rx="6"/><text class="tb" x="548" y="54">Review</text><text class="ts" x="548" y="74">blameless, within</text><text class="ts" x="548" y="88">a week</text>
+      <rect class="n-good" x="696" y="30" width="108" height="64" rx="6"/><text class="tb" x="708" y="54">Change</text><text class="ts" x="708" y="74">drill, alert,</text><text class="ts" x="708" y="88">runbook line</text>
+      <line class="e" x1="147" y1="62" x2="174" y2="62" marker-end="url(#a)"/><line class="e" x1="327" y1="62" x2="354" y2="62" marker-end="url(#a)"/><line class="e" x1="507" y1="62" x2="534" y2="62" marker-end="url(#a)"/><line class="e" x1="667" y1="62" x2="694" y2="62" marker-end="url(#a)"/>
+      <path class="e-good" d="M750,95 C750,130 81,130 81,97" marker-end="url(#a-good)"/><text class="ts tg" x="416" y="146" text-anchor="middle">each review makes the next detection faster</text>
+      <text class="ts" x="16" y="182"><tspan class="tb">SEV1</tspan> nobody can use it · <tspan class="tb">SEV2</tspan> a core flow is broken for some · <tspan class="tb">SEV3</tspan> degraded, with a workaround</text>
+      <text class="ts" x="16" y="206">The timeline is written as you go: request ids, dashboards and, for a harmful answer, the audit trail make it reconstructible.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 17.3</span>The incident loop. In a small team one person may be both incident lead and fixer; say so out loud. Most reviews should end in a new drill, an alert, or a runbook line, each tracked as an issue with an owner.</figcaption>
+  </figure>
+
+  <p>Drills inject faults into a stack nobody depends on; a <strong>game day</strong> adds the people. One person injects a scenario while the on-call engineer responds without knowing it in advance, and the team records the time to detect (did an alert fire, or did someone notice?), the time to mitigate, what users saw, and what the runbook got wrong, then fixes the runbook the same day. Scenarios worth rehearsing for a service like the reference one: the host is gone and must be restored from off-host backups; the identity provider is down; the model provider is down or rate limiting; the assistant gives harmful answers; the disk fills; a bad release is rolled back under load; and a leaked credential is rotated to see what breaks.</p>
+
+  <h4>Backups are only real once restored</h4>
+  <p>Only Postgres needs backing up: the rate limiter's counters are disposable, and runbook vectors can be rebuilt from runbook text, but the text cannot. Backups are copied off the host, because a dump on a server's disk dies with the server, and a restore is rehearsed at production size before it is trusted. A restore also signs out everyone who signed in after the dump, since sessions live in the database.</p>
+
+  <h3 id="ch17-honest">The honest list</h3>
+  <p>The reference service's production guide ends with what has never been tested, and why each matters: certificate renewal over months, the organization's real identity provider, a hosted model's latency and limits, browsers other than Chromium, more than one host, real traffic, a full-size restore, months of operation, a third-party security review, an accessibility audit, and answer quality on real questions. Each needs its own run before the stage that depends on it. A list like this is what makes the rest of a production guide credible.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"We have SLOs with an error budget agreed with the product owner, alerts that link to a runbook section, and an off switch for the AI feature that works in seconds without a deploy."</p>
+    <p>"Incidents get a blameless review, and the action items are a drill, an alert or a runbook line, with owners."</p>
+  </aside>
+
+  <h3 id="ch17-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">People are paged for blips</td><td data-label="Cause">Threshold alerts without a duration, or on causes rather than symptoms</td><td data-label="Fix">Burn-rate alerts on the SLO, with a short and a long window.</td></tr>
+        <tr><td data-label="Symptom">Switching a feature off pages the on-call engineer</td><td data-label="Cause">Deliberate refusals counted as errors</td><td data-label="Fix">Count them separately and leave them out of the error alert and the SLO.</td></tr>
+        <tr><td data-label="Symptom">An error budget is spent and nothing changes</td><td data-label="Cause">The policy was never agreed with the product owner</td><td data-label="Fix">Agree it before the first incident.</td></tr>
+        <tr><td data-label="Symptom">The runbook is wrong during the incident</td><td data-label="Cause">It was written once and never exercised</td><td data-label="Fix">Game days, and fixing the runbook the same day.</td></tr>
+        <tr><td data-label="Symptom">The off switch cannot be used during the outage</td><td data-label="Cause">It needs the app's sign-in, which is down</td><td data-label="Fix">A second path from the host, documented in the runbook.</td></tr>
+        <tr><td data-label="Symptom">A restore takes far longer than expected</td><td data-label="Cause">It was rehearsed only on small dumps</td><td data-label="Fix">Time a full-size restore.</td></tr>
+        <tr><td data-label="Symptom">The review produced a document and no change</td><td data-label="Cause">Action items without owners</td><td data-label="Fix">Issues with owners: a drill, an alert or a runbook line.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch17-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What is an error budget, and how does it change what a team works on?</p>
+      <details class="ans"><summary>Answer</summary><p>The amount of failure the SLO allows over its window, such as 3.6 hours of errors a month at 99.5%. While budget remains, the team ships; when it is spent, reliability work comes first until it recovers.</p></details>
+    </li>
+    <li>
+      <p>Why are burn-rate alerts better than a fixed error threshold?</p>
+      <details class="ans"><summary>Answer</summary><p>They page on how fast the budget users care about is being spent, with a short window for fast burns and a long one for slow leaks, so blips do not page and slow degradations still get noticed.</p></details>
+    </li>
+    <li>
+      <p>What three things does each alert's runbook section answer?</p>
+      <details class="ans"><summary>Answer</summary><p>What users experience, what to check first (exact panel and command), and what caused it before.</p></details>
+    </li>
+    <li>
+      <p>Why does an AI feature deserve an off switch rather than a rollback?</p>
+      <details class="ans"><summary>Answer</summary><p>It can start doing harm without any code change, through a poisoned document or a change at the provider, so there may be nothing to roll back; and a switch takes effect in seconds on every server.</p></details>
+    </li>
+  </ol>
+</section>

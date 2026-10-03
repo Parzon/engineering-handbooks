@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# The AI security lab (README.md). Both commands run their Python inside
+# the dev api container of your triage-assistant checkout (TRIAGE_DIR;
+# default: next to this repo), against its dev stack.
+set -euo pipefail
+LAB=$(cd "$(dirname "$0")" && pwd)
+cd "${TRIAGE_DIR:-$LAB/../../../triage-assistant}" && test -f compose.yaml \
+  || { echo "set TRIAGE_DIR to your triage-assistant checkout" >&2; exit 2; }
+
+case "${1:-}" in
+  redaction)
+    # The corpus lives in the checkout: apps/api/evals/redaction.py.
+    exec docker compose exec -T api python -m evals.redaction "${2:-both}"
+    ;;
+  setup)
+    exec docker compose exec -T api python - setup < "$LAB/lab.py"
+    ;;
+  *)
+    echo 'usage: lab redaction [tuning|heldout|both] | lab setup' >&2
+    exit 2
+    ;;
+esac

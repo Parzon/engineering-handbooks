@@ -1,0 +1,187 @@
+<section class="chapter" id="ch1">
+  <header class="ch-head">
+    <span class="ch-num">1</span>
+    <p class="eyebrow">Part I · The new layer</p>
+    <h2>What changed, and what did not</h2>
+    <p class="lede">A language model is a new kind of component, one whose output no unit test can pin down, but most of what makes an AI service work in production is engineering you already know, applied to that component with care.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>The genuinely new part: the same input gives different outputs, any text that reaches the prompt can try to instruct the model, and every call has a price in tokens.</li>
+      <li>The familiar part: seams and adapters, timeouts, streaming, access control, observability, capacity, supply chain. All of it still applies, and most of an AI service is this.</li>
+      <li>Tests prove the code; <strong>evals</strong> measure the model and prompt together, as a pass rate over repeated runs.</li>
+      <li>A safety property that matters goes in code, not in the prompt: a prompt rule is a probability.</li>
+      <li>In the reference service, the AI-specific logic is two small modules; everything around them is the standard platform.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Machine learning as a separate team training models</td><td>Application teams calling hosted or self-served models through an API</td><td>General-purpose models made many tasks a prompt rather than a training run.</td></tr>
+      <tr><td data-label="Then">Deterministic components, tested to pass or fail</td><td>One component that answers differently every run</td><td>Generation samples from a probability distribution.</td></tr>
+      <tr><td data-label="Then">Input validation against a known format</td><td>Untrusted text that can carry instructions</td><td>The model reads data and instructions in the same channel.</td></tr>
+      <tr><td data-label="Then">Cost per server-hour</td><td>Cost per token, per request</td><td>A question's price depends on how much context it carries and how much the model writes.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch1-small">The AI part is small</h3>
+  <figure class="fig wide" id="fig-1-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 320" role="img" aria-label="One question through the reference service. Platform parts, shared by every service: the edge and proxy, sign-in and sessions, the rate limiter, the visibility query that returns only what the asker may read, the audit trail, the off switch, streaming, metrics, logs and traces. AI-specific parts: retrieval of runbook sections, redaction of credentials, the prompt and message builder, the model seam, and the evals that gate changes to the prompt or model.">
+      <rect class="n" x="16" y="20" width="110" height="52" rx="5"/><text class="tb" x="71" y="42" text-anchor="middle">edge, proxy</text><text class="ts" x="71" y="60" text-anchor="middle">TLS, routing</text>
+      <rect class="n" x="146" y="20" width="110" height="52" rx="5"/><text class="tb" x="201" y="42" text-anchor="middle">sign-in</text><text class="ts" x="201" y="60" text-anchor="middle">session, roles</text>
+      <rect class="n" x="276" y="20" width="110" height="52" rx="5"/><text class="tb" x="331" y="42" text-anchor="middle">rate limit</text><text class="ts" x="331" y="60" text-anchor="middle">off switch</text>
+      <rect class="n" x="406" y="20" width="130" height="52" rx="5"/><text class="tb" x="471" y="42" text-anchor="middle">visibility query</text><text class="ts" x="471" y="60" text-anchor="middle">only what you may read</text>
+      <rect class="n-acc" x="556" y="20" width="110" height="52" rx="5"/><text class="tb" x="611" y="42" text-anchor="middle">retrieval</text><text class="ts" x="611" y="60" text-anchor="middle">runbook sections</text>
+      <rect class="n-acc" x="686" y="20" width="118" height="52" rx="5"/><text class="tb" x="745" y="42" text-anchor="middle">redaction</text><text class="ts" x="745" y="60" text-anchor="middle">credentials out</text>
+      <line class="e" x1="127" y1="46" x2="144" y2="46" marker-end="url(#a)"/><line class="e" x1="257" y1="46" x2="274" y2="46" marker-end="url(#a)"/><line class="e" x1="387" y1="46" x2="404" y2="46" marker-end="url(#a)"/><line class="e" x1="537" y1="46" x2="554" y2="46" marker-end="url(#a)"/><line class="e" x1="667" y1="46" x2="684" y2="46" marker-end="url(#a)"/>
+      <rect class="n-acc" x="556" y="110" width="248" height="52" rx="5"/><text class="tb" x="568" y="132">the prompt</text><text class="ts" x="568" y="150">instructions + the asker's context</text>
+      <rect class="n-acc" x="296" y="110" width="220" height="52" rx="5"/><text class="tb" x="308" y="132">the model seam</text><text class="ts" x="308" y="150">any OpenAI-compatible endpoint</text>
+      <rect class="n" x="16" y="110" width="240" height="52" rx="5"/><text class="tb" x="28" y="132">streaming to the browser</text><text class="ts" x="28" y="150">heartbeats, Stop cancels the call</text>
+      <line class="e" x1="745" y1="73" x2="745" y2="108" marker-end="url(#a)"/><line class="e" x1="555" y1="136" x2="518" y2="136" marker-end="url(#a)"/><line class="e" x1="295" y1="136" x2="258" y2="136" marker-end="url(#a)"/>
+      <rect class="n" x="16" y="190" width="788" height="44" rx="5"/><text class="ts" x="28" y="216"><tspan class="tb">Around every step:</tspan> the audit trail (what the model was given, by hash), metrics, logs and traces with ids and counts, never content</text>
+      <rect class="n-acc" x="16" y="250" width="788" height="44" rx="5"/><text class="ts" x="28" y="276"><tspan class="tb">Before every prompt or model change:</tspan> evals, a pass rate per case over repeated runs, compared with a baseline</text>
+      <text class="ts tmu" x="16" y="314">Accent: AI-specific. Outline: the standard platform every service shares.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 1.1</span>One question through the reference service. The AI-specific parts are the accented boxes; the rest is the platform that Handbook 2 covers, which the AI parts rely on for their safety: the model is only ever given what the visibility query returns.</figcaption>
+  </figure>
+
+  <p>The reference service is an incident triage assistant: an on-call engineer asks about the alerts their teams can see, and a model answers from those alerts and the teams' runbooks, streaming its answer and citing the runbook sections it used. Its AI-specific logic lives in two modules, one deciding what the model sees and one talking to any OpenAI-compatible endpoint. Everything else (sign-in, roles, database isolation, rate limits, streaming, telemetry, deployment) is the same platform a service without a model would need, and that is deliberate: a new project replaces the domain and the prompt, and keeps the rest.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/triage.py#L1-L5">apps/api/app/triage.py</a><span class="lines">the one module a new project rewrites</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The module that builds the prompt and turns the model's stream into events. Its docstring states the boundary; the comment above the prompt's version states how it may change.</p>
+        <ul class="notice">
+          <li>Every rule in the prompt answers a failure that was measured; the history of versions is kept with the reasons.</li>
+          <li>The version travels with every model call, every metric and every eval report, so a change in answers can be lined up with the prompt that produced it.</li>
+          <li>A unit test checks the prompt's hash against its version: an edit without a new version fails the build.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/triage.py" data-lines="1-5"><code class="language-python">"""The AI part of the service - the one module a new project rewrites.
+
+Routes, SSE framing, rate limits, logging, metrics and deployment stay the
+same whatever the model is asked to do. This module decides what the
+model sees (the prompt) and turns its stream into client events.</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/triage.py" data-lines="79-85"><code class="language-python"># Bump the version with every change to SYSTEM_PROMPT, and add a row to the
+# prompt history (the AI engineering chapter). It goes on every model span
+# (gen_ai.prompt.version), in app_info and in eval reports, so a change in
+# answers can be lined up with the prompt that made them. The hash is
+# checked against the version by a unit test: an edit without a bump fails.
+PROMPT_VERSION = "v6"
+PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch1-new">What is genuinely new</h3>
+  <figure class="fig wide" id="fig-1-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 330" role="img" aria-label="New: non-determinism, so quality is a pass rate measured by evals; untrusted text that can instruct the model, so injection is bounded by architecture; tokens as the unit of cost and latency; retrieval quality as a measurable stage; judges that must be calibrated before being trusted; reasoning models that spend hidden tokens. Familiar skill, applied: a seam over the provider is the adapter pattern; timeouts and cancellation on a slow, metered dependency; streaming over SSE; access control deciding what the model may read; observability with ids and counts but no content; capacity and cost planning; supply chain and data-processing agreements for the provider.">
+      <rect class="n-acc" x="16" y="16" width="384" height="300" rx="8"/><text class="tb" x="30" y="40">Genuinely new</text>
+      <g class="ts">
+      <text x="30" y="70"><tspan class="tb">Non-determinism:</tspan> quality is a pass rate,</text><text x="30" y="86">measured by evals over repeated runs</text>
+      <text x="30" y="116"><tspan class="tb">Untrusted text can instruct:</tspan> injection is</text><text x="30" y="132">bounded by architecture, not by the prompt</text>
+      <text x="30" y="162"><tspan class="tb">Tokens:</tspan> the unit of cost and latency</text>
+      <text x="30" y="192"><tspan class="tb">Retrieval quality:</tspan> a stage you measure</text><text x="30" y="208">on its own, before the prompt</text>
+      <text x="30" y="238"><tspan class="tb">Judges:</tspan> a model grading a model, trusted</text><text x="30" y="254">only after calibration</text>
+      <text x="30" y="284"><tspan class="tb">Reasoning models:</tspan> hidden tokens that count</text><text x="30" y="300">against limits and cost</text>
+      </g>
+      <rect class="n" x="420" y="16" width="384" height="300" rx="8"/><text class="tb" x="434" y="40">Familiar skill, applied</text>
+      <g class="ts">
+      <text x="434" y="70"><tspan class="tb">A seam over the provider:</tspan> the adapter</text><text x="434" y="86">pattern, with a mock for tests</text>
+      <text x="434" y="116"><tspan class="tb">Timeouts and cancellation:</tspan> a slow,</text><text x="434" y="132">metered dependency that can hang</text>
+      <text x="434" y="162"><tspan class="tb">Streaming:</tspan> Server-Sent Events, heartbeats</text>
+      <text x="434" y="192"><tspan class="tb">Access control:</tspan> it decides what the model</text><text x="434" y="208">may read, not only what users may</text>
+      <text x="434" y="238"><tspan class="tb">Observability:</tspan> ids, counts and timings;</text><text x="434" y="254">content only by explicit choice</text>
+      <text x="434" y="284"><tspan class="tb">Supply chain and contracts:</tspan> the provider</text><text x="434" y="300">is a processor of your data</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 1.2</span>Where an experienced engineer's existing skills carry over, and where something genuinely new has to be learned. The new column is the subject of most of this handbook; the right-hand column is why an experienced engineer is already most of the way there.</figcaption>
+  </figure>
+
+  <h3 id="ch1-evals">Tests and evals are different tools</h3>
+  <p>A unit test proves the code does what it says. It cannot tell you whether answers stay grounded in the alerts, whether the model obeys instructions smuggled into alert text, or whether an answer mentions another team's incident. Those depend on the model and the prompt together, and the same case can pass twenty-nine runs and fail the thirtieth.</p>
+
+  <figure class="fig wide" id="fig-1-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 220" role="img" aria-label="Tests: the subject is the code; the result is pass or fail, the same every run; they use the mock model; they run on every push in CI; they are free. Evals: the subject is the model and prompt, and for the api target the whole service; the result is a pass rate; they need a real model; they run before merging a prompt or model change; they cost GPU time or provider tokens. CI also runs the evals in plumbing mode against the mock, which proves the harness and the gate but says nothing about answer quality.">
+      <rect class="n" x="16" y="16" width="384" height="150" rx="6"/><text class="tb" x="30" y="40">Unit and integration tests</text>
+      <g class="ts"><text x="30" y="64">subject: the code</text><text x="30" y="86">result: pass or fail, the same every run</text><text x="30" y="108">model: the mock</text><text x="30" y="130">when: every push, in CI</text><text x="30" y="152">cost: free</text></g>
+      <rect class="n-acc" x="420" y="16" width="384" height="150" rx="6"/><text class="tb" x="434" y="40">Evals</text>
+      <g class="ts"><text x="434" y="64">subject: the model and prompt (and the service)</text><text x="434" y="86">result: a pass rate per case, over repeats</text><text x="434" y="108">model: a real one</text><text x="434" y="130">when: before a prompt or model change merges</text><text x="434" y="152">cost: GPU time or provider tokens</text></g>
+      <text class="ts" x="16" y="196">CI also runs the evals in <tspan class="tb">plumbing mode</tspan> against the mock: it proves the harness, the service and the gate work,</text>
+      <text class="ts" x="16" y="214">for free, and says nothing about answer quality. Quality mode needs a real model (Chapter 7).</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 1.3</span>Two tools for two questions. Neither replaces the other: a prompt change needs both a green build and an eval run compared with the baseline.</figcaption>
+  </figure>
+
+  <h3 id="ch1-code">Safety in code, not in the prompt</h3>
+  <p>A rule in a prompt is a probability. In the reference service, "never repeat credentials" still failed about one run in a hundred, and telling two wordings of that rule apart at such a rate takes thousands of runs. Redacting credentials in code before any model call cannot fail for the formats it recognizes, and keeps them from the provider too; the prompt rule stays as a second layer for formats the code does not know. The same principle bounds prompt injection: the prompt reduces the rate and evals measure it, but what limits the damage is architectural. The model has no tools that change anything, it is given only what the asker may read, and its output is rendered as text (Chapter 9).</p>
+
+  <h3 id="ch1-map">How this handbook is organized</h3>
+  <figure class="fig wide" id="fig-1-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 200" role="img" aria-label="The handbook's parts in order: how models run (tokens, serving); building with models (retrieval, knowledge graphs, agents and tools); proving it works (evaluation, observability); making it safe (security); running it (cost, distributed systems, operations); the data platform (warehouses, lakehouses, data engineering for AI); architecture and leadership (decisions, stack defaults, delivery, coding agents).">
+      <rect class="n" x="16" y="20" width="180" height="64" rx="6"/><text class="tb" x="28" y="44">How models run</text><text class="ts" x="28" y="64">tokens, serving: Ch. 2-3</text>
+      <rect class="n-acc" x="216" y="20" width="190" height="64" rx="6"/><text class="tb" x="228" y="44">Building with models</text><text class="ts" x="228" y="64">retrieval, graphs, agents: 4-6</text>
+      <rect class="n-acc" x="426" y="20" width="180" height="64" rx="6"/><text class="tb" x="438" y="44">Proving it works</text><text class="ts" x="438" y="64">evals, observability: 7-8</text>
+      <rect class="n-acc" x="626" y="20" width="178" height="64" rx="6"/><text class="tb" x="638" y="44">Making it safe</text><text class="ts" x="638" y="64">security: 9</text>
+      <rect class="n" x="16" y="112" width="250" height="64" rx="6"/><text class="tb" x="28" y="136">Running it</text><text class="ts" x="28" y="156">cost, distributed, operations: 10-12</text>
+      <rect class="n" x="286" y="112" width="240" height="64" rx="6"/><text class="tb" x="298" y="136">The data platform</text><text class="ts" x="298" y="156">warehouses, data for AI: 13-14</text>
+      <rect class="n" x="546" y="112" width="258" height="64" rx="6"/><text class="tb" x="558" y="136">Architecture and leadership</text><text class="ts" x="558" y="156">decisions, delivery, agents: 15-18</text>
+      <line class="e" x1="197" y1="52" x2="214" y2="52" marker-end="url(#a)"/><line class="e" x1="407" y1="52" x2="424" y2="52" marker-end="url(#a)"/><line class="e" x1="607" y1="52" x2="624" y2="52" marker-end="url(#a)"/>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 1.4</span>The parts of this handbook. The accented parts are where the reference service's code is quoted most; the others draw on general practice and are kept short where they are not specific to AI.</figcaption>
+  </figure>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Most of an AI service is ordinary engineering. The new parts are non-determinism, which we measure with evals as pass rates, and untrusted text reaching the prompt, which we bound with architecture rather than prompt wording."</p>
+    <p>"Anything that must never happen goes in code: redaction, access-controlled context, no tools that change state."</p>
+  </aside>
+
+  <h3 id="ch1-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A prompt change "passed" and production answers got worse</td><td data-label="Cause">It was checked on a few examples by eye</td><td data-label="Fix">Evals with repeats against a baseline, before merging.</td></tr>
+        <tr><td data-label="Symptom">A rule in the prompt is relied on as a security control</td><td data-label="Cause">Treating a probability as a guarantee</td><td data-label="Fix">Enforce it in code; keep the prompt rule as a second layer.</td></tr>
+        <tr><td data-label="Symptom">The model answered about data the user cannot see</td><td data-label="Cause">Its context came from a different query than the user's own view</td><td data-label="Fix">Build the context from the same access-controlled query.</td></tr>
+        <tr><td data-label="Symptom">Answers changed and nobody knows why</td><td data-label="Cause">Prompt and model versions were not recorded with each answer</td><td data-label="Fix">Version the prompt; put prompt and model on every span and report.</td></tr>
+        <tr><td data-label="Symptom">CI evals are green while answers are wrong</td><td data-label="Cause">CI runs them against the mock, which proves plumbing only</td><td data-label="Fix">Quality mode against a real model before each prompt or model change.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch1-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Name three things about a language model that are genuinely new to an experienced engineer, and three that are existing skills applied.</p>
+      <details class="ans"><summary>Answer</summary><p>New: non-deterministic output measured as pass rates; untrusted text that can instruct the model; tokens as the unit of cost and latency (also: retrieval quality, judge calibration, reasoning tokens). Applied: a seam over the provider, timeouts and cancellation, streaming, access control over the context, observability, supply-chain and contract review.</p></details>
+    </li>
+    <li>
+      <p>What can an eval tell you that a unit test cannot?</p>
+      <details class="ans"><summary>Answer</summary><p>How often the model and prompt together behave as intended, such as staying grounded, refusing what the context does not support, resisting injected instructions and never crossing teams, as a pass rate over repeated runs with a real model.</p></details>
+    </li>
+    <li>
+      <p>Why is a prompt rule not enough for a safety property?</p>
+      <details class="ans"><summary>Answer</summary><p>It is followed with some probability, not always, and rare failures need thousands of runs to measure. Code (redaction, access-controlled context, no state-changing tools) enforces the property every time for the cases it covers.</p></details>
+    </li>
+  </ol>
+</section>

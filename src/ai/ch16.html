@@ -1,0 +1,189 @@
+<section class="chapter" id="ch16">
+  <header class="ch-head">
+    <span class="ch-num">16</span>
+    <p class="eyebrow">Part VIII · Architecture and leadership</p>
+    <h2>Stack defaults and the complexity dial</h2>
+    <p class="lede">Complexity should follow measured pain, not anticipated pain, weighted by how expensive a choice is to reverse; so every stack starts from boring defaults and turns the dial (a cache, a queue, a split, a cluster, a vector database, an agent) only when evidence arrives.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Default to the simple option; add complexity for a metric, an incident or a measured limit; experiment freely with choices that are cheap to undo.</li>
+      <li>Postgres for everything until a measured need it cannot meet; a cache beside it, never instead of it.</li>
+      <li>The fastest framework is the one the team already knows.</li>
+      <li>Compose, then a managed container platform, then Kubernetes only when many hosts or the organization's platform demand it.</li>
+      <li>Spend on latency and availability against a stated target; spending beyond it buys nothing measurable.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Design for the scale you hope to reach</td><td>Design for the scale you have, with named triggers for the next step</td><td>Managed services make the next step quick to take when it is needed.</td></tr>
+      <tr><td data-label="Then">Microservices as the modern default</td><td>A modular monolith until a part needs its own scaling, cadence or failure domain</td><td>Network calls, distributed transactions and N deployables are real costs.</td></tr>
+      <tr><td data-label="Then">A specialized database per data type</td><td>Postgres with extensions first</td><td>One system to secure, back up and reason about.</td></tr>
+      <tr><td data-label="Then">Agents, rerankers and graphs in the first design</td><td>A pipeline with evals, adding each piece when evals show the gap</td><td>Each AI piece adds tokens, latency and failure modes.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch16-principle">The governing principle</h3>
+  <figure class="fig wide" id="fig-16-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Two axes: evidence, from anticipated to measured; and cost to reverse, from cheap to expensive. Measured and cheap to reverse: add it. Measured and expensive to reverse: add it, with a decision record and a rollout plan. Anticipated and cheap to reverse: experiment early if it helps. Anticipated and expensive to reverse: do not build it; write it down as a future option with the trigger that would justify it.">
+      <line class="rule-strong" x1="140" y1="250" x2="790" y2="250"/><line class="rule-strong" x1="140" y1="250" x2="140" y2="30"/>
+      <text class="ts" x="465" y="276" text-anchor="middle">evidence: anticipated → measured</text>
+      <text class="ts" x="16" y="70">expensive</text><text class="ts" x="16" y="86">to reverse</text><text class="ts" x="16" y="200">cheap</text><text class="ts" x="16" y="216">to reverse</text>
+      <rect class="n-warn" x="156" y="40" width="300" height="96" rx="6"/><text class="tb" x="168" y="64">Write it down, don't build</text><text class="ts" x="168" y="86">a future option in a decision record,</text><text class="ts" x="168" y="102">with the trigger that would justify it</text><text class="ts tmu" x="168" y="124">a premature service split</text>
+      <rect class="n-acc" x="476" y="40" width="304" height="96" rx="6"/><text class="tb" x="488" y="64">Add it, deliberately</text><text class="ts" x="488" y="86">a decision record and a rollout plan</text><text class="ts tmu" x="488" y="124">a split for a real scaling profile</text>
+      <rect class="n-soft" x="156" y="146" width="300" height="94" rx="6"/><text class="tb" x="168" y="170">Experiment, if it helps</text><text class="ts" x="168" y="192">cheap to undo: try it, measure it</text><text class="ts tmu" x="168" y="226">swapping one library</text>
+      <rect class="n-good" x="476" y="146" width="304" height="94" rx="6"/><text class="tb" x="488" y="170">Add it</text><text class="ts" x="488" y="192">a metric, an incident or a measured</text><text class="ts" x="488" y="208">limit says so</text><text class="ts tmu" x="488" y="226">an index for a slow query</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 16.1</span>Complexity follows measured pain, weighted by the cost of reversing. A wrong guess costs nothing if it is cheap to undo, and weeks if it is baked into three teams' code. Before adding anything, ask: which metric, incident or limit does it fix?</figcaption>
+  </figure>
+
+  <h3 id="ch16-defaults">Defaults, and the evidence that flips them</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Area</th><th>Default</th><th>Flip it when</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Area">Database</td><td data-label="Default">Postgres for anything structured or transactional, with extensions (pgvector, PostGIS)</td><td data-label="Flip">Records with genuinely no common shape, or write scale with acceptable eventual consistency, for a document store; large historical analysis for an OLAP engine</td></tr>
+        <tr><td data-label="Area">Cache and shared state</td><td data-label="Default">None; Redis-compatible store beside the database</td><td data-label="Flip">A specific, measured, repeated slow read; or several processes sharing a limit, cache or lock</td></tr>
+        <tr><td data-label="Area">Vector search</td><td data-label="Default">pgvector inside Postgres</td><td data-label="Flip">A measured scale, latency or filtering problem Postgres cannot meet</td></tr>
+        <tr><td data-label="Area">Backend framework</td><td data-label="Default">The one the team knows: FastAPI for Python APIs, Django when admin, ORM and auth should come included</td><td data-label="Flip">Shared types with the frontend favor TypeScript; a measured throughput need Python cannot meet favors Go</td></tr>
+        <tr><td data-label="Area">Frontend</td><td data-label="Default">React built by Vite for apps and internal tools</td><td data-label="Flip">Public, search-indexed content favors a static site or a meta-framework (Handbook 2, Chapter 10)</td></tr>
+        <tr><td data-label="Area">Orchestration</td><td data-label="Default">Compose on one host; then a managed container platform</td><td data-label="Flip">Many hosts, autoscaling and self-healing beyond one host, or an organization that already runs Kubernetes</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch16-dial">The dial</h3>
+  <figure class="fig wide" id="fig-16-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 330" role="img" aria-label="Five knobs, each with its trigger and its cost. A cache: trigger, a specific measured slow, repeated read; cost, a second system that can go stale or down, and stampedes on expiry; time to live trades staleness against database load. A queue: trigger, a task too slow to wait for, or one that must survive restarts and be retried; cost, the request returns before the work is done, so status must be reported back. A service split: trigger, a different scaling profile, deploy cadence or failure domain; cost, network calls, distributed transactions, N deployables. Kubernetes: trigger, many hosts and autoscaling beyond a managed platform, or an organization standard; cost, an ongoing operational tax. Buy or build: buy what is not the product's differentiator; build what is, or where no vendor fits a real constraint.">
+      <g class="ts">
+      <text x="16" y="22" class="tl">KNOB</text><text x="200" y="22" class="tl">TURN IT WHEN</text><text x="520" y="22" class="tl">WHAT IT COSTS</text>
+      <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
+      <text x="16" y="56" class="tb">a cache</text><text x="200" y="56">a specific read, measured slow and</text><text x="200" y="72">repeated, after profiling</text><text x="520" y="56">a system that goes stale or down;</text><text x="520" y="72">stampedes when keys expire</text>
+      <line class="rule" x1="16" y1="86" x2="804" y2="86"/>
+      <text x="16" y="110" class="tb">a queue</text><text x="200" y="110">too slow to wait for, or must</text><text x="200" y="126">survive restarts and retries</text><text x="520" y="110">the request returns before the work:</text><text x="520" y="126">status must be reported back</text>
+      <line class="rule" x1="16" y1="140" x2="804" y2="140"/>
+      <text x="16" y="164" class="tb">a service split</text><text x="200" y="164">its own scaling profile, deploy</text><text x="200" y="180">cadence or failure domain</text><text x="520" y="164">network calls, distributed</text><text x="520" y="180">transactions, N deployables</text>
+      <line class="rule" x1="16" y1="194" x2="804" y2="194"/>
+      <text x="16" y="218" class="tb">Kubernetes</text><text x="200" y="218">many hosts and autoscaling beyond a</text><text x="200" y="234">managed platform, or the org runs it</text><text x="520" y="218">an ongoing operational tax and</text><text x="520" y="234">a dedicated skill set</text>
+      <line class="rule" x1="16" y1="248" x2="804" y2="248"/>
+      <text x="16" y="272" class="tb">buy or build</text><text x="200" y="272">buy what is not your differentiator:</text><text x="200" y="288">auth, email, payments, orchestration</text><text x="520" y="272">building generic things wastes time;</text><text x="520" y="288">buying your core outsources your value</text>
+      <line class="rule" x1="16" y1="302" x2="804" y2="302"/>
+      </g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 16.2</span>The common knobs of architecture, each with its trigger and its price. Caching before profiling hides the wrong bottleneck as often as it fixes the right one; queuing trivial fast operations "for consistency" is complexity with no benefit.</figcaption>
+  </figure>
+
+  <h3 id="ch16-ai">The AI pieces on the dial</h3>
+  <figure class="fig wide" id="fig-16-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 290" role="img" aria-label="AI pieces left out until evidence asks for them, with their triggers. Retrieval: answers must come from your documents. A reranker: fusion's equal weighting measurably ranks the right chunk too low. An agent: the steps are not known in advance, and evals show it pays. Several agents: one agent's context or toolset is outgrown. A knowledge graph: competency questions whose answers live in relationships, which retrieval cannot answer. Fine-tuning: prompting and retrieval cannot reach the bar on evals, and the data and budget exist. A self-hosted model: data may not leave, or sustained load keeps GPUs busy. An MCP server: other AI clients should use the tools.">
+      <g class="ts">
+      <text x="16" y="22" class="tl">PIECE</text><text x="250" y="22" class="tl">THE EVIDENCE THAT ADDS IT</text>
+      <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
+      <rect class="n-good" x="16" y="38" width="220" height="26" rx="3"/><text x="28" y="56">retrieval</text><text x="250" y="56">the answers must come from your documents</text>
+      <rect class="n" x="16" y="70" width="220" height="26" rx="3"/><text x="28" y="88">a reranker</text><text x="250" y="88">fusion measurably ranks the right chunk too low</text>
+      <rect class="n" x="16" y="102" width="220" height="26" rx="3"/><text x="28" y="120">an agent</text><text x="250" y="120">the steps are not known in advance, and evals show it pays</text>
+      <rect class="n" x="16" y="134" width="220" height="26" rx="3"/><text x="28" y="152">several agents</text><text x="250" y="152">one agent's context or toolset is outgrown</text>
+      <rect class="n" x="16" y="166" width="220" height="26" rx="3"/><text x="28" y="184">a knowledge graph</text><text x="250" y="184">questions whose answers live in relationships</text>
+      <rect class="n" x="16" y="198" width="220" height="26" rx="3"/><text x="28" y="216">fine-tuning</text><text x="250" y="216">prompting and retrieval cannot reach the bar on evals</text>
+      <rect class="n" x="16" y="230" width="220" height="26" rx="3"/><text x="28" y="248">a self-hosted model</text><text x="250" y="248">data may not leave, or sustained load keeps GPUs busy</text>
+      <rect class="n" x="16" y="262" width="220" height="26" rx="3"/><text x="28" y="280">an MCP server</text><text x="250" y="280">other AI clients should use the tools</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 16.3</span>The same rule for AI components: each adds tokens, latency and failure modes, so each waits for evidence, usually an eval result. In the reference service, retrieval and an MCP server were added; the agent exists beside the pipeline but is not the default.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/TECH_STACK.md#L476-L489">TECH_STACK.md</a><span class="lines">questions for a design review</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The reference stack's design-review questions: each turns one knob of the dial into a yes-or-no question about the requirements.</p>
+        <ul class="notice">
+          <li>Retrieval, the agent and the MCP server each sit behind a question about what the product needs.</li>
+          <li>The agent's row carries its measured price: nearly four times the prompt tokens for the same quality.</li>
+          <li>Kubernetes is the last row, and the "no" answer is a managed container service.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="TECH_STACK.md" data-lines="476-489"><code class="language-markdown">**Questions for a design review:**
+
+| Question | Yes | No |
+|---|---|---|
+| Must the data survive a restart? | Postgres | memory is enough |
+| Does the data belong to teams or customers? | row-level security, from the first table | the service's own checks |
+| Must answers come from documents? | pgvector and full-text, in the same Postgres | no retrieval |
+| Are the steps known before the model runs? | a pipeline: code decides what the model reads | an agent with tools (ADR-0020). Measured here, the agent cost 3.8× the prompt tokens for the same quality |
+| Should other AI clients use the tools? | an MCP server over the same functions | nothing |
+| Does more than one process share a limit, cache or lock? | Valkey | in-process |
+| Will connections to Postgres near its limit? | PgBouncer, or RDS Proxy | connect directly |
+| Does a VM serve HTTPS itself? | Caddy | the load balancer terminates TLS |
+| Is someone on call? | alerts with tests, a dashboard, traces for the AI path | logs and `/metrics` |
+| Many services, and a platform team to run a cluster? | Kubernetes can pay for itself | a managed container service (ECS, Cloud Run) |</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch16-slo">Cost and latency as an explicit dial</h3>
+  <figure class="fig wide" id="fig-16-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 240" role="img" aria-label="p95 latency against monthly spend: latency falls as spend rises, then flattens. A stated target, for example p95 under 300 milliseconds, crosses the curve at one spend level. Spending less breaks the target; spending more buys nothing measurable. The same dial applies to CI runner size and to log retention.">
+      <line class="rule-strong" x1="80" y1="200" x2="560" y2="200"/><line class="rule-strong" x1="80" y1="200" x2="80" y2="30"/>
+      <text class="ts" x="320" y="226" text-anchor="middle">monthly spend →</text><text class="ts" x="16" y="40">p95</text><text class="ts" x="16" y="56">latency</text>
+      <path class="s1" d="M90,40 C160,120 230,165 330,178 C410,186 480,188 550,189"/>
+      <line class="e-acc dash" x1="80" y1="150" x2="560" y2="150"/><text class="ts ta" x="560" y="144" text-anchor="end">target: p95 under 300 ms</text>
+      <line class="rule dash" x1="226" y1="150" x2="226" y2="200"/><circle class="fill-acc" cx="226" cy="150" r="5"/>
+      <text class="ts tr" x="96" y="186">breaks the target</text><text class="ts" x="380" y="174">buys nothing measurable</text>
+      <rect class="n-soft" x="590" y="30" width="214" height="170" rx="6"/><text class="tb" x="602" y="54">The same dial</text><text class="ts" x="602" y="78">replicas, instance size,</text><text class="ts" x="602" y="94">a warmer cache, a region</text><text class="ts" x="602" y="122">CI: is the wait blocking</text><text class="ts" x="602" y="138">anyone?</text><text class="ts" x="602" y="166">log retention: is anyone</text><text class="ts" x="602" y="182">querying logs that old?</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 16.4</span>Decide the target first, then spend just enough to meet it (an illustrative curve). Generous provisioning "to be safe" is a cost with no measurable return.</figcaption>
+  </figure>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"We add complexity for measured pain, weighted by how hard it is to reverse; anything we might need later goes into a decision record with the trigger that would justify it."</p>
+    <p>"Postgres does retrieval, isolation and audit; we'd add a vector database, a reranker or an agent only when a measurement or an eval shows the gap."</p>
+  </aside>
+
+  <h3 id="ch16-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A cache made things worse</td><td data-label="Cause">Added before profiling; it hid the real bottleneck</td><td data-label="Fix">Measure first; cache one specific, repeated read.</td></tr>
+        <tr><td data-label="Symptom">Every change now crosses three services</td><td data-label="Cause">A split before any part needed its own scaling, cadence or failure domain</td><td data-label="Fix">A modular monolith with named split triggers.</td></tr>
+        <tr><td data-label="Symptom">A cluster nobody can operate</td><td data-label="Cause">Kubernetes adopted for one service</td><td data-label="Fix">A managed container platform until the triggers are real.</td></tr>
+        <tr><td data-label="Symptom">The first design has an agent, a graph and a reranker</td><td data-label="Cause">AI pieces added in anticipation</td><td data-label="Fix">A pipeline with evals; add each piece when evals show the gap.</td></tr>
+        <tr><td data-label="Symptom">A large bill for headroom nobody uses</td><td data-label="Cause">Provisioned "to be safe", with no target</td><td data-label="Fix">Set the SLO first; spend to meet it.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch16-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What is the governing principle for adding complexity, and how does reversibility change it?</p>
+      <details class="ans"><summary>Answer</summary><p>Add complexity for measured pain, not anticipated pain. Choices that are cheap to reverse can be tried early; choices that are expensive to reverse wait for evidence and are recorded as future options with a trigger.</p></details>
+    </li>
+    <li>
+      <p>Name the three reasons that justify splitting a service out of a monolith.</p>
+      <details class="ans"><summary>Answer</summary><p>A genuinely different scaling profile, a different deploy cadence, or a different failure domain.</p></details>
+    </li>
+    <li>
+      <p>When would you add a reranker to a retrieval pipeline?</p>
+      <details class="ans"><summary>Answer</summary><p>When retrieval metrics show the right chunk is found but ranked too low, for example because rank fusion weighs a confident wrong keyword match equally with the semantic winner, and the latency of a model on the critical path is acceptable.</p></details>
+    </li>
+  </ol>
+</section>

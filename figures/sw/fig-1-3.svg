@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 250" role="img" aria-label="Left: the four sections of an ADR: context, decision, alternatives considered, consequences, plus a status line. Right: its lifecycle: proposed, accepted, superseded by a later ADR. A real example: ADR-0001 is accepted, with parts superseded by ADR-0007 and ADR-0003."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="250" fill="#ffffff"/>
+      <rect class="n" x="16" y="16" width="360" height="218" rx="6"/>
+      <text class="tm tb" x="30" y="40">ADR-0015: Rollbacks roll back…</text>
+      <text class="ts" x="30" y="60">Status: accepted</text>
+      <rect class="n-soft" x="30" y="72" width="332" height="32" rx="4"/><text class="tb" x="42" y="93">Context</text><text class="ts" x="130" y="93">what problem forced it</text>
+      <rect class="n-soft" x="30" y="110" width="332" height="32" rx="4"/><text class="tb" x="42" y="131">Decision</text><text class="ts" x="130" y="131">what we are doing</text>
+      <rect class="n-soft" x="30" y="148" width="332" height="32" rx="4"/><text class="tb" x="42" y="169">Alternatives</text><text class="ts" x="130" y="169">what else, and why not</text>
+      <rect class="n-soft" x="30" y="186" width="332" height="32" rx="4"/><text class="tb" x="42" y="207">Consequences</text><text class="ts" x="160" y="207">easier, harder, measured</text>
+
+      <rect class="n-soft" x="430" y="40" width="110" height="40" rx="20"/><text class="ts tb" x="485" y="65" text-anchor="middle">proposed</text>
+      <rect class="n-good" x="570" y="40" width="110" height="40" rx="20"/><text class="ts tb" x="625" y="65" text-anchor="middle">accepted</text>
+      <rect class="n-warn" x="700" y="40" width="104" height="40" rx="20"/><text class="ts tb" x="752" y="58" text-anchor="middle">superseded</text><text class="ts" x="752" y="73" text-anchor="middle">by ADR-N</text>
+      <line class="e" x1="541" y1="60" x2="568" y2="60" marker-end="url(#a)"/>
+      <line class="e" x1="681" y1="60" x2="698" y2="60" marker-end="url(#a)"/>
+      <text class="tb" x="430" y="120">A real status line</text>
+      <text class="tm" x="430" y="142">ADR-0001: accepted; its streaming</text>
+      <text class="tm" x="430" y="160">format superseded by ADR-0007, its</text>
+      <text class="tm" x="430" y="178">compose layout by ADR-0003</text>
+      <text class="ts" x="430" y="210">The old text stays. The new record explains</text>
+      <text class="ts" x="430" y="226">what changed, so the history reads in order.</text>
+    </svg>

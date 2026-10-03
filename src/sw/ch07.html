@@ -1,0 +1,242 @@
+<section class="chapter" id="ch7">
+  <header class="ch-head">
+    <span class="ch-num">7</span>
+    <p class="eyebrow">Part III · Data</p>
+    <h2>Connections, pooling and row-level security</h2>
+    <p class="lede">Database connections are a budget shared by every worker and replica, a pooler stretches that budget at the price of per-session state, and row-level security makes Postgres itself refuse rows a caller should not see, so a forgotten filter returns nothing instead of leaking.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Connections multiply: replicas × workers × pool size. Postgres allows 100 by default, and each costs a server process.</li>
+      <li>A transaction-mode pooler (PgBouncer, RDS Proxy) lets many client connections share a few server connections, so nothing may rely on session state between transactions.</li>
+      <li>Two roles: the schema owner runs migrations; the application's role can read and write rows but not change the schema.</li>
+      <li>A pool that discards and recreates connections under bursts can trap a service in a slow state that sustains itself. A fixed-size pool ends it.</li>
+      <li>Row-level security is the second barrier behind the application's own filter: policies read who is asking from transaction-local settings.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">One application server, one connection pool</td><td>Many workers and replicas, a pooler in front of the database</td><td>Connections grow with every replica; the database's limit does not.</td></tr>
+      <tr><td data-label="Then">One database user for everything</td><td>An owner role for migrations, a restricted role for the application</td><td>A bug or an injection in the app cannot drop a table.</td></tr>
+      <tr><td data-label="Then">Tenant isolation only in application code</td><td>The same rule enforced by the database with row-level security</td><td>One forgotten <code>WHERE</code> should be an empty result, not a leak.</td></tr>
+      <tr><td data-label="Then">Timeouts set per session</td><td>Timeouts set on the database role</td><td>A transaction-mode pooler discards session settings.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch7-budget">The connection budget</h3>
+  <figure class="fig wide" id="fig-7-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 240" role="img" aria-label="The connection budget. Each api replica runs 2 workers with a fixed pool of 20 connections, so 40 client connections per replica. PgBouncer accepts up to 500 client connections, which allows about 12 replicas, and multiplexes them onto 20 server connections to Postgres, which allows 100 by default.">
+      <rect class="n" x="16" y="20" width="160" height="56" rx="5"/><text class="tb" x="28" y="42">api replica 1</text><text class="ts" x="28" y="62">2 workers × pool 20</text>
+      <rect class="n" x="16" y="88" width="160" height="56" rx="5"/><text class="tb" x="28" y="110">api replica 2</text><text class="ts" x="28" y="130">2 workers × pool 20</text>
+      <rect class="n-soft" x="16" y="156" width="160" height="56" rx="5"/><text class="tb" x="28" y="178">… up to about 12</text><text class="ts" x="28" y="198">40 connections each</text>
+      <rect class="n-acc" x="300" y="70" width="190" height="100" rx="6"/><text class="tb" x="395" y="98" text-anchor="middle">PgBouncer</text><text class="ts" x="395" y="118" text-anchor="middle">transaction pooling</text><text class="ts" x="395" y="136" text-anchor="middle">up to 500 clients</text><text class="ts" x="395" y="152" text-anchor="middle">20 server connections</text>
+      <rect class="n" x="620" y="80" width="184" height="80" rx="6"/><text class="tb" x="712" y="108" text-anchor="middle">Postgres</text><text class="ts" x="712" y="128" text-anchor="middle">100 connections by default,</text><text class="ts" x="712" y="144" text-anchor="middle">one process each</text>
+      <path class="e" d="M177,48 C240,48 240,100 298,100" marker-end="url(#a)"/>
+      <line class="e" x1="177" y1="116" x2="298" y2="116" marker-end="url(#a)"/>
+      <path class="e" d="M177,184 C240,184 240,135 298,135" marker-end="url(#a)"/>
+      <text class="ts" x="186" y="232">many client connections</text>
+      <line class="e-acc" x1="491" y1="120" x2="618" y2="120" marker-end="url(#a-acc)"/>
+      <text class="ts" x="555" y="112" text-anchor="middle">a few server</text><text class="ts" x="555" y="140" text-anchor="middle">connections</text>
+      <text class="ts" x="300" y="210">replicas × workers × pool ≤ the pooler's client limit; the pooler's</text>
+      <text class="ts" x="300" y="226">server pool ≤ Postgres' limit minus headroom for migrations and admins</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 7.1</span>The reference service's connection budget. Without the pooler, each replica's 40 connections would exhaust Postgres at three replicas. On AWS, RDS Proxy plays the pooler's role.</figcaption>
+  </figure>
+
+  <p>Transaction pooling has one hard consequence: a server connection is handed to a different client at the end of every transaction, so <strong>nothing may rely on session state</strong>. Session <code>SET</code> commands, advisory locks held across transactions, <code>LISTEN</code>/<code>NOTIFY</code> and temporary tables all break. That is why the reference service sets its statement and idle timeouts on the database role itself, and why it tells Postgres who is asking in every transaction rather than once per connection.</p>
+
+  <figure class="fig wide" id="fig-7-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Through a transaction pooler, server connection 1 serves user A's transaction, then user B's. If A used a session-level SET for its team, B's transaction inherits it: a leak. With set_config transaction-local, A's setting ends with A's transaction, and B starts with no context, which under row-level security means no rows.">
+      <text class="tl" x="16" y="18">ONE SERVER CONNECTION, TWO CLIENTS IN TURN</text>
+      <text class="tb tr" x="16" y="48">Session-level SET</text>
+      <rect class="n" x="200" y="32" width="250" height="30" rx="3"/><text class="ts" x="210" y="52">user A: SET team = payments; query</text>
+      <rect class="n-bad" x="460" y="32" width="344" height="30" rx="3"/><text class="ts" x="470" y="52">user B's transaction still sees team = payments</text>
+      <text class="tb tg" x="16" y="108">Transaction-local setting</text>
+      <rect class="n" x="200" y="92" width="250" height="30" rx="3"/><text class="ts" x="210" y="112">user A: set_config(..., true); query</text>
+      <rect class="n-good" x="460" y="92" width="344" height="30" rx="3"/><text class="ts" x="470" y="112">ended with A's transaction; B starts with nothing</text>
+      <text class="ts" x="16" y="160">Under row-level security, "nothing" means no rows: a query that forgets to say who is asking</text>
+      <text class="ts" x="16" y="178">sees and changes nothing. The setting reads NULL before it is ever set on a connection, and ''</text>
+      <text class="ts" x="16" y="196">after a transaction that set it has ended, so the policy must treat both as "no access".</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 7.2</span>Why the tenant context must be transaction-local. Through a transaction pooler, the next transaction on a server connection may be another user's, and a session-level setting would still be there for them.</figcaption>
+  </figure>
+
+  <h3 id="ch7-churn">A pool that traps itself</h3>
+  <p>Load tests of the reference service showed two tools disagreeing by a factor of 40: about 90 ms per request under one load generator and 2 ms under another, at the same rate. The difference was the shape of the arrivals, and what it did to the connection pool.</p>
+
+  <figure class="fig wide" id="fig-7-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 304" role="img" aria-label="A metastable loop: bursty arrivals push the pool into overflow; overflow connections are discarded when returned; new connections must log in again, a SCRAM handshake of about 12.6 ms each; requests get slower; slower requests keep concurrency high, which keeps the pool in overflow. The fix: a fixed pool of 20 with no overflow. Logins fell from 196 to 5 in 20 seconds and p50 from 97 to 35 ms.">
+      <rect class="n-warn" x="300" y="16" width="220" height="50" rx="6"/><text class="tb" x="410" y="38" text-anchor="middle">Bursty arrivals</text><text class="ts" x="410" y="56" text-anchor="middle">push the pool into overflow</text>
+      <rect class="n" x="560" y="96" width="244" height="50" rx="6"/><text class="tb" x="682" y="118" text-anchor="middle">Overflow connections</text><text class="ts" x="682" y="136" text-anchor="middle">are discarded when returned</text>
+      <rect class="n" x="300" y="176" width="220" height="50" rx="6"/><text class="tb" x="410" y="198" text-anchor="middle">New logins</text><text class="ts" x="410" y="216" text-anchor="middle">about 12.6 ms each</text>
+      <rect class="n-bad" x="16" y="96" width="244" height="50" rx="6"/><text class="tb" x="138" y="118" text-anchor="middle">Slower requests</text><text class="ts" x="138" y="136" text-anchor="middle">keep concurrency high</text>
+      <path class="e-bad" d="M521,41 C600,41 682,60 682,94" marker-end="url(#a-bad)"/>
+      <path class="e-bad" d="M682,147 C682,190 600,201 522,201" marker-end="url(#a-bad)"/>
+      <path class="e-bad" d="M299,201 C200,201 138,180 138,148" marker-end="url(#a-bad)"/>
+      <path class="e-bad" d="M138,95 C138,60 220,41 298,41" marker-end="url(#a-bad)"/>
+      <text class="ts tr tb" x="410" y="118" text-anchor="middle">the slow state</text>
+      <text class="ts tr" x="410" y="134" text-anchor="middle">sustains itself</text>
+      <rect class="n-good" x="16" y="244" width="250" height="50" rx="6"/><text class="tb" x="28" y="266">Fix: a fixed pool, 20, no overflow</text><text class="ts" x="28" y="284">logins 196 → 5; p50 97 → 35 ms</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 7.3</span>A metastable failure: a slow state kept alive by its own slowness, after the trigger is gone. Fix the feedback loop (a fixed-size pool), not only the trigger.</figcaption>
+  </figure>
+
+  <h3 id="ch7-rls">Row-level security: the second barrier</h3>
+  <p>The application already filters every read by the caller's teams and checks every write's role. That is one line of code per query, and the next endpoint, a refactor or a reporting query could forget it, silently returning another team's data, perhaps into the assistant's prompt. <strong>Row-level security</strong> moves the same rule into Postgres: each table holding team data has policies, one per command, that read who is asking from transaction-local settings. A query that forgets the filter returns nothing instead of leaking.</p>
+
+  <figure class="fig wide" id="fig-7-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 220" role="img" aria-label="Two barriers. The request's session gives the principal and its teams; the application filters the query by those teams. In the same transaction it sets app.read_team_ids with set_config; Postgres' policy on alerts allows a row only when its team is in that list, or the caller is an org admin or the alert service. If the application forgets its filter, the policy still returns only permitted rows; with no context at all, no rows.">
+      <rect class="n" x="16" y="40" width="150" height="70" rx="5"/><text class="tb" x="28" y="62">Session cookie</text><text class="ts" x="28" y="82">→ user and teams,</text><text class="ts" x="28" y="98">in one query</text>
+      <rect class="n-acc" x="200" y="40" width="200" height="70" rx="5"/><text class="tb" x="212" y="62">Barrier 1: the app</text><text class="ts" x="212" y="82">filters by the caller's</text><text class="ts" x="212" y="98">teams; 404 otherwise</text>
+      <rect class="n-acc" x="434" y="40" width="200" height="70" rx="5"/><text class="tb" x="446" y="62">Barrier 2: Postgres</text><text class="ts" x="446" y="82">policies read the</text><text class="ts" x="446" y="98">transaction's settings</text>
+      <rect class="n-good" x="668" y="40" width="136" height="70" rx="5"/><text class="tb" x="680" y="62">Only the</text><text class="tb" x="680" y="80">caller's rows</text>
+      <line class="e" x1="167" y1="75" x2="198" y2="75" marker-end="url(#a)"/>
+      <line class="e" x1="401" y1="75" x2="432" y2="75" marker-end="url(#a)"/>
+      <line class="e-good" x1="635" y1="75" x2="666" y2="75" marker-end="url(#a-good)"/>
+      <text class="tm" x="434" y="134">set_config('app.read_team_ids', '{3,7}', true)</text>
+      <rect class="n-warn" x="200" y="150" width="200" height="56" rx="5"/><text class="ts" x="212" y="172">a forgotten filter</text><text class="ts" x="212" y="190">in a new endpoint</text>
+      <path class="e dash" d="M401,178 C420,178 420,100 432,100" marker-end="url(#a)"/>
+      <text class="ts" x="434" y="186">is still filtered here: no leak</text>
+      <text class="ts" x="434" y="204">and no context at all means no rows</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 7.4</span>Defense in depth for multi-team data. The application answers first and is the main control; the policies are the backstop that turns a coding mistake into an empty result.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/db.py#L75-L105">apps/api/app/db.py</a><span class="lines">and the policies in</span><a href="{{TA}}/apps/api/migrations/versions/20260923_ce83ff21ab01_row_level_security_on_alerts.py#L37-L67">migrations/…_row_level_security_on_alerts.py</a></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The database session tells Postgres who is asking at the start of every transaction, and the migration defines one policy per command.</p>
+        <ul class="notice">
+          <li><code>set_config(..., true)</code>: the third argument makes the setting transaction-local, so it cannot leak through the pooler.</li>
+          <li>The policies read the settings through a scalar subquery, which Postgres evaluates once per query instead of once per row: 44 ms against 100 ms over a million rows.</li>
+          <li>An empty or unset setting becomes an empty list: no access, not an error.</li>
+          <li>There is no UPDATE policy because the app never updates alerts, so an update affects no rows.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/db.py" data-lines="88-105"><code class="language-python">def _set_config(values: dict[str, str]) -&gt; Select[Any]:
+    return select(*(func.set_config(k, v, True) for k, v in values.items()))
+
+
+@event.listens_for(ContextSession, "after_begin")
+def _apply_transaction_settings(
+    session: Session, transaction: SessionTransaction, connection: Connection
+) -&gt; None:
+    values: dict[str, str] | None = session.info.get("transaction_settings")
+    if values:
+        connection.execute(_set_config(values))
+
+
+async def set_transaction_settings(session: AsyncSession, values: dict[str, str]) -&gt; None:
+    """Applied to the open transaction, if any, and to every later one."""
+    session.info["transaction_settings"] = values
+    if session.in_transaction():
+        await session.execute(_set_config(values))</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/migrations/versions/20260923_ce83ff21ab01_row_level_security_on_alerts.py" data-lines="37-67"><code class="language-python">ORG_ADMIN = "(SELECT current_setting('app.org_admin', true)) = 'on'"
+SERVICE = "(SELECT current_setting('app.service', true)) = 'alertmanager'"
+
+
+def teams(setting: str) -&gt; str:
+    # The cast keeps ANY in its array form: `= ANY ((SELECT ...))` without
+    # it is the subquery form, comparing bigint with bigint[].
+    return f"team_id = ANY ((SELECT tenant_team_ids('app.{setting}'))::bigint[])"
+
+
+def upgrade() -&gt; None:
+    op.execute(
+        """
+        CREATE FUNCTION tenant_team_ids(setting text) RETURNS bigint[]
+        LANGUAGE sql STABLE PARALLEL SAFE
+        AS $$ SELECT coalesce(nullif(current_setting(setting, true), ''), '{}')::bigint[] $$
+        """
+    )
+    op.execute("ALTER TABLE alerts ENABLE ROW LEVEL SECURITY")
+    op.execute(
+        f"CREATE POLICY alerts_select ON alerts FOR SELECT "
+        f"USING ({ORG_ADMIN} OR {SERVICE} OR {teams('read_team_ids')})"
+    )
+    op.execute(
+        f"CREATE POLICY alerts_insert ON alerts FOR INSERT "
+        f"WITH CHECK ({ORG_ADMIN} OR {SERVICE} OR {teams('write_team_ids')})"
+    )
+    op.execute(
+        f"CREATE POLICY alerts_delete ON alerts FOR DELETE "
+        f"USING ({ORG_ADMIN} OR {teams('admin_team_ids')})"
+    )</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0014</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">Postgres enforces team isolation (row-level security)</p>
+    <dl>
+      <dt>Problem</dt><dd>Isolation depended on one line of code per query; a forgotten filter would leak silently, possibly into a model's prompt.</dd>
+      <dt>Decision</dt><dd>One policy per command on team data, reading transaction-local settings; no context means no rows; the owner bypasses policies, the app role does not; rolled out expand-then-contract across two releases.</dd>
+      <dt>Rejected</dt><dd>A schema or database per team (right for separate customers, heavy for teams in one organization); a database role per team; views per team.</dd>
+      <dt>See it in</dt><dd>The policies above, and nine database-level tests in <a href="{{TA}}/apps/api/tests/integration/test_row_level_security.py">test_row_level_security.py</a> that query as the app role directly.</dd>
+    </dl>
+  </aside>
+  <p data-adr="ADR-0005">The companion decision, ADR-0005, set the two-role model and the pooler: the schema owner is used only by migrations, which run directly against Postgres as a one-off step before the api starts, never on api startup, where several workers and replicas would race to migrate.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"The app connects through PgBouncer in transaction mode as a role that can't change the schema. Isolation is enforced twice: by the app's filter and by row-level security, with the tenant context set per transaction so it can't leak through the pooler."</p>
+  </aside>
+
+  <h3 id="ch7-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">The pooler looks healthy but every query fails</td><td data-label="Cause">It authenticated with md5 while Postgres requires SCRAM; <code>pg_isready</code> does not authenticate</td><td data-label="Fix">Configure SCRAM; make the readiness check run a real query.</td></tr>
+        <tr><td data-label="Symptom">One user's tenant setting appears in another user's request</td><td data-label="Cause">A session-level <code>SET</code> through transaction pooling</td><td data-label="Fix">Transaction-local <code>set_config(..., true)</code>, with a test.</td></tr>
+        <tr><td data-label="Symptom">Per-session timeouts silently do nothing</td><td data-label="Cause">Transaction pooling discards session settings</td><td data-label="Fix">Set timeouts on the database role.</td></tr>
+        <tr><td data-label="Symptom">Latency stays high after a burst is over</td><td data-label="Cause">Overflow connections discarded and recreated: a metastable loop</td><td data-label="Fix">A fixed-size pool with no overflow.</td></tr>
+        <tr><td data-label="Symptom">A pool-usage gauge said 2 while 10 requests were stuck</td><td data-label="Cause">It counted checkout events, which fire only after the connection's pre-ping succeeds</td><td data-label="Fix">Sample the pool's own accounting.</td></tr>
+        <tr><td data-label="Symptom">A test's cleanup deleted nothing</td><td data-label="Cause">Under row-level security, a query without context sees no rows</td><td data-label="Fix">Declare the context in fixtures; test as the app role, because the owner bypasses policies.</td></tr>
+        <tr><td data-label="Symptom">A policy is slow on large tables</td><td data-label="Cause">A function call in the policy runs once per row</td><td data-label="Fix">Wrap it in a scalar subquery so it runs once per query.</td></tr>
+        <tr><td data-label="Symptom">An insert is refused although the write policy allows it</td><td data-label="Cause"><code>INSERT … RETURNING</code> is also checked against the SELECT policy</td><td data-label="Fix">Make sure the writer may read its own row, or insert without returning.</td></tr>
+        <tr><td data-label="Symptom">After an upgrade, a running older release sees no rows</td><td data-label="Cause">The contract migration enabling policies ran before every instance sent the context</td><td data-label="Fix">Expand first (send the context), contract in the next release; never skip it.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch7-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What breaks when an application moves behind a transaction-mode pooler?</p>
+      <details class="ans"><summary>Answer</summary><p>Anything relying on session state between transactions: session <code>SET</code>, advisory locks held across transactions, <code>LISTEN</code>/<code>NOTIFY</code>, and temporary tables. Each transaction may run on a different server connection.</p></details>
+    </li>
+    <li>
+      <p>Why must the tenant setting be transaction-local?</p>
+      <details class="ans"><summary>Answer</summary><p>Because the pooler hands the same server connection to another client after the transaction ends. A session-level setting would still be there for them; a transaction-local one ends with the transaction.</p></details>
+    </li>
+    <li>
+      <p>What does "metastable" mean, and how did the reference service escape it?</p>
+      <details class="ans"><summary>Answer</summary><p>A slow state that keeps itself going after its trigger is gone. Discarded overflow connections forced new logins, which slowed requests and kept concurrency high. A fixed pool with no overflow broke the loop.</p></details>
+    </li>
+    <li>
+      <p>If the application already filters by team, what does row-level security add?</p>
+      <details class="ans"><summary>Answer</summary><p>A second barrier that holds when the application forgets: a missing filter returns an empty result instead of other teams' rows, and a query that says nothing about the caller sees nothing.</p></details>
+    </li>
+  </ol>
+</section>

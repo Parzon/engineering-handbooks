@@ -1,0 +1,185 @@
+<section class="chapter" id="ch9">
+  <header class="ch-head">
+    <span class="ch-num">9</span>
+    <p class="eyebrow">Part IV · Identity and protection</p>
+    <h2>Secrets, personal data and least privilege</h2>
+    <p class="lede">Secrets are generated, injected at runtime and never stored where code lives; every component gets only the rights its job needs; and the personal data a service holds is inventoried, retained for a stated time and deletable on request.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Secrets never go in Git, images, logs or tickets. A secret that reached any of them is rotated, not just deleted.</li>
+      <li>Least privilege at every layer: database roles, container settings, network exposure and HTTP headers.</li>
+      <li>Production refuses to start with unsafe settings, including any secret still at its example value.</li>
+      <li>A personal-data inventory lists what is held, where, why, who can read it, for how long, and how it is deleted.</li>
+      <li>Data that leaves the service (to a model provider, an identity provider, telemetry) is listed too, because the provider's terms then apply.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Shared passwords in a config file or a wiki page</td><td>Generated secrets, one per purpose, injected at runtime from a store</td><td>Nobody needs to know a secret for it to work, and each can be rotated alone.</td></tr>
+      <tr><td data-label="Then">Containers running as root with full capabilities</td><td>Non-root, read-only filesystem, all capabilities dropped</td><td>A compromised process can do far less.</td></tr>
+      <tr><td data-label="Then">Every port reachable inside the data center</td><td>Only the edge published; everything else on private networks</td><td>An internal service that cannot be reached cannot be attacked from outside.</td></tr>
+      <tr><td data-label="Then">Personal data kept "just in case"</td><td>An inventory with purposes, retention periods and deletion paths</td><td>Data protection law expects it, and data you do not hold cannot leak.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch9-secrets">Where secrets live</h3>
+  <figure class="fig wide" id="fig-9-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Secrets by environment. Laptop: a .env made once from .env.example with every placeholder generated, readable only by its owner. CI: generated per run for throwaway stacks. A VM: generated at first boot, readable only by the deploy user; the model key and identity-provider secret typed in once. A managed platform: a secret store injecting environment variables at start. Never: Git, the image, logs, chats or tickets.">
+      <rect class="n" x="16" y="20" width="186" height="96" rx="5"/><text class="tb" x="28" y="42">Laptop</text><text class="ts" x="28" y="62">.env made from the example,</text><text class="ts" x="28" y="78">every secret generated;</text><text class="ts" x="28" y="94">owner-only permissions</text>
+      <rect class="n" x="218" y="20" width="186" height="96" rx="5"/><text class="tb" x="230" y="42">CI</text><text class="ts" x="230" y="62">generated per run for</text><text class="ts" x="230" y="78">a throwaway stack,</text><text class="ts" x="230" y="94">deleted afterwards</text>
+      <rect class="n" x="420" y="20" width="186" height="96" rx="5"/><text class="tb" x="432" y="42">A VM</text><text class="ts" x="432" y="62">generated at first boot;</text><text class="ts" x="432" y="78">provider keys typed once;</text><text class="ts" x="432" y="94">deploy user only</text>
+      <rect class="n-acc" x="622" y="20" width="182" height="96" rx="5"/><text class="tb" x="634" y="42">Managed platform</text><text class="ts" x="634" y="62">a secret store injects</text><text class="ts" x="634" y="78">them as environment</text><text class="ts" x="634" y="94">variables at start</text>
+      <rect class="n-bad" x="16" y="140" width="788" height="44" rx="5"/><text class="tb tr" x="28" y="167">Never</text><text class="ts" x="80" y="167">in Git, in an image, in a log line, in a chat or a ticket. A secret that reached any of them is burned: rotate it.</text>
+      <text class="ts" x="16" y="212">Typed in code as secrets, they print as asterisks; an empty webhook token disables the webhook rather than accepting anything;</text>
+      <text class="ts" x="16" y="230">production refuses to start while any secret still has the example file's value.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 9.1</span>Where the reference service's secrets come from in each environment. Only the two provider credentials, the model key and the identity provider's client secret, are typed by a person; everything else is generated, and on AWS, generated by Secrets Manager itself (Handbook 3, Chapter 5).</figcaption>
+  </figure>
+
+  <p>Each secret proves one thing to one party. The identity provider's client secret proves the api is the registered application; the database passwords identify the api, the schema owner and the metrics exporter; the model key identifies the service to its provider; the alert webhook's token identifies Alertmanager, a service, which is why it is a bearer token compared in constant time rather than a session. On a public repository, a secret pushed in a commit has been copied the moment it was pushed, so rotation comes first.</p>
+
+  <h3 id="ch9-least">Least privilege, layer by layer</h3>
+  <figure class="fig wide" id="fig-9-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Four layers of least privilege. Database: an owner role used only by migrations, an app role that reads and writes rows but cannot create, alter or drop, a monitor role that reads statistics only. Containers: non-root, read-only root filesystem, all capabilities dropped, no new privileges, CPU and memory limits, no development tools. Network: only the edge is published; internal endpoints answer 404 from outside; dashboards on loopback. HTTP: TLS 1.3, HSTS, a strict Content Security Policy, frame denial, nosniff, no server version, a body size limit, rate limits.">
+      <rect class="n-soft" x="16" y="16" width="788" height="62" rx="6"/><text class="tb" x="30" y="40">Database roles</text><text class="ts" x="30" y="60">owner: migrations only · app: rows only, cannot DROP, CREATE or ALTER, with its own timeouts · monitor: statistics only</text>
+      <rect class="n-soft" x="16" y="86" width="788" height="62" rx="6"/><text class="tb" x="30" y="110">Containers</text><text class="ts" x="30" y="130">non-root (UID 10001) · read-only root filesystem with a tmpfs /tmp · cap_drop ALL · no-new-privileges · limits, no swap · no dev tools</text>
+      <rect class="n-soft" x="16" y="156" width="788" height="62" rx="6"/><text class="tb" x="30" y="180">Network</text><text class="ts" x="30" y="200">only the edge is published · /metrics and the webhook answer 404 from outside · dashboards and debug ports on loopback only</text>
+      <rect class="n-soft" x="16" y="226" width="788" height="62" rx="6"/><text class="tb" x="30" y="250">HTTP</text><text class="ts" x="30" y="270">TLS 1.3 and HSTS · CSP default-src 'self', no inline scripts · frames denied · nosniff · no server version · 1 MB bodies · rate limits</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 9.2</span>Least privilege at four layers of the reference service. Each forbidden operation was tried and refused; the image checks run in CI, and the browser tests fail on any Content Security Policy violation.</figcaption>
+  </figure>
+
+  <p>The host matters too. Membership of the <code>docker</code> group is root-equivalent, so only the deploy user has it; SSH takes keys only, never passwords, and root login is off; security updates install themselves. A debugger port is remote code execution, so the debugging overlay is a separate Compose file bound to loopback and never present in production. A profiler that needs to read another process's memory runs as a separate container borrowing the api's namespaces, on demand, so the api itself never holds that capability.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/postgres/initdb/10-app-role.sh#L13-L30">infra/postgres/initdb/10-app-role.sh</a><span class="lines">the application's database role</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The script that creates the application's role on a new database. It gets rows, not schema, and carries its own limits.</p>
+        <ul class="notice">
+          <li>The timeouts are set on the role because the transaction pooler discards session-level settings (Chapter 7).</li>
+          <li>Default privileges extend the grants to every table a future migration creates, so nobody has to remember to grant.</li>
+          <li>The script runs once, on an empty data volume; a change to an existing database is a migration.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/postgres/initdb/10-app-role.sh" data-lines="13-30"><code class="language-bash">psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+  -v db="$POSTGRES_DB" -v app_user="$APP_DB_USER" -v app_password="$APP_DB_PASSWORD" &lt;&lt;'SQL'
+CREATE ROLE :"app_user" LOGIN PASSWORD :'app_password';
+
+-- Server-side limits for every connection the app opens. They live on the
+-- role because PgBouncer's transaction pooling discards session-level SET.
+ALTER ROLE :"app_user" SET statement_timeout = '10s';
+ALTER ROLE :"app_user" SET idle_in_transaction_session_timeout = '30s';
+
+GRANT CONNECT ON DATABASE :"db" TO :"app_user";
+GRANT USAGE ON SCHEMA public TO :"app_user";
+
+-- Applies to tables/sequences the owner creates later, i.e. every migration.
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO :"app_user";
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+  GRANT USAGE, SELECT ON SEQUENCES TO :"app_user";
+SQL</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0023</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">Production is safe by default, and refuses unsafe settings</p>
+    <dl>
+      <dt>Problem</dt><dd>Safe production settings lived in a checklist, and a checklist is skipped under pressure.</dd>
+      <dt>Decision</dt><dd>Production mode changes some defaults on purpose (API docs off, a tenth of traces kept, the chat's rate limiter failing closed) and refuses to start on unsafe values, naming each. A deployment may waive a check only by name.</dd>
+      <dt>See it in</dt><dd><code>production_problems</code> in <a href="{{TA}}/apps/api/app/config.py#L366-L405">config.py</a>, with a unit test per refusal (Chapter 1).</dd>
+    </dl>
+  </aside>
+
+  <h3 id="ch9-personal">Personal data: an inventory, retention and erasure</h3>
+  <p>A service that holds data about people needs a document that answers a data protection officer, a lawyer, or a person asking what is held about them. The reference service's inventory lists every place personal data lives, and the most important line is the one saying what is <strong>not</strong> stored: questions and answers.</p>
+
+  <figure class="fig wide" id="fig-9-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Inside the service: accounts kept 365 days without a sign-in; sessions at most 12 hours; alerts 365 days; runbooks until deleted; the audit trail with ids and hashes but no text; questions and answers not stored; logs, traces and counters short-lived; backups the newest 14. Leaving the service: questions with the asker's visible alerts and runbook sections go to the model provider with credentials redacted, names and other text not; the sign-in goes to the identity provider; ids and timings go to telemetry.">
+      <rect class="zone" x="16" y="16" width="520" height="268" rx="8"/>
+      <text class="tl" x="30" y="36">HELD BY THE SERVICE, WITH RETENTION</text>
+      <text class="ts" x="30" y="62">accounts: until 365 days without a sign-in</text>
+      <text class="ts" x="30" y="82">sessions: 12 hours at most</text>
+      <text class="ts" x="30" y="102">alerts: 365 days (free text can name people)</text>
+      <text class="ts" x="30" y="122">runbooks and their vectors: until a team admin deletes them</text>
+      <text class="ts" x="30" y="142">audit trail: user ids, ids and hashes, never text; pruned by its owner</text>
+      <text class="ts" x="30" y="162">access logs: rotated; traces: in memory, ids only</text>
+      <text class="ts" x="30" y="182">rate-limit counters: 60 seconds</text>
+      <text class="ts" x="30" y="202">backups: the newest 14 dumps</text>
+      <rect class="n-good" x="30" y="220" width="300" height="30" rx="4"/><text class="ts tb" x="42" y="240">questions and answers: not stored</text>
+      <text class="ts" x="30" y="272">placeholder retention periods, set by policy</text>
+
+      <rect class="n-warn" x="580" y="30" width="224" height="80" rx="5"/><text class="tb" x="592" y="52">Model provider</text><text class="ts" x="592" y="72">questions, visible alerts and</text><text class="ts" x="592" y="88">runbook text; credentials</text><text class="ts" x="592" y="104">redacted, names are not</text>
+      <rect class="n" x="580" y="124" width="224" height="60" rx="5"/><text class="tb" x="592" y="146">Identity provider</text><text class="ts" x="592" y="166">the sign-in itself</text>
+      <rect class="n" x="580" y="198" width="224" height="60" rx="5"/><text class="tb" x="592" y="220">Telemetry backends</text><text class="ts" x="592" y="240">ids, counts, timings only</text>
+      <line class="e" x1="537" y1="70" x2="578" y2="70" marker-end="url(#a)"/>
+      <line class="e" x1="537" y1="154" x2="578" y2="154" marker-end="url(#a)"/>
+      <line class="e" x1="537" y1="228" x2="578" y2="228" marker-end="url(#a)"/>
+      <text class="tl" x="580" y="22">LEAVES THE SERVICE</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 9.3</span>The reference service's personal-data inventory, in one picture. Once data leaves for a provider, that provider's terms apply: retention, training use and processing region belong in a data-processing agreement before launch.</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>Access.</strong> An operator command exports, as JSON, everything held about a person, across every identity provider, and records that it did so.</li>
+    <li><strong>Erasure.</strong> A dry run shows what would be erased; the real run removes accounts, memberships and sessions and records it. The person must also be removed at the identity provider, or their next sign-in recreates them. The audit trail keeps their events under an id that no longer resolves to anyone: pseudonymous, not anonymous, and whether that is allowed is a legal decision to write down.</li>
+    <li><strong>Retention.</strong> A scheduled job deletes expired sessions, users who have not signed in for a year, and old alerts; an empty setting keeps that kind forever. Backups keep rows until they rotate out.</li>
+    <li><strong>Rectification.</strong> Name and email come from the identity provider at each sign-in, so they are corrected there.</li>
+  </ul>
+  <p data-adr="ADR-0025">Some questions belong outside engineering and should be asked early: the legal basis for each use; a data-processing agreement with the model provider (no training on your data, how long prompts are kept, where they are processed); a data protection impact assessment; whether a works council must agree to a system that can show what an employee asked; how a breach would be detected in time to report it; and the AI-transparency rule that people must be told they are dealing with an AI system, which the reference chat states above the question box.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Secrets are generated and injected at runtime; production refuses example values. The app's database role can't change the schema, containers are non-root and read-only, and only the edge is published."</p>
+    <p>"We keep a personal-data inventory with retention and deletion for each item, and we don't store questions or answers at all."</p>
+  </aside>
+
+  <h3 id="ch9-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A leaked secret keeps working after it was removed from the repository</td><td data-label="Cause">Removal does not undo the copies made when it was public</td><td data-label="Fix">Rotate first, then remove.</td></tr>
+        <tr><td data-label="Symptom">Secrets appear in a build log</td><td data-label="Cause"><code>make</code> echoes its recipes, values included</td><td data-label="Fix">Pass secrets to containers by name (<code>-e NAME</code>), taking the value from the environment.</td></tr>
+        <tr><td data-label="Symptom">An alert-routing tool cannot read a secret from the environment</td><td data-label="Cause">Its configuration does not expand environment variables</td><td data-label="Fix">Mount the secret as a file.</td></tr>
+        <tr><td data-label="Symptom">Erased users reappear</td><td data-label="Cause">They still exist at the identity provider and signed in again</td><td data-label="Fix">Remove them there as part of the erasure procedure.</td></tr>
+        <tr><td data-label="Symptom">Personal data survives in places nobody listed</td><td data-label="Cause">Logs, traces, backups and counters were not in the inventory</td><td data-label="Fix">A new table, log field or span attribute holding personal data gets an inventory row and a retention in the same change.</td></tr>
+        <tr><td data-label="Symptom">Sensitive facts survived redaction</td><td data-label="Cause">Redaction removes secret formats, not facts such as "payroll failed for 1,200 employees"</td><td data-label="Fix">Keep content out of telemetry by default; treat model inputs as leaving the service.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch9-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Where should a production secret come from, and where must it never appear?</p>
+      <details class="ans"><summary>Answer</summary><p>From a secret store or generation at first boot, injected into the environment at runtime. Never in Git, an image, logs, chats or tickets; if it does, rotate it.</p></details>
+    </li>
+    <li>
+      <p>Name one least-privilege control at each of the database, container and network layers.</p>
+      <details class="ans"><summary>Answer</summary><p>Database: an application role that can change rows but not the schema. Container: non-root with a read-only root filesystem and all capabilities dropped. Network: only the edge published, internal endpoints unreachable from outside.</p></details>
+    </li>
+    <li>
+      <p>What makes an erasure request complete in the reference service, and what remains?</p>
+      <details class="ans"><summary>Answer</summary><p>Erasing the accounts, memberships and sessions, and removing the person at the identity provider. Audit events remain under an id that no longer resolves (a legal decision), and backups hold the rows until they rotate out.</p></details>
+    </li>
+  </ol>
+</section>

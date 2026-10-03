@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 440" role="img" aria-label="OpenID Connect with PKCE, the api as a confidential client. The browser opens the api's login route. The api creates state, a nonce and a PKCE verifier, and redirects to the provider with the challenge. The person signs in at the provider, which the app never sees. The provider redirects the browser back to the callback with a one-time code and the state. The api checks the state, then exchanges the code, the verifier and its client secret for an ID token over its own back channel. It verifies the token, replaces the user's roles from the groups claim, stores the hash of a new session token and sets the cookie. The browser only ever holds the cookie."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="440" fill="#ffffff"/>
+      <rect class="n" x="20" y="14" width="130" height="40" rx="5"/><text class="tb" x="85" y="39" text-anchor="middle">Browser</text>
+      <rect class="n-acc" x="330" y="14" width="160" height="40" rx="5"/><text class="tb" x="410" y="39" text-anchor="middle">api (confidential)</text>
+      <rect class="n" x="650" y="14" width="150" height="40" rx="5"/><text class="tb" x="725" y="39" text-anchor="middle">Identity provider</text>
+      <line class="rule dash" x1="85" y1="54" x2="85" y2="430"/>
+      <line class="rule dash" x1="410" y1="54" x2="410" y2="430"/>
+      <line class="rule dash" x1="725" y1="54" x2="725" y2="430"/>
+
+      <line class="e" x1="85" y1="80" x2="408" y2="80" marker-end="url(#a)"/><text class="ts" x="247" y="74" text-anchor="middle">1  GET /api/auth/login</text>
+      <rect class="n-soft" x="420" y="88" width="290" height="36" rx="4"/><text class="ts" x="430" y="104">2  makes state, a nonce and a PKCE verifier;</text><text class="ts" x="430" y="118">keeps them for 10 minutes</text>
+      <line class="e" x1="410" y1="138" x2="87" y2="138" marker-end="url(#a)"/><text class="ts" x="247" y="132" text-anchor="middle">redirect to the provider, with the challenge</text>
+      <line class="e" x1="85" y1="160" x2="723" y2="160" marker-end="url(#a)"/><text class="ts" x="560" y="154" text-anchor="middle">3  the provider's sign-in page</text>
+      <rect class="n-soft" x="530" y="168" width="185" height="36" rx="4"/><text class="ts" x="540" y="184">password and MFA: the app</text><text class="ts" x="540" y="198">never sees either</text>
+      <line class="e" x1="725" y1="218" x2="87" y2="218" marker-end="url(#a)"/><text class="ts" x="560" y="212" text-anchor="middle">4  redirect back: a one-time code, the state</text>
+      <line class="e" x1="85" y1="240" x2="408" y2="240" marker-end="url(#a)"/><text class="ts" x="247" y="234" text-anchor="middle">GET /api/auth/callback?code=…&amp;state=…</text>
+      <rect class="n-soft" x="200" y="248" width="200" height="22" rx="4"/><text class="ts" x="210" y="263">5  state matches the cookie?</text>
+      <line class="e-acc" x1="410" y1="286" x2="723" y2="286" marker-end="url(#a-acc)"/><text class="ts" x="567" y="280" text-anchor="middle">6  back channel: code + verifier + client secret</text>
+      <line class="e-acc dash" x1="725" y1="310" x2="412" y2="310" marker-end="url(#a-acc)"/><text class="ts" x="567" y="304" text-anchor="middle">7  ID token (the access token is dropped)</text>
+      <rect class="n-acc" x="420" y="320" width="300" height="50" rx="4"/><text class="ts" x="430" y="338">8  verify: signature, issuer, audience,</text><text class="ts" x="430" y="352">expiry, nonce; replace roles from the</text><text class="ts" x="430" y="366">groups claim; store the session's hash</text>
+      <line class="e-good" x1="410" y1="392" x2="87" y2="392" marker-end="url(#a-good)"/><text class="ts" x="247" y="386" text-anchor="middle">9  Set-Cookie: __Host-session (HttpOnly)</text>
+      <text class="ts tb" x="85" y="420">the browser holds only a cookie: never a token</text>
+    </svg>

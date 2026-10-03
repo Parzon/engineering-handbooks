@@ -1,0 +1,213 @@
+<section class="chapter" id="ch15">
+  <header class="ch-head">
+    <span class="ch-num">15</span>
+    <p class="eyebrow">Part VIII · Running it</p>
+    <h2>Reliability: timeouts, failures and drills</h2>
+    <p class="lede">A reliable service decides in advance what happens when each dependency fails, bounds every wait where the work actually happens, answers in seconds rather than hanging, and proves all of it by breaking each dependency on purpose.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Every soft dependency has a written failure policy: fail open, fail closed, or a choice per endpoint.</li>
+      <li>Cap work on the server that does it. A client-side timeout only stops waiting, and its cleanup can hang.</li>
+      <li>Interactive traffic fails fast: seconds, a clear 503 and a request id, not a two-minute queue built for batch jobs.</li>
+      <li>Liveness checks nothing external; readiness checks hard dependencies and only reports soft ones.</li>
+      <li>Failure drills inject one fault at a time into a production-shaped stack. Freezing a dependency is harsher than stopping it, and the worst bug appeared only under load.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Failure behavior discovered during the outage</td><td>A matrix of faults and what users see, measured before launch</td><td>Every service fails; the question is how.</td></tr>
+      <tr><td data-label="Then">Default timeouts from libraries and proxies</td><td>Every wait bounded, with the sum kept under the outer limit</td><td>Defaults suit batch work: PgBouncer waits two minutes for a connection.</td></tr>
+      <tr><td data-label="Then">"Is it up?" health checks</td><td>Liveness and readiness as two different questions</td><td>A database outage must not restart every replica at once.</td></tr>
+      <tr><td data-label="Then">Disaster recovery tests once a year</td><td>Small, repeatable drills run after every risky upgrade</td><td>Cheap containers make faults easy to inject.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch15-policy">Decide what happens when a dependency fails</h3>
+  <figure class="fig wide" id="fig-15-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Three failure policies for a rate limiter whose store is unreachable. Fail open: allow the request; availability wins and the limit is gone for the outage; right when the limit is a courtesy and the store a soft dependency. Fail closed: reject with 503; protection wins and a store outage becomes a full outage; right when the limit is the security control. Per endpoint: closed on expensive or abusable endpoints such as a model call, open on cheap reads. The reference service fails open with a 200-millisecond budget, except the chat in production, which fails closed. Whatever the choice: bound the wait, count the decisions, alert on them, write it down.">
+      <rect class="n-good" x="16" y="16" width="250" height="150" rx="6"/><text class="tb" x="28" y="40">Fail open</text><text class="ts" x="28" y="62">allow the request</text><text class="ts" x="28" y="86">availability wins; no limit</text><text class="ts" x="28" y="102">for the outage</text><text class="ts" x="28" y="128">when the limit is a courtesy</text><text class="ts" x="28" y="144">and the store is optional</text>
+      <rect class="n-bad" x="285" y="16" width="250" height="150" rx="6"/><text class="tb" x="297" y="40">Fail closed</text><text class="ts" x="297" y="62">reject with a 503</text><text class="ts" x="297" y="86">protection wins; a store</text><text class="ts" x="297" y="102">outage is a full outage</text><text class="ts" x="297" y="128">when the limit is the control:</text><text class="ts" x="297" y="144">sign-in attempts, abuse</text>
+      <rect class="n-acc" x="554" y="16" width="250" height="150" rx="6"/><text class="tb" x="566" y="40">Per endpoint</text><text class="ts" x="566" y="62">closed where it is expensive,</text><text class="ts" x="566" y="78">open on cheap reads</text><text class="ts" x="566" y="104">the reference service: open,</text><text class="ts" x="566" y="120">200 ms budget; the chat fails</text><text class="ts" x="566" y="136">closed in production, because</text><text class="ts" x="566" y="152">each request is a paid model call</text>
+      <text class="tb" x="16" y="200">Whichever you choose:</text><text class="ts" x="170" y="200">bound the wait, count each fail-open or fail-closed decision,</text>
+      <text class="ts" x="170" y="220">alert on them, and write the choice down as a decision record.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 15.1</span>Three failure policies, shown for a rate limiter. The same question applies to every soft dependency: a cache, a feature-flag service, an identity provider's metadata.</figcaption>
+  </figure>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0004</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">The rate limiter fails open</p>
+    <dl>
+      <dt>Problem</dt><dd>The limiter's store is shared by every worker; if it goes down, every request must still be answered one way or another.</dd>
+      <dt>Decision</dt><dd>Allow the request when the store does not answer within its budget, log and count the decision, and alert. The chat is the exception in production: it fails closed, because an unlimited chat is an unlimited bill.</dd>
+      <dt>See it in</dt><dd>The docstring of <a href="{{TA}}/apps/api/app/ratelimit.py">ratelimit.py</a>; the Valkey drills in the failure matrix.</dd>
+    </dl>
+  </aside>
+
+  <h3 id="ch15-timeouts">Where timeouts belong</h3>
+  <p>Put the cap where the work happens: the database's <code>statement_timeout</code>, the pooler's query timeout. The server then stops the work and returns a clean error. A client-side timeout only stops <em>waiting</em>, and if its cleanup needs the remote side to cooperate, a dead remote turns that cleanup into a hang. That was the reference service's worst bug.</p>
+
+  <figure class="fig wide" id="fig-15-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="The leak, before and after. Before: a query's client-side timeout fires; the driver asks the server to cancel it; every later operation on that connection, including the rollback that returns it to the pool, waits for the server's acknowledgement with no timeout. With Postgres frozen, the acknowledgement never comes: the connection is held forever. Freezing Postgres for 20 seconds under load left 13 of 40 pooled connections stuck after it recovered. After: time is capped on the server side only, by the role's statement timeout and the pooler's query timeout; the pooler fails fast; a connection closed mid-query maps to 503; the readiness probe abandons a slow check instead of cancelling it. The same drill now leaves zero connections held.">
+      <text class="tl tr" x="16" y="22">BEFORE: A CLIENT-SIDE TIMEOUT</text>
+      <rect class="n" x="16" y="34" width="170" height="54" rx="5"/><text class="ts" x="28" y="56">query times out</text><text class="ts" x="28" y="74">on the client</text>
+      <rect class="n" x="216" y="34" width="170" height="54" rx="5"/><text class="ts" x="228" y="56">driver asks the server</text><text class="ts" x="228" y="74">to cancel</text>
+      <rect class="n" x="416" y="34" width="170" height="54" rx="5"/><text class="ts" x="428" y="56">rollback waits for the</text><text class="ts" x="428" y="74">acknowledgement</text>
+      <rect class="n-bad" x="616" y="34" width="188" height="54" rx="5"/><text class="ts" x="628" y="56">server frozen: it never</text><text class="ts" x="628" y="74">comes; held forever</text>
+      <line class="e" x1="187" y1="61" x2="214" y2="61" marker-end="url(#a)"/><line class="e" x1="387" y1="61" x2="414" y2="61" marker-end="url(#a)"/><line class="e-bad" x1="587" y1="61" x2="614" y2="61" marker-end="url(#a-bad)"/>
+      <text class="ts tr" x="16" y="114">Postgres frozen 20 s under load: 13 of 40 pool connections stuck after it recovered.</text>
+
+      <text class="tl tg" x="16" y="156">AFTER: CAPPED WHERE THE WORK HAPPENS</text>
+      <rect class="n-good" x="16" y="168" width="788" height="86" rx="6"/>
+      <text class="ts" x="28" y="190">query time capped only on the server: the role's 10 s statement timeout, the pooler's 15 s backstop</text>
+      <text class="ts" x="28" y="210">the pooler fails fast: 5 s queue, 5 s connect, 2 s login retry, 1 s for a cached "no such host"</text>
+      <text class="ts" x="28" y="230">a connection closed mid-query maps to a 503; the readiness probe abandons a slow check</text>
+      <text class="ts" x="28" y="246">rather than cancelling it</text>
+      <text class="ts tg" x="16" y="282">The same drill: 67,121 reads served, 28 clean 503s, 0 connections held afterwards.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 15.2</span>The leak the drills found, and the fix. Single-request drills never showed it; only a freeze under load, followed by a check that the pools were empty, did. The test pattern is worth copying.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/compose.yaml#L269-L286">compose.yaml</a><span class="lines">the pooler, made to fail fast</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>PgBouncer's defaults suit batch jobs. Each setting here records its default and the drill that showed why it had to change.</p>
+        <ul class="notice">
+          <li>A client waited two minutes for a connection by default; interactive requests now get an error in five seconds.</li>
+          <li>The query timeout is a backstop above the database role's own ten-second limit, for when Postgres cannot enforce it itself.</li>
+          <li>A stopped container vanishes from Docker's DNS, and the pooler cached that answer: Postgres was back while every login still failed.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="compose.yaml" data-lines="269-286"><code class="language-yaml">      # Fail fast when Postgres is down or frozen (make drills d="db-stop
+      # db-hang"). PgBouncer defaults in brackets.
+      # A client waits this long for a server connection, then gets an error [120s].
+      QUERY_WAIT_TIMEOUT: 5
+      # Cancels a query running this long and closes its connections [off].
+      # A backstop for when Postgres cannot enforce the role's 10s
+      # statement_timeout itself (frozen, partitioned): keep it above 10s.
+      QUERY_TIMEOUT: 15
+      # A new server connection must be up within this [15s].
+      SERVER_CONNECT_TIMEOUT: 5
+      # After a failed login to Postgres, retry after this long [15s] - which
+      # is also how long clients keep getting "server login has been
+      # failing" once Postgres is back.
+      SERVER_LOGIN_RETRY: 2
+      # A stopped container vanishes from Docker's DNS, and PgBouncer caches
+      # that "no such host" answer [15s]: Postgres would be back while
+      # PgBouncer still failed every login from its cache.
+      DNS_NXDOMAIN_TTL: 1</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0010</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">Database timeouts live on the server side; failures answer in seconds</p>
+    <dl>
+      <dt>Problem</dt><dd>With Postgres stopped, reads hung for 36 seconds and the chat answered 500; frozen, it leaked pool connections for good.</dd>
+      <dt>Decision</dt><dd>Server-side caps only, a fail-fast pooler, a 503 for a connection closed mid-query, and the database drills rerun after any upgrade on the database path.</dd>
+      <dt>See it in</dt><dd>The role's timeouts in <a href="{{TA}}/infra/postgres/initdb/10-app-role.sh">10-app-role.sh</a> (Chapter 9) and the PgBouncer settings above.</dd>
+    </dl>
+  </aside>
+
+  <h4>Three more rules about waiting</h4>
+  <ul>
+    <li><strong>Cancel or abandon.</strong> A timeout cancels once, and cleanup after it can block again. To answer on time no matter what, run the work as a separate task, wait with a deadline, and abandon it (keep a reference, let it finish) when cancelling would trigger a cleanup that can hang.</li>
+    <li><strong>Propagate deadlines.</strong> Pass the remaining budget down with each call (gRPC deadlines, a per-transaction statement timeout), so no layer works longer than its caller will wait. Otherwise a timed-out client leaves work running, and a retried write can commit twice: hence idempotency keys on writes.</li>
+    <li><strong>Keep the sum under the outer limit.</strong> The longest a user can wait is the sum of the timeouts along the path; the proxy's must be above it (Chapter 11).</li>
+  </ul>
+
+  <h3 id="ch15-health">Liveness and readiness</h3>
+  <figure class="fig wide" id="fig-15-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 210" role="img" aria-label="Liveness, /health: is the process alive? It checks nothing external, because failing it restarts the container, and a database outage must not restart every replica at once. Readiness, /ready: should traffic come here? It fails on hard dependencies such as the database, and reports soft ones such as the rate limiter's store or the identity provider as degraded while still answering 200, or a partial outage becomes a total one.">
+      <rect class="n" x="16" y="16" width="384" height="176" rx="6"/><text class="tb" x="30" y="40">Liveness: /health</text><text class="ts ta" x="30" y="62">"Is the process alive?"</text>
+      <text class="ts" x="30" y="90">checks nothing external</text><text class="ts" x="30" y="114">failing it restarts the container, and a</text><text class="ts" x="30" y="130">database outage must not restart every</text><text class="ts" x="30" y="146">replica at once</text><text class="ts tmu" x="30" y="176">container and load balancer health checks</text>
+      <rect class="n-acc" x="420" y="16" width="384" height="176" rx="6"/><text class="tb" x="434" y="40">Readiness: /ready</text><text class="ts ta" x="434" y="62">"Should traffic come here?"</text>
+      <text class="ts" x="434" y="90">fails on hard dependencies: the database</text><text class="ts" x="434" y="114">reports soft ones as degraded, still 200:</text><text class="ts" x="434" y="130">the limiter's store, the identity provider</text><text class="ts" x="434" y="146">otherwise a partial outage becomes total</text><text class="ts tmu" x="434" y="176">orchestrator routing decisions, dashboards</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 15.3</span>Two different questions. ECS has only one signal, the load balancer's health check; pointed at readiness, a database outage marked every api task unhealthy and ECS kept replacing them, so there it points at <code>/health</code> (Handbook 3, Chapter 9).</figcaption>
+  </figure>
+
+  <h3 id="ch15-drills">Failure drills</h3>
+  <p>The reference service's drill script injects one fault at a time into the production-shaped stack with plain Docker: stop for "down", pause for "frozen" (the process is alive, its connections stay open, nothing answers), a network disconnect, a kill from the host for a crash, a lowered memory limit, and the mock model's admin interface for provider failures. It records what a signed-in user sees on each path, restores the stack, and checks recovery. An injection that fails is reported as a failure, never as a result: an early version reported "rate-limited model, answer fine" because the mock was still starting.</p>
+
+  <figure class="fig wide" id="fig-15-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 340" role="img" aria-label="Selected rows of the failure matrix. Valkey stopped: reads and writes work without rate limiting; the chat answers 503 in 14 milliseconds in production. PgBouncer frozen: 503 after 5 seconds. Postgres stopped: 503 in 15 milliseconds. Model hangs: the stream stays open with heartbeats, then llm_timeout at 60 seconds. Identity provider stopped: signed-in users notice nothing; new sign-ins fail; readiness reports degraded within 30 seconds. One worker killed: its streams are cut, everything else unaffected. Recreate deploy: new requests get 502 for 6.7 seconds. Rolling deploy through the edge: no failed request in three runs. Memory limit below the working set: a crash loop until fixed.">
+      <text class="tl" x="16" y="22">FAULT</text><text class="tl" x="250" y="22">WHAT USERS SEE</text><text class="tl" x="690" y="22">VERDICT</text>
+      <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
+      <text class="tb" x="16" y="54">Valkey stopped</text><text class="ts" x="250" y="54">reads, writes and sign-in work, unlimited; the chat refuses in 14 ms</text><rect class="n-good" x="690" y="40" width="114" height="22" rx="3"/><text class="ts" x="747" y="56" text-anchor="middle">degraded</text>
+      <text class="tb" x="16" y="88">PgBouncer frozen</text><text class="ts" x="250" y="88">a JSON 503 after 5.0 s</text><rect class="n-warn" x="690" y="74" width="114" height="22" rx="3"/><text class="ts" x="747" y="90" text-anchor="middle">fails fast</text>
+      <text class="tb" x="16" y="122">Postgres stopped</text><text class="ts" x="250" y="122">a JSON 503 in 15 ms; nobody is signed in without it</text><rect class="n-warn" x="690" y="108" width="114" height="22" rx="3"/><text class="ts" x="747" y="124" text-anchor="middle">fails fast</text>
+      <text class="tb" x="16" y="156">The model hangs</text><text class="ts" x="250" y="156">heartbeats keep the stream open; llm_timeout at 60 s</text><rect class="n-warn" x="690" y="142" width="114" height="22" rx="3"/><text class="ts" x="747" y="158" text-anchor="middle">bounded</text>
+      <text class="tb" x="16" y="190">Identity provider down</text><text class="ts" x="250" y="190">signed-in users notice nothing; new sign-ins fail</text><rect class="n-good" x="690" y="176" width="114" height="22" rx="3"/><text class="ts" x="747" y="192" text-anchor="middle">degraded</text>
+      <text class="tb" x="16" y="224">One worker killed</text><text class="ts" x="250" y="224">its streams cut (3 of 6); everything else unaffected</text><rect class="n-good" x="690" y="210" width="114" height="22" rx="3"/><text class="ts" x="747" y="226" text-anchor="middle">contained</text>
+      <text class="tb" x="16" y="258">Recreate deploy</text><text class="ts" x="250" y="258">streams finish; new requests get 502 for 6.7 s</text><rect class="n-bad" x="690" y="244" width="114" height="22" rx="3"/><text class="ts" x="747" y="260" text-anchor="middle">downtime</text>
+      <text class="tb" x="16" y="292">Rolling deploy</text><text class="ts" x="250" y="292">no failed request in three runs through the edge</text><rect class="n-good" x="690" y="278" width="114" height="22" rx="3"/><text class="ts" x="747" y="294" text-anchor="middle">invisible</text>
+      <text class="tb" x="16" y="326">Memory below working set</text><text class="ts" x="250" y="326">a crash loop; the site is down until the limit is fixed</text><rect class="n-bad" x="690" y="312" width="114" height="22" rx="3"/><text class="ts" x="747" y="328" text-anchor="middle">outage</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 15.4</span>Nine of the reference service's twenty-odd drills, as measured after the fixes. The full matrix in the operations guide also names the alert that covers each fault if it lasts, and how long recovery took.</figcaption>
+  </figure>
+
+  <p>Two findings shape deployment. A single container replaced by "stop, then start" refuses new requests for as long as the longest in-flight answer takes to drain, plus boot time; a rolling deploy starts the new instance beside the old one and drains the old one only once the new one is ready (Handbook 3, Chapter 13). And memory limits on a host with swap were soft: the api put 48 MiB in swap and kept serving without a single error, until every limited service set its swap limit equal to its memory limit, which made an out-of-memory kill loud and alerting.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Each soft dependency has a written failure policy; the limiter fails open with a 200-millisecond budget, except the chat in production."</p>
+    <p>"Timeouts live on the server; the pooler fails in seconds; and we prove it with drills, including a database freeze under load followed by a check that the pools are empty."</p>
+  </aside>
+
+  <h3 id="ch15-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">Pool connections stay in use after the database recovers</td><td data-label="Cause">A client-side cancel whose cleanup waits for a dead server</td><td data-label="Fix">Cap time on the server; drill a freeze under load and check the pools.</td></tr>
+        <tr><td data-label="Symptom">Requests hang for two minutes when the database is down</td><td data-label="Cause">The pooler's queue timeout, designed for batch work</td><td data-label="Fix">Seconds, with a clear 503.</td></tr>
+        <tr><td data-label="Symptom">A database blip restarts every replica</td><td data-label="Cause">The liveness check tests the database</td><td data-label="Fix">Liveness checks nothing external.</td></tr>
+        <tr><td data-label="Symptom">A cache outage takes the whole site down</td><td data-label="Cause">Readiness fails on a soft dependency</td><td data-label="Fix">Report it as degraded; keep answering 200.</td></tr>
+        <tr><td data-label="Symptom">The drill says a dependency failure was harmless</td><td data-label="Cause">The fault was never injected</td><td data-label="Fix">Verify each injection; report a failed one as such.</td></tr>
+        <tr><td data-label="Symptom">A crashed container never restarts in a drill</td><td data-label="Cause"><code>docker kill</code> counts as a manual stop</td><td data-label="Fix">Kill the process from the host, as the kernel would.</td></tr>
+        <tr><td data-label="Symptom">A short outage leaves no trace in metrics</td><td data-label="Cause">It was shorter than a scrape interval</td><td data-label="Fix">Look in logs and request errors.</td></tr>
+        <tr><td data-label="Symptom">A retried write is applied twice</td><td data-label="Cause">The first attempt kept running after its caller timed out</td><td data-label="Fix">Deadline propagation and idempotency keys.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch15-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>When should a rate limiter fail open, and when closed?</p>
+      <details class="ans"><summary>Answer</summary><p>Open when the limit is a courtesy or cost guard and its store is a soft dependency; closed when the limit is itself the security control, or when each request is expensive, as with a paid model call.</p></details>
+    </li>
+    <li>
+      <p>Why is a client-side timeout not enough to protect a pool?</p>
+      <details class="ans"><summary>Answer</summary><p>It stops waiting, not the work. If the driver's cleanup needs the server's cooperation, a frozen server turns the cleanup into a hang and the connection is held forever. A server-side cap stops the work itself.</p></details>
+    </li>
+    <li>
+      <p>What is the difference between liveness and readiness?</p>
+      <details class="ans"><summary>Answer</summary><p>Liveness asks whether the process is alive and checks nothing external, because failing it restarts the container. Readiness asks whether traffic should come here: it fails on hard dependencies and reports soft ones as degraded.</p></details>
+    </li>
+    <li>
+      <p>Why is freezing a dependency a harsher drill than stopping it?</p>
+      <details class="ans"><summary>Answer</summary><p>A stopped dependency refuses connections at once. A frozen one keeps its connections open and never answers, so only timeouts protect you, and code paths that wait without a bound hang.</p></details>
+    </li>
+  </ol>
+</section>

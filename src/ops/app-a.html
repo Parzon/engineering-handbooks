@@ -1,0 +1,89 @@
+<p>Terms used in this handbook, each with the chapter that explains it. Application terms are in Handbook 2's glossary; AI terms in Handbook 1's.</p>
+<dl class="glossary">
+  <dt>Application Load Balancer (ALB)</dt>
+  <dd>AWS's HTTP load balancer: terminates TLS, routes by path and host, and checks target health. <a class="see" href="#ch9">Chapter 9</a></dd>
+  <dt>Artifact</dt>
+  <dd>A versioned output of the pipeline, such as an image, built once and promoted unchanged between environments. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>Blue/green deployment</dt>
+  <dd>Running a second full environment on the new version and switching traffic at once, keeping the old one for a switch back. <a class="see" href="#ch13">Chapter 13</a></dd>
+  <dt>Branch protection</dt>
+  <dd>Repository rules that require checks and reviews before anything reaches the main branch. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>Canary</dt>
+  <dd>Sending a small share of traffic to a new version, watching it, and widening in steps. <a class="see" href="#ch13">Chapter 13</a></dd>
+  <dt>CDK</dt>
+  <dd>The AWS Cloud Development Kit: infrastructure written in a programming language and synthesized to CloudFormation. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>cloud-init</dt>
+  <dd>A tool that configures a new virtual machine on first boot from user data. <a class="see" href="#ch6">Chapter 6</a></dd>
+  <dt>CloudFormation</dt>
+  <dd>AWS's native infrastructure-as-code service, which creates and updates stacks of resources. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>Continuous delivery</dt>
+  <dd>Every change that passes the pipeline is releasable, and releasing is a routine, automated step. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>Dependabot</dt>
+  <dd>GitHub's bot that opens pull requests to update dependencies and pinned images. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Drift</dt>
+  <dd>Differences between declared infrastructure and what actually runs, usually from manual changes. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>ECR</dt>
+  <dd>Amazon Elastic Container Registry: private image storage in an AWS account. <a class="see" href="#ch5">Chapter 5</a></dd>
+  <dt>ECS</dt>
+  <dd>Amazon Elastic Container Service: runs containers as tasks and services, on EC2 or on Fargate. <a class="see" href="#ch9">Chapter 9</a></dd>
+  <dt>EKS</dt>
+  <dd>Amazon Elastic Kubernetes Service: managed Kubernetes control planes. <a class="see" href="#ch10">Chapter 10</a></dd>
+  <dt>Environment</dt>
+  <dd>A separate copy of the system (development, staging, production) with its own configuration and data. <a class="see" href="#ch13">Chapter 13</a></dd>
+  <dt>Fargate</dt>
+  <dd>Serverless compute for containers on AWS: no instances to manage. <a class="see" href="#ch9">Chapter 9</a></dd>
+  <dt>Feature flag</dt>
+  <dd>A switch that turns code on or off per tenant or percentage without a deploy. <a class="see" href="#ch13">Chapter 13</a></dd>
+  <dt>GitHub Actions</dt>
+  <dd>GitHub's CI/CD: workflows of jobs triggered by repository events. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>gitleaks</dt>
+  <dd>A scanner for secrets committed to Git history. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>IAM role</dt>
+  <dd>An AWS identity with permissions that a service, a task or a federated identity assumes temporarily. <a class="see" href="#ch5">Chapter 5</a></dd>
+  <dt>Immutable infrastructure</dt>
+  <dd>Replacing servers or containers with new ones built from an image, rather than changing them in place. <a class="see" href="#ch6">Chapter 6</a></dd>
+  <dt>Infrastructure as code (IaC)</dt>
+  <dd>Declaring infrastructure in reviewed, versioned code that a tool applies. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>Kubernetes</dt>
+  <dd>A container orchestrator: pods, deployments and services scheduled across a cluster of nodes. <a class="see" href="#ch10">Chapter 10</a></dd>
+  <dt>Least privilege</dt>
+  <dd>Granting each identity only the permissions its job needs. <a class="see" href="#ch5">Chapter 5</a></dd>
+  <dt>NAT gateway</dt>
+  <dd>Lets resources in private subnets reach the internet without being reachable from it; priced per hour and per gigabyte. <a class="see" href="#ch8">Chapter 8</a></dd>
+  <dt>OIDC federation</dt>
+  <dd>A CI job proves its identity to a cloud with a short-lived token and assumes a role: no stored keys. <a class="see" href="#ch5">Chapter 5</a></dd>
+  <dt>Pinning</dt>
+  <dd>Referring to an action, image or dependency by an immutable identifier (a commit SHA, a digest) rather than a movable tag. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Pull request</dt>
+  <dd>A proposed change with its review, checks and discussion, merged into the main branch when approved. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>Rollback</dt>
+  <dd>Returning to the previous known-good version; for code, redeploying the previous tag. <a class="see" href="#ch13">Chapter 13</a></dd>
+  <dt>Rolling deployment</dt>
+  <dd>Replacing instances a few at a time, new ones healthy before old ones drain. <a class="see" href="#ch13">Chapter 13</a></dd>
+  <dt>SBOM</dt>
+  <dd>A software bill of materials: the list of components inside an artifact. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>Secrets Manager</dt>
+  <dd>AWS's store for secrets, which can generate, rotate and inject them at runtime. <a class="see" href="#ch5">Chapter 5</a></dd>
+  <dt>Security group</dt>
+  <dd>A stateful AWS firewall attached to resources, allowing traffic by port and source. <a class="see" href="#ch8">Chapter 8</a></dd>
+  <dt>Semantic versioning</dt>
+  <dd>MAJOR.MINOR.PATCH version numbers that signal breaking changes, features and fixes. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>Subnet</dt>
+  <dd>A range of addresses in a VPC within one availability zone; public if routed to an internet gateway, private otherwise. <a class="see" href="#ch8">Chapter 8</a></dd>
+  <dt>Supply chain</dt>
+  <dd>Everything that goes into an artifact (dependencies, base images, actions, the build itself) and can be attacked. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Tag (release)</dt>
+  <dd>A Git tag such as v1.2.3 that marks a release and, in the reference pipeline, triggers image publishing. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>Task definition</dt>
+  <dd>ECS's description of a task's containers: images, CPU, memory, environment, secrets and roles. <a class="see" href="#ch9">Chapter 9</a></dd>
+  <dt>Teardown</dt>
+  <dd>Deleting everything a stack created, in the order its dependencies require, and verifying nothing billable remains. <a class="see" href="#ch14">Chapter 14</a></dd>
+  <dt>Trivy</dt>
+  <dd>A scanner for vulnerabilities in images, dependencies and configuration. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>Trunk-based development</dt>
+  <dd>Short-lived branches merged often into one main branch, which stays releasable. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>VPC</dt>
+  <dd>A virtual private cloud: an isolated network in an AWS account, divided into subnets. <a class="see" href="#ch8">Chapter 8</a></dd>
+  <dt>VPC endpoint</dt>
+  <dd>A private connection from a VPC to an AWS service, avoiding the NAT gateway and the internet. <a class="see" href="#ch9">Chapter 9</a></dd>
+</dl>

@@ -1,0 +1,6 @@
+# Dependencies and local QA output
+tools/node_modules/
+qa/
+__pycache__/
+# Local list of terms the check must reject; never published
+tools/private-terms.txt

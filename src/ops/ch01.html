@@ -1,0 +1,287 @@
+<section class="chapter" id="ch1">
+  <header class="ch-head">
+    <span class="ch-num">1</span>
+    <p class="eyebrow">Part I · What changed</p>
+    <h2>From laptop to production</h2>
+    <p class="lede">A change now travels one automated path: a pipeline reviews and tests it, builds it once into an immutable image, and deploys it by declaring which version should run, so a rollback is the same operation as a release.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Every change goes through a pull request, automated checks and a review before it reaches the main branch.</li>
+      <li>A release is a version tag. It produces one image per component, built once and never rebuilt for another environment.</li>
+      <li>Environments differ only in configuration. The bytes tested in staging are the bytes production runs.</li>
+      <li>Deploying means "run version X". Rolling back means "run the previous version" through the same pipeline.</li>
+      <li>Infrastructure is code in the same repository, changed through pull requests like everything else.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Copy files to a server over SSH or FTP, or run a deploy script by hand</td><td>A pipeline builds, tests and deploys; people approve, they do not type commands on servers</td><td>Manual steps are skipped under pressure, and nobody can see what was done.</td></tr>
+      <tr><td data-label="Then">Build on each server from a branch</td><td>Build once in CI, push to a registry, promote the same image everywhere</td><td>Two hosts building the same commit can end up with different bytes.</td></tr>
+      <tr><td data-label="Then">A configuration file per environment, often holding secrets, in the repo or on the server</td><td>Configuration from the environment; secrets from a secret store</td><td>The same image must run in every environment, and secrets must not travel with it.</td></tr>
+      <tr><td data-label="Then">Hand-configured servers that drift apart</td><td>Infrastructure as code; servers and containers replaced, never patched in place</td><td>Rebuilding from code is repeatable; patching by hand is not.</td></tr>
+      <tr><td data-label="Then">A big release night every few weeks</td><td>Small releases, any time, with zero-downtime deploys and an automatic rollback</td><td>Small changes are easier to review, test and undo.</td></tr>
+      <tr><td data-label="Then">A separate operations team runs what developers hand over</td><td>The team that builds the service also runs it, with the pipeline and monitoring as shared tools</td><td>The people who know the code fix it fastest, and feel the cost of fragile releases.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch1-path">The path a change takes</h3>
+  <p>The figure below is the path the reference service actually uses, end to end. A developer's only actions are opening a pull request, merging it once it is reviewed and green, and pushing a version tag. Everything after the tag is automated, gated and reversible. Each stage is a chapter of this handbook.</p>
+
+  <figure class="fig wide" id="fig-1-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 330" role="img" aria-label="The delivery path in two rows. Top: developer, pull request, CI checks, protected main branch, version tag. Bottom, right to left: release builds and scans once, images in two registries, a deploy gated by a GitHub environment, a rolling update with a circuit breaker, and a smoke test through the load balancer. Rollback runs the same deploy with the previous tag.">
+      <rect class="n" x="16" y="34" width="136" height="64" rx="5"/>
+      <text class="tb" x="84" y="60" text-anchor="middle">Developer</text>
+      <text class="ts" x="84" y="78" text-anchor="middle">branch, commits</text>
+      <rect class="n" x="182" y="34" width="136" height="64" rx="5"/>
+      <text class="tb" x="250" y="60" text-anchor="middle">Pull request</text>
+      <text class="ts" x="250" y="78" text-anchor="middle">review, one concern</text>
+      <rect class="n" x="348" y="34" width="136" height="64" rx="5"/>
+      <text class="tb" x="416" y="60" text-anchor="middle">CI checks</text>
+      <text class="ts" x="416" y="78" text-anchor="middle">lint, tests, e2e, scans</text>
+      <rect class="n" x="514" y="34" width="136" height="64" rx="5"/>
+      <text class="tb" x="582" y="60" text-anchor="middle">Protected main</text>
+      <text class="ts" x="582" y="78" text-anchor="middle">green and reviewed</text>
+      <rect class="n-acc" x="680" y="34" width="124" height="64" rx="5"/>
+      <text class="tb" x="742" y="60" text-anchor="middle">Version tag</text>
+      <text class="tm" x="742" y="80" text-anchor="middle">v0.8.2</text>
+      <line class="e" x1="153" y1="66" x2="180" y2="66" marker-end="url(#a)"/>
+      <line class="e" x1="319" y1="66" x2="346" y2="66" marker-end="url(#a)"/>
+      <line class="e" x1="485" y1="66" x2="512" y2="66" marker-end="url(#a)"/>
+      <line class="e" x1="651" y1="66" x2="678" y2="66" marker-end="url(#a)"/>
+      <text class="ts ta" x="250" y="116" text-anchor="middle">Chapter 2</text>
+      <text class="ts ta" x="416" y="116" text-anchor="middle">Chapters 3, 4</text>
+
+      <path class="e-acc" d="M742,99 V150" marker-end="url(#a-acc)"/>
+      <rect class="n" x="680" y="152" width="124" height="76" rx="5"/>
+      <text class="tb" x="742" y="176" text-anchor="middle">Release</text>
+      <text class="ts" x="742" y="194" text-anchor="middle">build once, scan,</text>
+      <text class="ts" x="742" y="210" text-anchor="middle">amd64 and arm64</text>
+      <rect class="n" x="514" y="152" width="136" height="76" rx="5"/>
+      <text class="tb" x="582" y="176" text-anchor="middle">Registries</text>
+      <text class="ts" x="582" y="194" text-anchor="middle">GHCR, then ECR</text>
+      <text class="ts" x="582" y="210" text-anchor="middle">same digest in both</text>
+      <rect class="n" x="348" y="152" width="136" height="76" rx="5"/>
+      <text class="tb" x="416" y="176" text-anchor="middle">Deploy gate</text>
+      <text class="ts" x="416" y="194" text-anchor="middle">GitHub environment,</text>
+      <text class="ts" x="416" y="210" text-anchor="middle">keyless credentials</text>
+      <rect class="n" x="182" y="152" width="136" height="76" rx="5"/>
+      <text class="tb" x="250" y="176" text-anchor="middle">Rolling update</text>
+      <text class="ts" x="250" y="194" text-anchor="middle">new tasks first; a</text>
+      <text class="ts" x="250" y="210" text-anchor="middle">circuit breaker</text>
+      <rect class="n-good" x="16" y="152" width="136" height="76" rx="5"/>
+      <text class="tb" x="84" y="176" text-anchor="middle">Smoke test</text>
+      <text class="ts" x="84" y="194" text-anchor="middle">through the load</text>
+      <text class="ts" x="84" y="210" text-anchor="middle">balancer</text>
+      <line class="e" x1="679" y1="190" x2="652" y2="190" marker-end="url(#a)"/>
+      <line class="e" x1="513" y1="190" x2="486" y2="190" marker-end="url(#a)"/>
+      <line class="e" x1="347" y1="190" x2="320" y2="190" marker-end="url(#a)"/>
+      <line class="e" x1="181" y1="190" x2="154" y2="190" marker-end="url(#a)"/>
+      <text class="ts ta" x="742" y="246" text-anchor="middle">Chapter 3</text>
+      <text class="ts ta" x="582" y="246" text-anchor="middle">Chapters 3, 5</text>
+      <text class="ts ta" x="416" y="246" text-anchor="middle">Chapters 5, 13</text>
+      <text class="ts ta" x="250" y="246" text-anchor="middle">Chapter 9</text>
+
+      <path class="e dash" d="M84,229 V276 H470 V232" marker-end="url(#a)"/>
+      <text class="ts" x="277" y="294" text-anchor="middle">rollback: run the same deploy with the previous tag</text>
+      <text class="ts" x="16" y="320">The infrastructure itself is code in the same repository, changed by pull request (Chapter 7).</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 1.1</span>The delivery path of the reference service. After the version tag, no person touches a server. A rollback is not a special procedure: it is the deploy, run with an older version.</figcaption>
+  </figure>
+
+  <p>Three properties make this path trustworthy, and the rest of the handbook explains how each is achieved.</p>
+  <ul>
+    <li><strong>Everything is reviewed.</strong> Code, infrastructure, pipeline definitions and even accepted security risks change only through pull requests.</li>
+    <li><strong>Everything is reproducible.</strong> The release builds from locked dependencies and pinned base images. The infrastructure is rebuilt from code, and a drift check reports any change made by hand.</li>
+    <li><strong>Everything is reversible.</strong> Releases roll forward and back through the same deploy, and database changes are written so the previous release keeps working.</li>
+  </ul>
+
+  <h3 id="ch1-proven">What the reference build proved</h3>
+  <p>A path is only as good as its evidence. These properties were each tested on the reference build, on AWS, with traffic flowing.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Property</th><th>How it is achieved</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Property">No long-lived keys anywhere</td><td data-label="How">OIDC roles for CI, task and instance roles for workloads, sign-in sessions for people</td><td data-label="Evidence">Chapter 5</td></tr>
+        <tr><td data-label="Property">Reproducible infrastructure</td><td data-label="How">CDK in the repository; a diff reviewed before every change; drift detection</td><td data-label="Evidence">A manual change was detected and replaced through a pull request</td></tr>
+        <tr><td data-label="Property">Immutable, traceable artifacts</td><td data-label="How">Immutable image tags; the same digest in both registries; deploys by exact version</td><td data-label="Evidence">Pushing a different image over an existing tag was refused</td></tr>
+        <tr><td data-label="Property">Zero-downtime deploys</td><td data-label="How">Rolling updates that start the new version first and wait for it to be healthy</td><td data-label="Evidence">352, 967 and 1,441 probe requests during three deploys, none failed</td></tr>
+        <tr><td data-label="Property">Safe failure</td><td data-label="How">A deployment circuit breaker; startup checks that give up; a load balancer that keeps the old version serving</td><td data-label="Evidence">A deliberately bad release was rolled back automatically</td></tr>
+        <tr><td data-label="Property">Safe rollback</td><td data-label="How">Additive database migrations; a code-only rollback when the database is ahead</td><td data-label="Evidence">Rollbacks across a migration on a VM and on ECS</td></tr>
+        <tr><td data-label="Property">Scale and resilience</td><td data-label="How">Two tasks across two availability zones; autoscaling from two to four</td><td data-label="Evidence">A killed task caused no failed requests; a 7-minute load test of 33,601 requests had none fail</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch1-promote">One artifact, promoted through environments</h3>
+  <p>The single most important rule on the path is <strong>build once, promote the same artifact</strong>. A release builds each component exactly once. Staging, production and any other environment then run those same bytes, identified by a version tag and, underneath it, a content digest that cannot change. Only the configuration differs: addresses, limits and secrets arrive from the environment at runtime.</p>
+
+  <figure class="fig wide" id="fig-1-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 264" role="img" aria-label="One image, identified by its version and digest, runs in staging, the cloud demo and production. Each environment supplies its own configuration: an env file on a VM, Secrets Manager on ECS, the organization's secret store in production.">
+      <rect class="n-acc" x="16" y="88" width="214" height="88" rx="6"/>
+      <text class="tl" x="30" y="110">ONE RELEASE IMAGE</text>
+      <text class="tm tb" x="30" y="132">triage-assistant-api:0.8.2</text>
+      <text class="tm" x="30" y="152">sha256:fcbc59d1…</text>
+      <text class="ts" x="30" y="168">built once, never rebuilt</text>
+
+      <rect class="n" x="320" y="18" width="214" height="58" rx="5"/>
+      <text class="tb" x="427" y="42" text-anchor="middle">Staging or demo VM</text>
+      <text class="ts" x="427" y="60" text-anchor="middle">pulls the tag, rolls it in</text>
+      <rect class="n" x="320" y="103" width="214" height="58" rx="5"/>
+      <text class="tb" x="427" y="127" text-anchor="middle">Cloud demo on ECS</text>
+      <text class="ts" x="427" y="145" text-anchor="middle">same tag, copied to ECR</text>
+      <rect class="n" x="320" y="188" width="214" height="58" rx="5"/>
+      <text class="tb" x="427" y="212" text-anchor="middle">Production</text>
+      <text class="ts" x="427" y="230" text-anchor="middle">the same tag, later</text>
+      <path class="e-acc" d="M231,122 C270,122 270,47 318,47" marker-end="url(#a-acc)"/>
+      <line class="e-acc" x1="231" y1="132" x2="318" y2="132" marker-end="url(#a-acc)"/>
+      <path class="e-acc" d="M231,142 C270,142 270,217 318,217" marker-end="url(#a-acc)"/>
+      <text class="ts" x="275" y="124" text-anchor="middle">same</text>
+      <text class="ts" x="275" y="152" text-anchor="middle">digest</text>
+
+      <rect class="n-soft" x="612" y="18" width="192" height="58" rx="5"/>
+      <text class="tb" x="708" y="42" text-anchor="middle">an env file</text>
+      <text class="ts" x="708" y="60" text-anchor="middle">generated at first boot</text>
+      <rect class="n-soft" x="612" y="103" width="192" height="58" rx="5"/>
+      <text class="tb" x="708" y="127" text-anchor="middle">Secrets Manager</text>
+      <text class="ts" x="708" y="145" text-anchor="middle">injected at task start</text>
+      <rect class="n-soft" x="612" y="188" width="192" height="58" rx="5"/>
+      <text class="tb" x="708" y="212" text-anchor="middle">The organization's</text>
+      <text class="ts" x="708" y="230" text-anchor="middle">secret store and settings</text>
+      <line class="e" x1="611" y1="47" x2="536" y2="47" marker-end="url(#a)"/>
+      <line class="e" x1="611" y1="132" x2="536" y2="132" marker-end="url(#a)"/>
+      <line class="e" x1="611" y1="217" x2="536" y2="217" marker-end="url(#a)"/>
+      <text class="tl" x="573" y="14" text-anchor="middle">CONFIG</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 1.2</span>The image is the constant; the configuration is the variable. Because nothing environment-specific is baked into the image, a problem found in staging is a problem in the exact bytes production would run.</figcaption>
+  </figure>
+
+  <p>Two consequences follow. A version must name exact bytes, so nothing is ever deployed as <code>latest</code>: two pulls of <code>latest</code> can be different code, and a rollback has no name to return to. And a host never builds from source: building on a server needs compilers and internet access there, and two hosts building the same commit can still differ, because a package was republished or a base image patched in between.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/.github/workflows/release.yml#L1-L16">.github/workflows/release.yml</a><span class="lines">the release, described at the top of its own workflow</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Pipelines are files in <code>.github/workflows/</code>, reviewed like code. The release workflow opens with a comment that states its whole contract: what a tag publishes, under which names, for which processors, and what happens before the release notes are written.</p>
+        <ul class="notice">
+          <li>One tag produces three image names, the exact version, the minor line and the commit, and moves <code>latest</code>, which nothing here deploys: the comment says so.</li>
+          <li>It tests what it published, not what it built: it pulls the release on both processor types and runs the stack from it.</li>
+          <li>The same builds run, without pushing, on any pull request that changes their inputs, so a broken release build is caught before the tag.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path=".github/workflows/release.yml" data-lines="1-16"><code class="language-yaml">name: Release
+
+# A version tag on main publishes the production images (api, web and the
+# TLS edge) to GitHub's container registry, for linux/amd64 and linux/arm64
+# (Apple Silicon, AWS Graviton) under one tag:
+#   git tag -a v1.4.0 -m "v1.4.0" &amp;&amp; git push origin v1.4.0
+#   -&gt; ghcr.io/&lt;owner&gt;/triage-assistant-api:1.4.0, :1.4, :sha-&lt;commit&gt;, :latest
+#      ghcr.io/&lt;owner&gt;/triage-assistant-web:  the same tags
+#      ghcr.io/&lt;owner&gt;/triage-assistant-edge: the same tags
+# :latest (docker/metadata-action's default) moves with every release, before
+# the smoke test below: deploy by version, never by latest.
+# Then it pulls what it published, on both architectures, and runs the
+# stack from those images before writing the release notes. A host deploys
+# it with `make deploy tag=1.4.0` (docs/runbooks/demo-vm.md).
+#
+# Pull requests that change the images' inputs run the same builds, on both</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0011</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">Releases are version tags that publish images; one host deploys by rolling</p>
+    <dl>
+      <dt>Problem</dt><dd>Building on each host made every host a build machine, and a plain container restart refused requests for 6.7 seconds.</dd>
+      <dt>Decision</dt><dd>A release is a <code>vX.Y.Z</code> tag on main that publishes images. Hosts pull and never build. A host deploys by starting the new version beside the old one.</dd>
+      <dt>See it in</dt><dd><a href="{{TA}}/.github/workflows/release.yml">release.yml</a> builds and publishes; <a href="{{TA}}/scripts/deploy.sh">scripts/deploy.sh</a> rolls a release onto one host.</dd>
+      <dt>Result</dt><dd>Zero failed requests during the swap, and a clean host serving 41 seconds after checkout.</dd>
+    </dl>
+  </aside>
+
+  <h3 id="ch1-envs">The environments</h3>
+  <p>Each environment has one job. The table is the reference service's set, and it is a reasonable default for any team.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Environment</th><th>Its job</th><th>Data</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Environment">Laptop, development</td><td data-label="Job">Write and debug code: hot reload, a debugger, a fake model provider, a demo identity provider</td><td data-label="Data">Seeded, disposable</td></tr>
+        <tr><td data-label="Environment">Laptop, production shape</td><td data-label="Job">Check it behaves like production before pushing: the production images, proxy and server settings</td><td data-label="Data">Seeded</td></tr>
+        <tr><td data-label="Environment">CI</td><td data-label="Job">The same checks on a clean machine for every pull request, including browser tests against the production shape</td><td data-label="Data">None kept</td></tr>
+        <tr><td data-label="Environment">Staging or demo</td><td data-label="Job">Shared and always on: demos, pilots, real provider keys, failure drills</td><td data-label="Data">Demo data, never production data</td></tr>
+        <tr><td data-label="Environment">Production</td><td data-label="Job">Users, signed in through the organization's identity provider</td><td data-label="Data">Real</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Production data never flows down to laptops. When a bug genuinely needs production-shaped data, the answer is an anonymized snapshot in staging, or synthetic data with the same shape, not a copy of production on someone's machine.</p>
+
+  <h3 id="ch1-sizes">The same service at three sizes</h3>
+  <p>A path like this does not require a large platform. The same service, with the same images, runs at three sizes, and each step up adds pieces only when a named need appears.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th></th><th>A new project, week one</th><th>One virtual machine</th><th>A managed cloud platform</th></tr></thead>
+      <tbody>
+        <tr><td data-label="">Compute</td><td data-label="Week one">api and web in Compose</td><td data-label="One VM">gunicorn workers, rolling deploys</td><td data-label="Cloud">ECS on Fargate behind a load balancer</td></tr>
+        <tr><td data-label="">Data</td><td data-label="Week one">Postgres</td><td data-label="One VM">plus a connection pooler; backups off the host</td><td data-label="Cloud">RDS or Aurora; Multi-AZ in production</td></tr>
+        <tr><td data-label="">Shared state</td><td data-label="Week one">none</td><td data-label="One VM">Valkey for rate-limit counters</td><td data-label="Cloud">ElastiCache for Valkey</td></tr>
+        <tr><td data-label="">Edge</td><td data-label="Week one">localhost</td><td data-label="One VM">Caddy for HTTPS, then nginx</td><td data-label="Cloud">A load balancer with a managed certificate</td></tr>
+        <tr><td data-label="">Watching</td><td data-label="Week one">JSON logs and a metrics endpoint</td><td data-label="One VM">Prometheus, Grafana, Alertmanager, Jaeger</td><td data-label="Cloud">CloudWatch, or managed Prometheus and Grafana</td></tr>
+        <tr><td data-label="">Delivery</td><td data-label="Week one">CI with tests and scans</td><td data-label="One VM">plus releases to a registry and a deploy script</td><td data-label="Cloud">plus a cloud registry and infrastructure as code</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The reference build ran all three. The cloud column ran on AWS without a domain name, a real identity provider or a paid model, which the service's production checks allow only when each exception is named. Chapter 12 tells that story.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"We build each release once and promote the same image through every environment; only configuration changes."</p>
+    <p>"Deploying and rolling back are the same pipeline with a different version. Nobody runs commands on production servers."</p>
+  </aside>
+
+  <h3 id="ch1-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A rollback has nothing to go back to</td><td data-label="Cause">The service was deployed as <code>latest</code>, which names whatever was pushed last</td><td data-label="Fix">Deploy exact version tags, or digests, from a registry with immutable tags.</td></tr>
+        <tr><td data-label="Symptom">Two servers on the same version behave differently</td><td data-label="Cause">Each built from source; a dependency or base image changed between builds</td><td data-label="Fix">Build once in CI; hosts only pull.</td></tr>
+        <tr><td data-label="Symptom">Every release replaces a component that did not change</td><td data-label="Cause">Image layers record file times, and every CI checkout gets new ones, so no two builds are byte-identical</td><td data-label="Fix">Compare builds by a hash of their inputs, and replace a component only when its inputs changed.</td></tr>
+        <tr><td data-label="Symptom">An image tag now points at different code</td><td data-label="Cause">Anyone who can push a package can re-push a tag</td><td data-label="Fix">Make the release workflow the only pusher, use immutable tags, check build provenance, or deploy by digest.</td></tr>
+        <tr><td data-label="Symptom">Images from a public repository can be pulled by anyone</td><td data-label="Cause">Packages built by a public repository's workflow are public by default on GitHub's registry</td><td data-label="Fix">Expect it: never put a secret in an image.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch1-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Why should staging and production run the same image rather than each building from the same commit?</p>
+      <details class="ans"><summary>Answer</summary><p>Because a build is not reproducible bit for bit: packages get republished and base images patched between builds. Running the same image, identified by its digest, means what was tested is exactly what runs.</p></details>
+    </li>
+    <li>
+      <p>What is the difference between a release and a deploy in this path?</p>
+      <details class="ans"><summary>Answer</summary><p>A release is a version tag that builds, scans and publishes images once. A deploy tells an environment to run a particular released version. One release can be deployed many times, to many environments, and an older one can be deployed again as a rollback.</p></details>
+    </li>
+    <li>
+      <p>Why is <code>latest</code> never deployed?</p>
+      <details class="ans"><summary>Answer</summary><p>It is a movable label: two pulls can return different code, and there is no name to roll back to. A deploy must name exact bytes.</p></details>
+    </li>
+    <li>
+      <p>What makes a rollback safe when the release being undone changed the database?</p>
+      <details class="ans"><summary>Answer</summary><p>Writing migrations so they only add (expand) before anything is removed (contract), so the previous release still runs on the newer schema. A rollback then deploys the older code and leaves the schema alone. Chapter 13 covers it.</p></details>
+    </li>
+  </ol>
+</section>

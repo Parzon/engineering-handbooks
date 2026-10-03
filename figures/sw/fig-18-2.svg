@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 280" role="img" aria-label="Adding a piece. Three triggers you can name: a measurement with the command that produced it; a written requirement; a failure users would see, shown by a drill. Then price it: an image to patch and scan; settings and secrets; a failure mode to decide and drill; a backup if it holds state; an upgrade path; monitoring with an exporter, alerts and a runbook section; a decision record and reading time. Valkey, used only for rate-limit counters, cost a fail-open decision, a fail-closed exception, three alerts, two drills, an exporter and two sizing fixes. Take a piece away when nobody can say what happens when it fails, a managed service does the same job, two things do one job, or it was added in case and nothing has needed it since."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="280" fill="#ffffff"/>
+      <text class="tl" x="16" y="22">ADD FOR A TRIGGER YOU CAN NAME</text>
+      <rect class="n" x="16" y="34" width="250" height="52" rx="5"/><text class="tb" x="28" y="56">a measurement</text><text class="ts" x="28" y="74">a number, and the command behind it</text>
+      <rect class="n" x="16" y="94" width="250" height="52" rx="5"/><text class="tb" x="28" y="116">a requirement</text><text class="ts" x="28" y="134">written: sign-in, an SLO, compliance</text>
+      <rect class="n" x="16" y="154" width="250" height="52" rx="5"/><text class="tb" x="28" y="176">a failure users would see</text><text class="ts" x="28" y="194">shown by a drill</text>
+      <path class="e" d="M267,120 L300,120" marker-end="url(#a)"/>
+      <rect class="n-warn" x="302" y="34" width="250" height="172" rx="6"/><text class="tb" x="314" y="56">Then price it</text>
+      <text class="ts" x="314" y="80">an image to patch and scan</text><text class="ts" x="314" y="98">settings and secrets</text><text class="ts" x="314" y="116">a failure mode to decide and drill</text><text class="ts" x="314" y="134">a backup, if it holds state</text><text class="ts" x="314" y="152">an upgrade path</text><text class="ts" x="314" y="170">an exporter, alerts, a runbook</text><text class="ts" x="314" y="188">a decision record, reading time</text>
+      <rect class="n-soft" x="580" y="34" width="224" height="172" rx="6"/><text class="tb" x="592" y="56">Take it away when</text>
+      <text class="ts" x="592" y="80">nobody can say how it fails</text><text class="ts" x="592" y="104">a managed service does the job</text><text class="ts" x="592" y="128">two things do one job</text><text class="ts" x="592" y="152">it was added "in case", and</text><text class="ts" x="592" y="168">nothing has needed it since</text>
+      <text class="ts" x="16" y="238"><tspan class="tb">The price of one small piece:</tspan> Valkey, for rate-limit counters alone, cost a fail-open decision, a fail-closed</text>
+      <text class="ts" x="16" y="256">exception for the chat, three alerts, two drills, an exporter and two sizing fixes under load.</text>
+    </svg>

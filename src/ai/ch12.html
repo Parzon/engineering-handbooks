@@ -1,0 +1,177 @@
+<section class="chapter" id="ch12">
+  <header class="ch-head">
+    <span class="ch-num">12</span>
+    <p class="eyebrow">Part VI · Running it</p>
+    <h2>Production AI operations</h2>
+    <p class="lede">Running an AI feature in production adds three things to ordinary operations: version everything that changes behavior, including the model and the prompt; gate every such change on evals; and expect incidents in which every request succeeds while the answers are wrong.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Version the code, the exact model, the prompt, retrieval settings, the index and its embedding model, and the eval set; every answer traceable to all of them.</li>
+      <li>Never depend on a model alias such as "latest": a provider moving it changes your system without a deploy.</li>
+      <li>No prompt, model or retrieval change ships without the eval suite against the baseline; safety cases pass every run.</li>
+      <li>One rollback per kind of change, decided before shipping: code, prompt or model, feature, index, schema.</li>
+      <li>Quality indicators join the usual service levels: eval pass rate per release, refusal and fallback rates, grounded share of sampled answers, cost per request.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">A release is a new build</td><td>A behavior change can be a setting: a model, a prompt, an index</td><td>Most AI changes need no code change at all.</td></tr>
+      <tr><td data-label="Then">Errors and latency as the health signal</td><td>Quality indicators beside them</td><td>A wrong answer returns 200.</td></tr>
+      <tr><td data-label="Then">Data migrations as one-off scripts</td><td>Re-embedding as a planned migration: build beside, evaluate, switch</td><td>Vectors from different models are incomparable, and an index takes time to build.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch12-versions">Version everything that changes behavior</h3>
+  <figure class="fig wide" id="fig-12-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Everything that changes an answer, and how the reference service versions it: the code, by image tag; the model, by exact version, never an alias; the prompt, in Git with a version and a hash checked by a test; retrieval settings such as sections per answer; the index and its embedding model, by an embedding key stored on every vector; the eval set, in Git and reviewed like code. All of them land on every answer's trace and in an info metric, so a change in answers can be lined up with a change in what runs.">
+      <g class="ts">
+      <rect class="n" x="16" y="20" width="250" height="56" rx="5"/><text x="28" y="42" class="tb">code</text><text x="28" y="62">the image tag of the release</text>
+      <rect class="n-warn" x="285" y="20" width="250" height="56" rx="5"/><text x="297" y="42" class="tb">model</text><text x="297" y="62">an exact version, never an alias</text>
+      <rect class="n-acc" x="554" y="20" width="250" height="56" rx="5"/><text x="566" y="42" class="tb">prompt</text><text x="566" y="62">version + hash, checked by a test</text>
+      <rect class="n" x="16" y="90" width="250" height="56" rx="5"/><text x="28" y="112" class="tb">retrieval settings</text><text x="28" y="132">sections per answer, timeouts</text>
+      <rect class="n-acc" x="285" y="90" width="250" height="56" rx="5"/><text x="297" y="112" class="tb">index and embedding model</text><text x="297" y="132">an embedding key on every vector</text>
+      <rect class="n" x="554" y="90" width="250" height="56" rx="5"/><text x="566" y="112" class="tb">eval set</text><text x="566" y="132">in Git, reviewed like code</text>
+      </g>
+      <rect class="n-good" x="16" y="170" width="788" height="60" rx="6"/><text class="tb" x="28" y="194">On every answer's trace, and in one info metric</text><text class="ts" x="28" y="214">release, prompt name and version, model, embedding model: when answers change, line the change up with this first</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.1</span>The six things that change an AI service's answers. Evaluate with the model and settings production uses: a different provider, model version or reasoning effort in staging makes its evals meaningless.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/metrics.py#L83-L89">apps/api/app/metrics.py</a><span class="lines">what this process runs, as a metric</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>An info metric: always 1, with labels for what is running. Dashboards and alerts can then show a change in answers next to the change in versions that caused it.</p>
+        <ul class="notice">
+          <li>The prompt label is its name and version, the same value recorded on every model span and in eval reports.</li>
+          <li>The model label is what the service asked for; the trace also records the model that answered, which can differ behind an alias.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/metrics.py" data-lines="83-89"><code class="language-python">app_info = Gauge(
+    "app_info",
+    "1 for what this process runs: the release, the prompt (name:version), the model and the "
+    "embedding model. When answers change, line their change up with this one first.",
+    ["version", "prompt", "model", "embedding_model"],
+    multiprocess_mode="max",
+)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch12-release">Releasing a behavior change</h3>
+  <figure class="fig wide" id="fig-12-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 280" role="img" aria-label="Changing the model or provider, in order. Point the settings at the candidate. Calibrate the judge on this suite. Run the suite with the judge and ten repeats, the leak case two hundred times, and the api target once. Compare pass rates and the failing answers, latency, and tokens per call times price. Commit the new baseline with the switch. Ship behind a canary or a feature flag, comparing the model metrics by model label. Keep the old configuration for an instant switch back.">
+      <g class="ts">
+      <rect class="n" x="16" y="20" width="180" height="70" rx="6"/><text x="28" y="44" class="tb">1 Point at it</text><text x="28" y="64">model settings, effort</text><text x="28" y="80">for a reasoning model</text>
+      <rect class="n" x="216" y="20" width="180" height="70" rx="6"/><text x="228" y="44" class="tb">2 Calibrate the judge</text><text x="228" y="64">on this suite, before</text><text x="228" y="80">trusting its verdicts</text>
+      <rect class="n-acc" x="416" y="20" width="180" height="70" rx="6"/><text x="428" y="44" class="tb">3 Run the suite</text><text x="428" y="64">10 repeats; the leak</text><text x="428" y="80">case 200; api target</text>
+      <rect class="n" x="616" y="20" width="188" height="70" rx="6"/><text x="628" y="44" class="tb">4 Compare</text><text x="628" y="64">pass rates and answers,</text><text x="628" y="80">latency, tokens × price</text>
+      <rect class="n-good" x="416" y="120" width="180" height="70" rx="6"/><text x="428" y="144" class="tb">5 New baseline</text><text x="428" y="164">committed with the</text><text x="428" y="180">switch, in one change</text>
+      <rect class="n-warn" x="616" y="120" width="188" height="70" rx="6"/><text x="628" y="144" class="tb">6 Ship gradually</text><text x="628" y="164">a flag or a canary;</text><text x="628" y="180">metrics by model label</text>
+      </g>
+      <g class="e"><line x1="197" y1="55" x2="214" y2="55" marker-end="url(#a)"/><line x1="397" y1="55" x2="414" y2="55" marker-end="url(#a)"/><line x1="597" y1="55" x2="614" y2="55" marker-end="url(#a)"/><path d="M710,91 C710,106 506,104 506,118" marker-end="url(#a)"/><line x1="597" y1="155" x2="614" y2="155" marker-end="url(#a)"/></g>
+      <text class="ts" x="16" y="134"><tspan class="tb">Flag:</tspan> ship dark, enable per tenant or</text><text class="ts" x="16" y="150">percentage, disable without a deploy.</text>
+      <text class="ts" x="16" y="174"><tspan class="tb">Canary:</tspan> a small share of traffic on</text><text class="ts" x="16" y="190">the new version, widened in steps.</text>
+      <text class="ts" x="16" y="226"><tspan class="tb">Re-embedding is a data migration:</tspan> build the new index beside the old, evaluate retrieval on it, then switch, keeping the old</text>
+      <text class="ts" x="16" y="244">one for a switch back (blue/green for the index). Until then, the reference service finds sections stored under an old</text>
+      <text class="ts" x="16" y="262">embedding key by keyword only, and reports that mode.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.2</span>The reference project's procedure for changing the model or provider. The same gate applies to a prompt change and to a retrieval change; for retrieval, the benchmark is recall@k and MRR on labeled questions (Chapter 4).</figcaption>
+  </figure>
+
+  <h3 id="ch12-rollback">One rollback per kind of change</h3>
+  <figure class="fig wide" id="fig-12-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Rollbacks by kind of change, decided before shipping and practiced. Code: redeploy the previous tag. Prompt or model: switch the version back in configuration. A feature: its flag, or the assistant's off switch. The index: switch back to the old one. A schema: do not roll back; fix forward, since rollbacks roll back the code, never the schema.">
+      <g class="ts">
+      <rect class="n" x="16" y="20" width="150" height="90" rx="6"/><text x="28" y="44" class="tb">code</text><text x="28" y="66">redeploy the</text><text x="28" y="82">previous tag</text>
+      <rect class="n-acc" x="178" y="20" width="150" height="90" rx="6"/><text x="190" y="44" class="tb">prompt, model</text><text x="190" y="66">switch the version</text><text x="190" y="82">back in configuration</text>
+      <rect class="n-warn" x="340" y="20" width="150" height="90" rx="6"/><text x="352" y="44" class="tb">a feature</text><text x="352" y="66">its flag; for the AI</text><text x="352" y="82">itself, the off switch</text>
+      <rect class="n" x="502" y="20" width="150" height="90" rx="6"/><text x="514" y="44" class="tb">the index</text><text x="514" y="66">switch back to the</text><text x="514" y="82">old one, kept beside</text>
+      <rect class="n-bad" x="664" y="20" width="140" height="90" rx="6"/><text x="676" y="44" class="tb">a schema</text><text x="676" y="66">don't: fix forward;</text><text x="676" y="82">code rolls back alone</text>
+      </g>
+      <text class="ts" x="16" y="146"><tspan class="tb">An AI incident can show no errors at all.</tspan> Detect it with quality indicators and user reports; triage by what changed (a</text>
+      <text class="ts" x="16" y="166">deploy, a prompt, the provider's model, the data, the index); mitigate with the flag, the off switch or a rollback; then add the</text>
+      <text class="ts" x="16" y="186">failure to the eval set so it cannot come back unnoticed.</text>
+      <text class="ts tmu" x="16" y="214">Schema rollbacks and the deploy ladder: Handbook 3, Chapter 13. The off switch: Handbook 2, Chapter 17.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.3</span>The rollback for each kind of change in an AI service. Each is decided before the change ships, and practiced; the fastest for a misbehaving AI feature is a switch that takes effect in seconds without a deploy.</figcaption>
+  </figure>
+
+  <h3 id="ch12-slo">Service levels for an AI feature</h3>
+  <p>An <strong>SLI</strong> is what is measured (the share of requests answered without error; the p95 time to first token); an <strong>SLO</strong> is the internal target over a window (99.5% over 30 days; that p95 under three seconds), whose gap to 100% is the error budget; an <strong>SLA</strong> is the contractual promise, set looser than the SLO. AI adds quality indicators: the eval pass rate per release, refusal and fallback rates, the grounded share of sampled answers, and the cost per request. The reference service's proposed objectives include answers completed (99% of model calls not cancelled ending well) and answer quality (the gate passes on the production model each release, with safety cases at 100%), beside availability and latency (Handbook 2, Chapter 17).</p>
+
+  <h3 id="ch12-checklist">The end-to-end checklist</h3>
+  <figure class="fig wide" id="fig-12-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Twelve steps for an AI feature in production. Requirements: the task, users, measurable targets and what it must never do. Architecture: the simplest design, with data boundaries drawn. Implementation: behind a flag, the model behind one seam. Testing: unit and integration tests against a mock model in CI. Evaluation: golden and adversarial sets, a calibrated judge, a baseline. Security: access control in code, redaction, least-privilege tools, an audit trail. Deployment: pinned model and prompt versions, staging, a canary or flag. Observability: a trace per answer, token and cost metrics, request ids in logs. Monitoring: SLOs with burn-rate alerts, quality and cost indicators. Incident response: runbooks, on-call, a kill switch. Rollback: one per kind of change, practiced. Iteration: production failures become eval cases, and every change goes through the gate.">
+      <g class="ts">
+      <rect class="n" x="16" y="16" width="250" height="56" rx="5"/><text x="28" y="38" class="tb">1 Requirements</text><text x="28" y="58">targets, and what it must never do</text>
+      <rect class="n" x="285" y="16" width="250" height="56" rx="5"/><text x="297" y="38" class="tb">2 Architecture</text><text x="297" y="58">simplest design, data boundaries</text>
+      <rect class="n" x="554" y="16" width="250" height="56" rx="5"/><text x="566" y="38" class="tb">3 Implementation</text><text x="566" y="58">behind a flag and one seam</text>
+      <rect class="n" x="16" y="84" width="250" height="56" rx="5"/><text x="28" y="106" class="tb">4 Testing</text><text x="28" y="126">against a mock model, in CI</text>
+      <rect class="n-acc" x="285" y="84" width="250" height="56" rx="5"/><text x="297" y="106" class="tb">5 Evaluation</text><text x="297" y="126">golden, adversarial, judge, baseline</text>
+      <rect class="n-acc" x="554" y="84" width="250" height="56" rx="5"/><text x="566" y="106" class="tb">6 Security</text><text x="566" y="126">access, redaction, tools, audit</text>
+      <rect class="n" x="16" y="152" width="250" height="56" rx="5"/><text x="28" y="174" class="tb">7 Deployment</text><text x="28" y="194">pinned versions; canary or flag</text>
+      <rect class="n" x="285" y="152" width="250" height="56" rx="5"/><text x="297" y="174" class="tb">8 Observability</text><text x="297" y="194">a trace per answer; tokens, cost</text>
+      <rect class="n" x="554" y="152" width="250" height="56" rx="5"/><text x="566" y="174" class="tb">9 Monitoring</text><text x="566" y="194">SLOs, burn rates, quality, cost</text>
+      <rect class="n" x="16" y="220" width="250" height="56" rx="5"/><text x="28" y="242" class="tb">10 Incident response</text><text x="28" y="262">runbooks, on-call, a kill switch</text>
+      <rect class="n" x="285" y="220" width="250" height="56" rx="5"/><text x="297" y="242" class="tb">11 Rollback</text><text x="297" y="262">one per kind of change, practiced</text>
+      <rect class="n-good" x="554" y="220" width="250" height="56" rx="5"/><text x="566" y="242" class="tb">12 Iteration</text><text x="566" y="262">failures become eval cases</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.4</span>An end-to-end checklist for putting an AI feature into production. The accented steps are the ones an ordinary service does not have; every other step is the ordinary one, applied to a component that answers differently each time.</figcaption>
+  </figure>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"We pin exact model versions, version the prompt with a hash, and record both on every answer, so a change in answers lines up with a change in what runs."</p>
+    <p>"Each kind of change has its rollback: a tag, a config switch for the prompt or model, a flag, the old index, and fix-forward for the schema. AI incidents can show no errors, so we watch quality indicators too."</p>
+  </aside>
+
+  <h3 id="ch12-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">Answers changed with no deploy</td><td data-label="Cause">The provider moved a model alias</td><td data-label="Fix">Pin exact versions; record the model that answered.</td></tr>
+        <tr><td data-label="Symptom">Staging evals passed; production answers differ</td><td data-label="Cause">Staging used another model, version or reasoning effort</td><td data-label="Fix">Evaluate with production's exact model and settings.</td></tr>
+        <tr><td data-label="Symptom">An incident shows no errors anywhere</td><td data-label="Cause">Wrong answers return 200</td><td data-label="Fix">Quality indicators, sampled grading, user reports.</td></tr>
+        <tr><td data-label="Symptom">A model rollback is slow</td><td data-label="Cause">The model is chosen in code, not configuration</td><td data-label="Fix">Model and prompt versions as configuration; keep the old values.</td></tr>
+        <tr><td data-label="Symptom">Search quality collapsed during a re-embed</td><td data-label="Cause">Vectors re-embedded in place while being searched</td><td data-label="Fix">Build the new index beside the old; evaluate; switch.</td></tr>
+        <tr><td data-label="Symptom">The same failure returns after a fix</td><td data-label="Cause">It never became an eval case</td><td data-label="Fix">Every production failure becomes a case.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch12-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Why is a model alias such as "latest" dangerous in production?</p>
+      <details class="ans"><summary>Answer</summary><p>The provider can move it to a different model at any time, changing your system's behavior without a deploy, a review or an eval run.</p></details>
+    </li>
+    <li>
+      <p>What is the rollback for a prompt change, a new feature, a re-embedding and a schema change?</p>
+      <details class="ans"><summary>Answer</summary><p>Prompt: switch the version back in configuration. Feature: its flag (or, for the AI itself, the off switch). Re-embedding: switch back to the old index kept beside the new one. Schema: do not roll back; roll the code back alone and fix forward.</p></details>
+    </li>
+    <li>
+      <p>What quality indicators would you add to the service levels of an AI feature?</p>
+      <details class="ans"><summary>Answer</summary><p>The eval pass rate per release, refusal and fallback rates, the grounded share of sampled answers, invented citations, and the cost per request, beside availability and latency.</p></details>
+    </li>
+  </ol>
+</section>

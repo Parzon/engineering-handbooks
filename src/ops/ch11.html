@@ -1,0 +1,96 @@
+<section class="chapter" id="ch11">
+  <header class="ch-head">
+    <span class="ch-num">11</span>
+    <p class="eyebrow">Part V · Running on AWS</p>
+    <h2>The same ideas on Azure and Google Cloud</h2>
+    <p class="lede">Every major cloud offers the same building blocks under different names (a registry, a container platform, managed databases, a private network, workload identities and keyless CI), so the delivery path in this handbook carries over almost one to one, with a few differences worth knowing.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>The concepts transfer: build once, promote, configuration from the environment, identities instead of keys, infrastructure as code.</li>
+      <li>The names change, and so do a few defaults: Cloud Run and Container Apps give each service an HTTPS URL, revisions with traffic splitting, and scale to zero.</li>
+      <li>Environments are separated by AWS accounts, Azure subscriptions and resource groups, or Google Cloud projects.</li>
+      <li>Terraform works on all three with the same workflow, but resources are not portable: each cloud's resource is written for that cloud.</li>
+    </ul>
+  </div>
+
+  <h3 id="ch11-map">The map</h3>
+  <p>The reference service was built on AWS. Everything in this table that is not AWS comes from the providers' documentation rather than from running it, but the mapping is close enough that a team moving clouds changes names, not designs.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Concern</th><th>AWS</th><th>Azure</th><th>Google Cloud</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Concern">Image registry</td><td data-label="AWS">ECR</td><td data-label="Azure">Azure Container Registry</td><td data-label="Google Cloud">Artifact Registry</td></tr>
+        <tr><td data-label="Concern">Containers, no servers</td><td data-label="AWS">ECS on Fargate</td><td data-label="Azure">Azure Container Apps</td><td data-label="Google Cloud">Cloud Run</td></tr>
+        <tr><td data-label="Concern">Managed Kubernetes</td><td data-label="AWS">EKS</td><td data-label="Azure">AKS</td><td data-label="Google Cloud">GKE (Autopilot also runs the nodes)</td></tr>
+        <tr><td data-label="Concern">Virtual machines</td><td data-label="AWS">EC2</td><td data-label="Azure">Virtual Machines</td><td data-label="Google Cloud">Compute Engine</td></tr>
+        <tr><td data-label="Concern">Managed Postgres</td><td data-label="AWS">RDS, Aurora</td><td data-label="Azure">Azure Database for PostgreSQL, Flexible Server</td><td data-label="Google Cloud">Cloud SQL, AlloyDB</td></tr>
+        <tr><td data-label="Concern">Managed Redis or Valkey</td><td data-label="AWS">ElastiCache</td><td data-label="Azure">Azure Managed Redis</td><td data-label="Google Cloud">Memorystore</td></tr>
+        <tr><td data-label="Concern">HTTP load balancer</td><td data-label="AWS">Application Load Balancer</td><td data-label="Azure">Application Gateway, Front Door; Container Apps has built-in ingress</td><td data-label="Google Cloud">Cloud Load Balancing; Cloud Run has a built-in HTTPS URL</td></tr>
+        <tr><td data-label="Concern">Private network</td><td data-label="AWS">VPC (regional), subnets, security groups</td><td data-label="Azure">VNet (regional), subnets, network security groups</td><td data-label="Google Cloud">VPC (global), regional subnets, firewall rules</td></tr>
+        <tr><td data-label="Concern">Secrets</td><td data-label="AWS">Secrets Manager, Parameter Store</td><td data-label="Azure">Key Vault</td><td data-label="Google Cloud">Secret Manager</td></tr>
+        <tr><td data-label="Concern">A workload's identity</td><td data-label="AWS">IAM role: task role, instance profile</td><td data-label="Azure">Managed identity</td><td data-label="Google Cloud">Service account</td></tr>
+        <tr><td data-label="Concern">CI without keys</td><td data-label="AWS">IAM OIDC provider and a role</td><td data-label="Azure">Entra ID federated credential</td><td data-label="Google Cloud">Workload Identity Federation</td></tr>
+        <tr><td data-label="Concern">Environments apart</td><td data-label="AWS">Accounts, in AWS Organizations</td><td data-label="Azure">Subscriptions and resource groups</td><td data-label="Google Cloud">Projects</td></tr>
+        <tr><td data-label="Concern">Native infrastructure as code</td><td data-label="AWS">CloudFormation, with CDK on top</td><td data-label="Azure">ARM templates, with Bicep on top</td><td data-label="Google Cloud">Infrastructure Manager, which runs Terraform</td></tr>
+        <tr><td data-label="Concern">Logs, metrics, alarms</td><td data-label="AWS">CloudWatch</td><td data-label="Azure">Azure Monitor: Log Analytics, Application Insights</td><td data-label="Google Cloud">Cloud Logging, Cloud Monitoring</td></tr>
+        <tr><td data-label="Concern">Budget alerts</td><td data-label="AWS">AWS Budgets</td><td data-label="Azure">Cost Management budgets</td><td data-label="Google Cloud">Billing budgets</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch11-diff">Three differences worth knowing</h3>
+  <h4>Revisions and traffic splitting</h4>
+  <p>On Cloud Run and Container Apps, every deploy creates an immutable <strong>revision</strong>, and traffic is split between revisions by percentage. A canary (5% to the new revision) or a rollback (100% back to the old one) is a setting, not a redeploy. On ECS the equivalent is a rolling deployment with its circuit breaker, or blue/green deployments through CodeDeploy.</p>
+
+  <figure class="fig wide" id="fig-11-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 240" role="img" aria-label="Three settings of traffic between revision 7 and revision 8: first 100 percent on revision 7; then a canary with 95 percent on 7 and 5 percent on 8; then 100 percent on 8. A rollback sets 100 percent back on revision 7, with no redeploy.">
+      <text class="tl" x="16" y="18">TRAFFIC BETWEEN TWO REVISIONS, SET BY CONFIGURATION</text>
+      <text class="ts" x="16" y="52">before the release</text>
+      <rect class="n" x="190" y="36" width="560" height="26" rx="3"/><text class="ts" x="470" y="54" text-anchor="middle">revision 7: 100%</text>
+      <text class="ts" x="16" y="96">canary</text>
+      <rect class="n" x="190" y="80" width="532" height="26" rx="3"/><text class="ts" x="456" y="98" text-anchor="middle">revision 7: 95%</text>
+      <rect class="n-acc" x="722" y="80" width="28" height="26" rx="3"/><text class="ts ta tb" x="760" y="98">5%</text>
+      <text class="ts" x="16" y="140">fully released</text>
+      <rect class="n-acc" x="190" y="124" width="560" height="26" rx="3"/><text class="ts" x="470" y="142" text-anchor="middle">revision 8: 100%</text>
+      <text class="ts tr" x="16" y="184">rollback</text>
+      <rect class="n" x="190" y="168" width="560" height="26" rx="3"/><text class="ts" x="470" y="186" text-anchor="middle">revision 7: 100%, with no redeploy</text>
+      <text class="ts" x="190" y="222">Each revision is immutable, so going back means pointing traffic at it again.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 11.1</span>Revisions and traffic splitting on Cloud Run and Container Apps. A canary and a rollback are both changes of percentages, which makes them quick and cheap to rehearse.</figcaption>
+  </figure>
+
+  <h4>HTTPS out of the box</h4>
+  <p>Cloud Run and Container Apps give each service an HTTPS address with a managed certificate. On AWS, a load balancer needs a certificate from ACM and a domain you control. That is why the reference build's AWS stage ran over plain HTTP, with that exception named explicitly in the service's production checks.</p>
+
+  <h4>Scale to zero</h4>
+  <p>Cloud Run and Container Apps can run no instance at all while a service is idle, and start one on the next request, at the cost of a cold start. A Fargate service keeps its minimum number of tasks running, and billing, at all times. For an internal tool used a few times a day, scale to zero changes the cost picture; for an interactive service, the cold start usually rules it out.</p>
+
+  <h3 id="ch11-terraform">Terraform across clouds</h3>
+  <p>The language, the plan-and-apply workflow and the state file are the same on every cloud, through each cloud's provider. The resources are not: an ECS service has no Azure twin with the same fields, so it is rewritten as a Container App. Remote state with a lock lives in an S3 bucket, an Azure storage blob (with a lease) or a Google Cloud bucket, and CI authenticates to each through that cloud's OIDC federation. Chapter 7 shows the same registry declared on all three.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"The design is cloud-neutral: one image per version, configuration from the environment, workload identities, keyless CI, infrastructure as code. Moving clouds renames the pieces; Cloud Run and Container Apps would also give us revisions, HTTPS and scale to zero by default."</p>
+  </aside>
+
+  <h3 id="ch11-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>How do Cloud Run and Container Apps make a rollback cheaper than a redeploy?</p>
+      <details class="ans"><summary>Answer</summary><p>Every deploy is an immutable revision, and traffic is split between revisions by configuration. A rollback sets 100% of traffic back on the previous revision, without building or deploying anything.</p></details>
+    </li>
+    <li>
+      <p>Why did the reference AWS build run over plain HTTP, when the same service on Cloud Run would not have?</p>
+      <details class="ans"><summary>Answer</summary><p>An AWS load balancer needs a certificate for a domain you control, and the build had no domain. Cloud Run and Container Apps give each service a managed HTTPS address by default.</p></details>
+    </li>
+    <li>
+      <p>What carries over between clouds in Terraform, and what does not?</p>
+      <details class="ans"><summary>Answer</summary><p>The language, the plan-and-apply workflow and remote state carry over. The resource definitions do not: each cloud's resources are written for that cloud.</p></details>
+    </li>
+  </ol>
+</section>

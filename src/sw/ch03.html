@@ -1,0 +1,204 @@
+<section class="chapter" id="ch3">
+  <header class="ch-head">
+    <span class="ch-num">3</span>
+    <p class="eyebrow">Part II · Foundations, refreshed</p>
+    <h2>Linux and processes</h2>
+    <p class="lede">Containers did not replace Linux, they made it unavoidable: a service is still a process that holds a port, receives signals, lives inside kernel-enforced limits and leaves an exit code, and reading those correctly is most of what debugging a container means.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Exit codes above 128 mean "killed by signal N": 137 is SIGKILL, almost always the out-of-memory killer; 143 is SIGTERM, a polite stop.</li>
+      <li>A graceful stop is SIGTERM, a grace period to finish in-flight work, then SIGKILL. The grace period must cover the longest request.</li>
+      <li>Memory limits are kernel cgroups; when a limit is hit, the kernel kills a process with no chance to log. With swap allowed, a limit is not a wall.</li>
+      <li>A process inside a container sees the host's CPU count unless it reads its own cgroup limits.</li>
+      <li>Most servers run a Debian or Red Hat family distribution; container images are usually a slim Debian or Alpine, and Alpine's C library breaks some compiled Python packages.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">A long-lived server you log into and inspect</td><td>Disposable containers, inspected from outside through logs, metrics and exit codes</td><td>The container may already be gone when you look.</td></tr>
+      <tr><td data-label="Then">init scripts and a process supervisor on each host</td><td>The container runtime or orchestrator restarts processes</td><td>Restart policy is configuration, not a script.</td></tr>
+      <tr><td data-label="Then">"The machine has 8 cores, so 17 workers"</td><td>Workers sized from the container's CPU limit</td><td>A container often gets a fraction of the host.</td></tr>
+      <tr><td data-label="Then">A process grows until the machine swaps</td><td>A hard memory limit per container, and a kill when it is hit</td><td>One leak kills one container, not the host.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch3-exit">Exit codes and signals</h3>
+  <p>A process's exit code is the first clue in any container post-mortem, and the important ones are few. Codes from 128 upwards are not chosen by the program at all: the shell reports 128 plus the number of the signal that killed it.</p>
+
+  <figure class="fig wide" id="fig-3-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Exit codes: 0 success; 1 a generic failure; 2 misuse of a shell builtin; 126 found but not executable; 127 command not found. 128 plus N means killed by signal N: 129 SIGHUP when the terminal closed; 130 SIGINT, Control-C; 137 SIGKILL, kill -9 or most often the out-of-memory killer, with no chance to log; 143 SIGTERM, a graceful stop request.">
+      <text class="tl" x="16" y="18">CHOSEN BY THE PROGRAM</text>
+      <rect class="n-good" x="16" y="28" width="90" height="56" rx="5"/><text class="tb" x="61" y="52" text-anchor="middle">0</text><text class="ts" x="61" y="72" text-anchor="middle">success</text>
+      <rect class="n" x="116" y="28" width="150" height="56" rx="5"/><text class="tb" x="191" y="52" text-anchor="middle">1</text><text class="ts" x="191" y="72" text-anchor="middle">generic failure</text>
+      <rect class="n" x="276" y="28" width="150" height="56" rx="5"/><text class="tb" x="351" y="52" text-anchor="middle">2</text><text class="ts" x="351" y="72" text-anchor="middle">shell builtin misuse</text>
+      <rect class="n" x="436" y="28" width="180" height="56" rx="5"/><text class="tb" x="526" y="52" text-anchor="middle">126</text><text class="ts" x="526" y="72" text-anchor="middle">found, not executable</text>
+      <rect class="n" x="626" y="28" width="178" height="56" rx="5"/><text class="tb" x="715" y="52" text-anchor="middle">127</text><text class="ts" x="715" y="72" text-anchor="middle">command not found</text>
+
+      <text class="tl" x="16" y="118">128 + N: KILLED BY SIGNAL N</text>
+      <rect class="n" x="16" y="128" width="180" height="80" rx="5"/><text class="tb" x="30" y="152">129  SIGHUP</text><text class="ts" x="30" y="172">the terminal closed: an</text><text class="ts" x="30" y="188">attached container dies</text>
+      <rect class="n" x="206" y="128" width="180" height="80" rx="5"/><text class="tb" x="220" y="152">130  SIGINT</text><text class="ts" x="220" y="172">Control-C</text>
+      <rect class="n-bad" x="396" y="128" width="210" height="80" rx="5"/><text class="tb tr" x="410" y="152">137  SIGKILL</text><text class="ts" x="410" y="172">kill -9, or far more often the</text><text class="ts" x="410" y="188">OOM killer: no log line at all</text>
+      <rect class="n-acc" x="616" y="128" width="188" height="80" rx="5"/><text class="tb" x="630" y="152">143  SIGTERM</text><text class="ts" x="630" y="172">a polite stop request:</text><text class="ts" x="630" y="188">finish, then exit</text>
+      <text class="ts" x="16" y="236">A container that dies with 137 and an empty log almost always ran out of memory. Check the kernel's log and the OOM counters.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 3.1</span>The exit codes worth recognizing on sight. A process killed by SIGKILL cannot catch it, clean up or write a last log line, which is why out-of-memory deaths are so often mistaken for mysterious crashes.</figcaption>
+  </figure>
+
+  <h4>Stopping a process gracefully</h4>
+  <p>A graceful stop has three steps. The runtime sends <strong>SIGTERM</strong>; the server stops accepting new connections and finishes what it is doing; if it has not exited when the grace period ends, the runtime sends <strong>SIGKILL</strong>. <code>docker stop</code> waits 10 seconds by default; <code>docker kill</code> sends SIGKILL at once. For a service that streams model answers for up to two minutes, the default is far too short.</p>
+
+  <figure class="fig wide" id="fig-3-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 170" role="img" aria-label="A graceful stop on a timeline: SIGTERM at time zero; the server stops accepting connections and drains in-flight requests, up to its graceful timeout of 120 seconds; the runtime's grace period must be longer, here 130 seconds, after which SIGKILL ends anything left.">
+      <line class="rule-strong" x1="40" y1="90" x2="790" y2="90"/>
+      <line class="e-acc" x1="40" y1="56" x2="40" y2="88" marker-end="url(#a-acc)"/>
+      <text class="tb" x="40" y="46" text-anchor="middle">SIGTERM</text>
+      <rect class="n-good" x="40" y="100" width="600" height="28" rx="3"/>
+      <text class="ts" x="340" y="119" text-anchor="middle">stop accepting; finish in-flight requests and streams (graceful timeout 120 s)</text>
+      <line class="e-bad" x1="720" y1="56" x2="720" y2="88" marker-end="url(#a-bad)"/>
+      <text class="tb tr" x="720" y="46" text-anchor="middle">SIGKILL</text>
+      <text class="ts" x="720" y="148" text-anchor="middle">grace period</text>
+      <text class="ts" x="720" y="164" text-anchor="middle">ends at 130 s</text>
+      <text class="ts" x="640" y="148" text-anchor="end">the drain must finish before the grace period ends</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 3.2</span>The order of a graceful stop. The application's own drain time must be shorter than the platform's grace period (Compose <code>stop_grace_period</code>, ECS <code>stopTimeout</code>, Kubernetes <code>terminationGracePeriodSeconds</code>), or the kill arrives mid-answer.</figcaption>
+  </figure>
+
+  <h3 id="ch3-port">What holds a port, and which process is which</h3>
+  <p>When something already listens on a port, <code>ss -ltnp</code> shows the listening socket and the process that owns it (an empty process column means another user owns it, so run it again with sudo). <code>ps -p &lt;PID&gt; -o pid,ppid,user,lstart,cmd</code> says who started it and when, and <code>pstree -p &lt;PID&gt;</code> shows its family. One parent with several identical children is the pre-fork worker model: one master that opened the socket, and workers that inherited it (Chapter 5).</p>
+  <p>The same tools explain the classic "port is already allocated" error from Docker: usually a forgotten stack still running. And when a network test gives a suspiciously perfect result, such as a 0.02 ms response or an instant success, the command probably ran on the wrong machine.</p>
+
+  <h3 id="ch3-limits">Limits the kernel enforces</h3>
+  <p>A container is an ordinary process that the kernel isolates with two features. <strong>Namespaces</strong> give it a private view: its own process numbering, network stack and filesystem root. <strong>Control groups</strong> (cgroups) limit and account its resources: memory, CPU time, disk throughput and the number of processes. Disk space and GPUs are not cgroup limits; GPUs are handed to containers as whole devices.</p>
+
+  <figure class="fig wide" id="fig-3-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 220" role="img" aria-label="Memory for a container with a 50 MB limit. Without a swap limit, Docker lets it use as much again in swap, so it grew to 95 MB slowly and silently. With swap set equal to memory, the limit is a wall: at 50 MB the kernel's OOM killer sends SIGKILL and the process exits with 137.">
+      <text class="tb" x="16" y="30">Limit set, swap left at its default</text>
+      <rect class="n-acc" x="16" y="42" width="300" height="32" rx="3"/><text class="ts" x="166" y="63" text-anchor="middle">memory up to 50 MB</text>
+      <rect class="n-warn" x="316" y="42" width="270" height="32" rx="3"/><text class="ts" x="451" y="63" text-anchor="middle">then as much again in swap</text>
+      <text class="ts tw" x="600" y="63">reached 95 MB, slowly,</text>
+      <text class="ts tw" x="600" y="79">with no error</text>
+      <text class="tb" x="16" y="124">Swap equal to memory: a hard wall</text>
+      <rect class="n-acc" x="16" y="136" width="300" height="32" rx="3"/><text class="ts" x="166" y="157" text-anchor="middle">memory up to 50 MB</text>
+      <rect class="n-bad" x="316" y="136" width="22" height="32" rx="3"/>
+      <text class="ts tr tb" x="348" y="150">OOM killer: SIGKILL</text>
+      <text class="ts" x="348" y="166">exit 137, no last log line</text>
+      <text class="ts" x="16" y="204">In Compose, set memswap_limit equal to the limit. Kubernetes and ECS run containers without swap by default.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 3.3</span>Measured on the reference stack: a memory limit with swap available is not a limit. The default allows as much again in swap, so a leak turns into slowness instead of a clear failure.</figcaption>
+  </figure>
+
+  <p>Three more silent failures of memory limits are worth knowing. An out-of-memory kill of one <em>worker</em> inside a container leaves the container "healthy": only a log line from the parent, a cgroup counter and an alert record it. Docker's own <code>OOMKilled</code> flag can read <code>false</code> even after the main process was killed; the kernel's log (<code>journalctl -k</code>) is the authority. And lowering a live container's limit kills processes even when swap is allowed.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/gunicorn.conf.py#L15-L29">apps/api/gunicorn.conf.py</a><span class="lines">counting the CPUs a container may really use</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The server sizes its worker pool from the CPUs it may use. Python's <code>os.cpu_count()</code> reports the host's cores even inside a limited container, so the configuration reads the cgroup's CPU quota directly.</p>
+        <ul class="notice">
+          <li><code>/sys/fs/cgroup/cpu.max</code> holds "quota period", or "max period" when unlimited; quota divided by period, rounded up, is the usable CPU count.</li>
+          <li>The same file is written by a Compose <code>cpus:</code> limit, an ECS task's CPU, or a Kubernetes limit, so one image sizes itself correctly everywhere.</li>
+          <li>Pinning to specific cores is covered by the CPU affinity call.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/gunicorn.conf.py" data-lines="15-29"><code class="language-python">def available_cpus(cpu_max: Path = Path("/sys/fs/cgroup/cpu.max")) -&gt; int:
+    """CPUs this container may actually use.
+
+    os.cpu_count() reports the host's cores even inside a CPU-limited
+    container. A `--cpus` / compose `cpus:` / ECS / Kubernetes CPU limit is
+    the cgroup v2 quota in cpu.max: "&lt;quota&gt; &lt;period&gt;", or "max &lt;period&gt;"
+    when unlimited. sched_getaffinity() covers `--cpuset-cpus`.
+    """
+    try:
+        quota, period = cpu_max.read_text().split()
+        if quota != "max":
+            return max(1, -(-int(quota) // int(period)))  # ceiling division
+    except (OSError, ValueError):
+        pass
+    return len(os.sched_getaffinity(0))</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h4>How many containers fit on one host?</h4>
+  <p>There is no fixed number. An idle container costs a few megabytes; the limit is the sum of what the containers actually use: memory (the working set, not the idle size), CPU, process counts, open files, disk and network connection tracking. Measure with <code>docker stats</code>, add up the working sets, add 20 to 30 percent headroom and the host's own needs, and give each container a memory limit so that one leak kills only itself. Memory is the resource that kills; the others mostly degrade: CPU starvation, process or file-descriptor exhaustion, a full disk from image layers and logs.</p>
+
+  <h3 id="ch3-distros">Distributions, and the images built on them</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Family</th><th>Members</th><th>Packages</th><th>Where you meet it</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Family">Debian</td><td data-label="Members">Debian, Ubuntu</td><td data-label="Packages"><code>apt</code>, <code>.deb</code></td><td data-label="Where">Most servers (Ubuntu LTS); the <code>-slim</code> container images</td></tr>
+        <tr><td data-label="Family">Red Hat</td><td data-label="Members">RHEL, Rocky, Alma, Fedora, Amazon Linux</td><td data-label="Packages"><code>dnf</code>, <code>.rpm</code></td><td data-label="Where">Enterprises; Amazon Linux on AWS</td></tr>
+        <tr><td data-label="Family">Alpine</td><td data-label="Members">Alpine</td><td data-label="Packages"><code>apk</code></td><td data-label="Where">Tiny container images, built on the musl C library and busybox</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>A distribution is the kernel plus the userland, a package manager and defaults. For Python services, the choice of base image matters more than it looks: most compiled Python packages ship wheels built for glibc, and Alpine's musl library cannot use them, so installs either fail or compile from source. A slim Debian image is the usual default.</p>
+
+  <h3 id="ch3-debug">Debugging at the kernel boundary</h3>
+  <ul>
+    <li><strong>The kernel's own log</strong>, <code>journalctl -k</code> or <code>dmesg</code>, is the authority on who the out-of-memory killer killed and why.</li>
+    <li><strong><code>strace</code></strong> stops a process at every system call: extremely informative and extremely slow, for a single reproduced problem.</li>
+    <li><strong>Slim images have no <code>ps</code></strong>: <code>docker top</code> from the host lists a container's processes.</li>
+    <li><strong>A sidecar debug container</strong> started in the target's network namespace sees exactly what the application sees, with tools the application image does not carry.</li>
+  </ul>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Exit 137 with an empty log is the OOM killer until proven otherwise. We set memory limits with swap equal to memory, so a leak fails loudly and kills only its own container."</p>
+    <p>"Workers are sized from the cgroup's CPU quota, not the host's core count, and the drain time stays below the platform's grace period."</p>
+  </aside>
+
+  <h3 id="ch3-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A container dies with exit 137 and no error in its log</td><td data-label="Cause">The OOM killer sent SIGKILL</td><td data-label="Fix">Read the kernel log and the cgroup's OOM counter; raise the limit or fix the leak.</td></tr>
+        <tr><td data-label="Symptom">Memory grows past the limit without any kill</td><td data-label="Cause">Swap is allowed: the default is as much again</td><td data-label="Fix">Set the swap limit equal to the memory limit.</td></tr>
+        <tr><td data-label="Symptom">A stopped-on-purpose container stays down after a "crash test"</td><td data-label="Cause"><code>docker kill</code> counts as a manual stop, so the restart policy ignores it</td><td data-label="Fix">Simulate crashes with SIGKILL from the host's process namespace.</td></tr>
+        <tr><td data-label="Symptom">An unhealthy container is never restarted</td><td data-label="Cause">Docker's restart policies act on exit only; "unhealthy" matters to orchestrators and dependencies</td><td data-label="Fix">Let an orchestrator act on health, or make the process exit.</td></tr>
+        <tr><td data-label="Symptom">A worker pool is far too large inside a container</td><td data-label="Cause"><code>os.cpu_count()</code> reports the host's cores</td><td data-label="Fix">Read the cgroup's CPU quota.</td></tr>
+        <tr><td data-label="Symptom">A wait loop never ends, or a kill loop kills itself</td><td data-label="Cause"><code>pgrep -f</code> or <code>pkill -f</code> matches the shell running it</td><td data-label="Fix">Track and kill by process ID.</td></tr>
+        <tr><td data-label="Symptom">A script carries on after a failed command</td><td data-label="Cause"><code>! cmd</code> is exempt from <code>set -e</code></td><td data-label="Fix">Test the condition explicitly with <code>if</code>.</td></tr>
+        <tr><td data-label="Symptom">A rename put a directory inside another</td><td data-label="Cause"><code>mv src existing-dir</code> moves into the directory</td><td data-label="Fix">Check the target does not exist, or use <code>mv -T</code>.</td></tr>
+        <tr><td data-label="Symptom">A password was pasted into a chat to get past <code>sudo</code></td><td data-label="Cause"><code>sudo</code> needs a terminal for its prompt</td><td data-label="Fix">That password is burned: rotate it.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch3-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>A container exits with 137 and nothing in its log. What happened, most likely, and where do you confirm it?</p>
+      <details class="ans"><summary>Answer</summary><p>It was killed by SIGKILL, almost always the kernel's out-of-memory killer enforcing the container's memory limit. Confirm it in the kernel log and the cgroup's OOM counter; Docker's own flag is not always reliable.</p></details>
+    </li>
+    <li>
+      <p>Why must the application's drain time be shorter than the platform's stop grace period?</p>
+      <details class="ans"><summary>Answer</summary><p>Because when the grace period ends, the platform sends SIGKILL. If the application is still finishing a long stream, that stream is cut off mid-answer.</p></details>
+    </li>
+    <li>
+      <p>Why can a 50 MB memory limit let a container use 95 MB?</p>
+      <details class="ans"><summary>Answer</summary><p>With swap available and no swap limit, Docker allows as much again in swap. The container slows down instead of being killed. Setting swap equal to memory makes the limit a wall.</p></details>
+    </li>
+    <li>
+      <p>Why might a Python service fail to install its dependencies on an Alpine base image?</p>
+      <details class="ans"><summary>Answer</summary><p>Alpine uses the musl C library, and most precompiled Python wheels target glibc. Installs fall back to compiling from source, which needs compilers and headers, or fail.</p></details>
+    </li>
+  </ol>
+</section>

@@ -1,0 +1,270 @@
+<section class="chapter" id="ch12">
+  <header class="ch-head">
+    <span class="ch-num">12</span>
+    <p class="eyebrow">Part VI · Containers</p>
+    <h2>Containers and Compose</h2>
+    <p class="lede">An image is an immutable, content-addressed snapshot built in cached layers; a container is a process running from it; and Compose describes a whole stack as one file per shared shape plus a small overlay per environment.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Image is to container as class is to object. A tag is a movable pointer, like a branch; the digest is the identity.</li>
+      <li>Order a Dockerfile from what changes least to what changes most: dependency manifests and their install before the code.</li>
+      <li>Multi-stage builds keep compilers, package managers and dev tools out of the image that ships.</li>
+      <li><code>EXPOSE</code> is documentation; the application's bind creates the listener; only <code>-p</code> opens anything on the host, and it bypasses the host firewall.</li>
+      <li>Compose: a base file every environment shares, an override merged automatically in development, a production overlay named explicitly.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Servers configured by hand, drifting apart</td><td>Images built once, run anywhere unchanged</td><td>The artifact that passed the tests is the artifact that runs.</td></tr>
+      <tr><td data-label="Then">One fat image with the build tools inside</td><td>Multi-stage builds; a slim, non-root final stage</td><td>Smaller to pull, fewer vulnerabilities to patch, less for an attacker to use.</td></tr>
+      <tr><td data-label="Then">A wiki page of <code>docker run</code> flags</td><td>A Compose file in the repository, with an overlay per environment</td><td>The whole stack is versioned and reviewed like code.</td></tr>
+      <tr><td data-label="Then">Base images by tag (<code>python:3.13</code>)</td><td>Base images pinned by digest, updated by a bot</td><td>A tag can move under you; a digest cannot.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch12-images">Images, layers and the cache</h3>
+  <figure class="fig wide" id="fig-12-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Layer caching. A Dockerfile's instructions become layers stacked on the base image: the base, system packages, the dependency manifests, installing dependencies, then the code. A change to the code rebuilds only the last layer; a change to the manifests rebuilds from the install onward. Copying the code before installing dependencies would make every code change reinstall everything. On the right: image versus container versus tag versus digest.">
+      <text class="tl" x="16" y="24">LAYERS, BOTTOM UP</text>
+      <rect class="n-soft" x="16" y="232" width="330" height="36" rx="4"/><text class="ts" x="28" y="255">FROM python:3.13-slim@sha256:… (pinned)</text>
+      <rect class="n-soft" x="16" y="190" width="330" height="36" rx="4"/><text class="ts" x="28" y="213">system packages, users</text>
+      <rect class="n-soft" x="16" y="148" width="330" height="36" rx="4"/><text class="ts" x="28" y="171">COPY pyproject.toml uv.lock</text>
+      <rect class="n-soft" x="16" y="106" width="330" height="36" rx="4"/><text class="ts" x="28" y="129">install dependencies (slow)</text>
+      <rect class="n-acc" x="16" y="64" width="330" height="36" rx="4"/><text class="ts" x="28" y="87">COPY app/ (changes on every commit)</text>
+      <path class="e-acc" d="M352,82 L380,82" marker-end="url(#a-acc)"/><text class="ts ta" x="386" y="86">a code change rebuilds only this</text>
+      <path class="e" d="M352,166 C368,166 368,124 352,124"/><text class="ts" x="386" y="148">a dependency change rebuilds</text><text class="ts" x="386" y="164">from the install upward</text>
+      <text class="ts tr" x="16" y="290">Copy the code before installing, and every commit reinstalls every dependency.</text>
+
+      <text class="tl" x="600" y="24">FOUR WORDS</text>
+      <text class="ts" x="600" y="50"><tspan class="tb">image</tspan>: the immutable build</text>
+      <text class="ts" x="600" y="66">output, like a class</text>
+      <text class="ts" x="600" y="96"><tspan class="tb">container</tspan>: a running process</text>
+      <text class="ts" x="600" y="112">from it, like an object</text>
+      <text class="ts" x="600" y="142"><tspan class="tb">tag</tspan>: a movable name, like</text>
+      <text class="ts" x="600" y="158">a branch; a rebuild moves it</text>
+      <text class="ts" x="600" y="188"><tspan class="tb">digest</tspan>: sha256 of the</text>
+      <text class="ts" x="600" y="204">content; the real identity</text>
+      <text class="ts tmu" x="600" y="236">logs, exec, stop: containers</text>
+      <text class="ts tmu" x="600" y="252">run, push, tag: images</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.1</span>An unchanged instruction reuses its cached layer, and a changed one invalidates every layer above it. A <code>.dockerignore</code> (virtual environments, <code>.git</code>, caches) matters as soon as anything copies a whole directory.</figcaption>
+  </figure>
+
+  <figure class="fig wide" id="fig-12-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 220" role="img" aria-label="The reference api's multi-stage build. A deps stage builds a virtual environment with runtime dependencies only. A dev stage adds dev tools, a user with your UID, and hot reload over a bind-mounted source. The production stage starts again from the pinned slim base, adds a numeric non-root user, removes pip, copies only the virtual environment and the code, which stays owned by root, and adds a health check. Only the production stage ships.">
+      <rect class="n" x="16" y="80" width="190" height="80" rx="5"/><text class="tb" x="28" y="104">deps</text><text class="ts" x="28" y="124">a virtual environment with</text><text class="ts" x="28" y="140">runtime dependencies only</text>
+      <rect class="n-soft" x="290" y="16" width="230" height="80" rx="5"/><text class="tb" x="302" y="40">dev</text><text class="ts" x="302" y="60">+ dev tools, a user with your</text><text class="ts" x="302" y="76">UID, hot reload over the source</text>
+      <rect class="n-good" x="290" y="120" width="514" height="84" rx="5"/><text class="tb" x="302" y="144">production: a fresh, pinned slim base</text>
+      <text class="ts" x="302" y="164">numeric non-root user (UID 10001) · pip removed · only the virtual environment and code copied in</text>
+      <text class="ts" x="302" y="180">code owned by root, read-only to the app · breakpoints disabled · a health check</text>
+      <text class="ts" x="302" y="196">compilers, caches and dev tools never reach it</text>
+      <path class="e" d="M207,104 C250,104 250,56 288,56" marker-end="url(#a)"/>
+      <path class="e-good" d="M207,136 C250,136 250,162 288,162" marker-end="url(#a-good)"/><text class="ts" x="28" y="186">COPY --from=deps</text>
+      <text class="ts tmu" x="560" y="60">used by make in development;</text><text class="ts tmu" x="560" y="76">never pushed to a registry</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.2</span>Three stages, one Dockerfile. The dev and production images share the exact dependency set, because both come from the same <code>deps</code> stage and lockfile.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/Dockerfile#L53-L86">apps/api/Dockerfile</a><span class="lines">the production stage</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The stage that ships. Each line carries the reason for a decision that is easy to get wrong.</p>
+        <ul class="notice">
+          <li>A numeric user, because Kubernetes can only verify that a numeric <code>USER</code> is not root.</li>
+          <li>pip is removed: the environment is complete, pip's vendored libraries carry their own vulnerabilities, and an attacker could use it to install more.</li>
+          <li>A forgotten <code>breakpoint()</code> would freeze a worker waiting for keyboard input; here it is a no-op.</li>
+          <li>The health check uses Python, because the slim image has no curl.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/Dockerfile" data-lines="53-86"><code class="language-dockerfile"># ---- production -------------------------------------------------------------
+FROM python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b AS production
+# Numeric UID: Kubernetes' runAsNonRoot can only verify a numeric USER.
+# pip goes: the virtualenv below is complete, and the base image's pip
+# carries its own vendored libraries with their own vulnerabilities
+# (msgpack, setuptools' pkg_resources: make scan) - and it lets whoever gets
+# code execution install more.
+RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin app \
+ &amp;&amp; python -m pip uninstall --yes --root-user-action ignore pip
+WORKDIR /api
+# Same path as in the deps stage: a venv's scripts hard-code its location.
+COPY --from=deps /api/.venv /api/.venv
+# Code stays owned by root and read-only to the app user, so a compromised
+# process cannot rewrite it.
+COPY alembic.ini gunicorn.conf.py ./
+COPY migrations/ ./migrations/
+COPY app/ ./app/
+# PROMETHEUS_MULTIPROC_DIR: one metrics file per worker, summed on scrape
+# (app/metrics.py). Must be set before start, never set to "" (the client
+# checks only that the variable exists). /tmp is a tmpfs in compose.prod.yaml.
+# PYTHONBREAKPOINT=0: a breakpoint() left in the code is a no-op here. With
+# the default (pdb) it would stop a worker waiting for keyboard input that
+# never comes - the worker hangs until gunicorn kills it.
+ENV PATH="/api/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONFAULTHANDLER=1 \
+    PYTHONBREAKPOINT=0 \
+    PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus
+USER 10001:10001
+EXPOSE 8010
+HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
+  CMD ["python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8010/health', timeout=2).status == 200 else 1)"]
+CMD ["gunicorn", "app.asgi:app", "-c", "gunicorn.conf.py"]</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch12-network">Ports and container networks</h3>
+  <figure class="fig wide" id="fig-12-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Bridge networking. Each Compose project gets a bridge, a virtual switch in the kernel. Each container has its own network namespace, joined to the bridge by a veth pair, with an address from the bridge's subnet; service names resolve through Docker's DNS on that network. Traffic out is NAT-ed by rules Docker manages. A published port, -p, is one deliberate hole from the host into a container, and because the NAT happens in PREROUTING, before the host firewall's INPUT rules, a published port bypasses ufw. Bind it to 127.0.0.1, or filter in the DOCKER-USER chain.">
+      <rect class="zone" x="16" y="16" width="788" height="268" rx="8"/><text class="tl" x="30" y="36">THE HOST</text>
+      <rect class="n-acc" x="200" y="150" width="420" height="34" rx="4"/><text class="ts" x="410" y="172" text-anchor="middle">bridge: a virtual switch, one per Compose project; DNS by service name</text>
+      <rect class="n" x="200" y="56" width="120" height="56" rx="5"/><text class="tb" x="260" y="80" text-anchor="middle">web</text><text class="ts" x="260" y="98" text-anchor="middle">listens on 8080</text>
+      <rect class="n" x="350" y="56" width="120" height="56" rx="5"/><text class="tb" x="410" y="80" text-anchor="middle">api</text><text class="ts" x="410" y="98" text-anchor="middle">listens on 8010</text>
+      <rect class="n" x="500" y="56" width="120" height="56" rx="5"/><text class="tb" x="560" y="80" text-anchor="middle">db</text><text class="ts" x="560" y="98" text-anchor="middle">listens on 5432</text>
+      <line class="e" x1="260" y1="112" x2="260" y2="150"/><line class="e" x1="410" y1="112" x2="410" y2="150"/><line class="e" x1="560" y1="112" x2="560" y2="150"/>
+      <text class="ts" x="636" y="130">each line: a veth pair,</text><text class="ts" x="636" y="146">a virtual cable</text>
+      <rect class="n-warn" x="30" y="214" width="250" height="56" rx="5"/><text class="tb" x="42" y="236">-p 127.0.0.1:8080:8080</text><text class="ts" x="42" y="256">one deliberate hole, loopback only</text>
+      <path class="e-acc" d="M155,213 C155,180 180,167 198,167" marker-end="url(#a-acc)"/>
+      <rect class="n-bad" x="330" y="214" width="460" height="56" rx="5"/><text class="tb tr" x="342" y="236">Published ports bypass the host firewall</text><text class="ts" x="342" y="256">Docker's NAT runs before ufw's rules; filter in DOCKER-USER</text>
+      <text class="ts" x="30" y="80">EXPOSE: metadata only</text><text class="ts" x="30" y="98">the app's bind: the listener</text><text class="ts" x="30" y="116">-p: the only thing that</text><text class="ts" x="30" y="134">opens a port on the host</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.3</span>How a Compose stack is wired on one host. Service names resolve only within one host's Docker networks; spanning hosts is the job of an orchestrator, which is the real reason Kubernetes and ECS exist (Handbook 3, Chapters 9 and 10).</figcaption>
+  </figure>
+
+  <p>Two error messages tell you where to look. <em>Connection refused</em> means a packet arrived and was actively rejected: the path works, nothing listens there. A <em>timeout</em> means the packet vanished: a firewall, a frozen process, a wrong route. With a correct <code>-p</code>, a refusal points inside the container, at an application bound to <code>127.0.0.1</code> instead of all interfaces, or not started. A stopped container also disappears from Docker's DNS, so its clients see a name-resolution error rather than a refusal, and should treat it as "unavailable".</p>
+
+  <h4>Volumes, restarts and health</h4>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Concept</th><th>What to know</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Concept">Named volume</td><td data-label="Know">Docker-managed storage for data a container owns, such as a database's files. Survives the container being recreated; <code>down</code> keeps it, <code>down -v</code> deletes it.</td></tr>
+        <tr><td data-label="Concept">Bind mount</td><td data-label="Know">A host directory mapped in, live both ways: the development pattern for hot reload. It pins the directory, not the path, so a directory recreated by <code>git checkout</code> is no longer the one mounted.</td></tr>
+        <tr><td data-label="Concept">Restart policy</td><td data-label="Know">Acts on exit only. <code>unless-stopped</code> restarts after a crash or a daemon restart, not after a manual stop. Docker never restarts a container for being <em>unhealthy</em>; orchestrators do.</td></tr>
+        <tr><td data-label="Concept">Health check</td><td data-label="Know">Drives <code>depends_on: condition: service_healthy</code> and orchestrators' replacement decisions. Its output is in <code>docker inspect</code>, not <code>docker logs</code>.</td></tr>
+        <tr><td data-label="Concept">Logs</td><td data-label="Know"><code>docker logs</code> holds only the main process's standard output and error, in a file that is unbounded unless rotation is configured.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch12-compose">Compose: one base, an overlay per environment</h3>
+  <figure class="fig wide" id="fig-12-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 270" role="img" aria-label="compose.yaml is what every environment shares: services, images or build contexts, the environment contract, health checks, dependencies, restart and log rotation; no ports and no mounts. compose.override.yaml is merged automatically into any plain docker compose command: dev targets, source bind mounts, ports on 127.0.0.1. compose.prod.yaml is named explicitly with -f: production targets, image names and tags, only the edge published, read-only filesystems, dropped capabilities, limits. Merge rules: environment merges key by key, the overlay winning; ports lists are concatenated; the !reset tag removes an inherited entry.">
+      <rect class="n-acc" x="300" y="16" width="220" height="104" rx="6"/><text class="tb" x="312" y="40">compose.yaml</text><text class="ts" x="312" y="60">what every environment shares:</text><text class="ts" x="312" y="76">services, env contract, health,</text><text class="ts" x="312" y="92">restart, log rotation</text><text class="ts tr" x="312" y="110">no ports, no mounts</text>
+      <rect class="n" x="16" y="150" width="250" height="96" rx="6"/><text class="tb" x="28" y="174">compose.override.yaml</text><text class="ts" x="28" y="194">development, merged automatically</text><text class="ts" x="28" y="210">dev targets, source bind mounts,</text><text class="ts" x="28" y="226">ports on 127.0.0.1</text>
+      <rect class="n-good" x="554" y="150" width="250" height="96" rx="6"/><text class="tb" x="566" y="174">compose.prod.yaml</text><text class="ts" x="566" y="194">named explicitly with -f</text><text class="ts" x="566" y="210">release images, edge only published,</text><text class="ts" x="566" y="226">read-only, cap_drop, limits</text>
+      <path class="e" d="M300,90 C220,90 141,110 141,148" marker-end="url(#a)"/>
+      <path class="e-good" d="M520,90 C600,90 679,110 679,148" marker-end="url(#a-good)"/>
+      <text class="tl" x="300" y="152">MERGE RULES</text>
+      <text class="ts" x="300" y="174">environment: key by key, overlay wins</text>
+      <text class="ts" x="300" y="194">ports: lists are concatenated</text>
+      <text class="ts" x="300" y="214">!reset removes an inherited entry</text>
+      <text class="ts" x="300" y="234">-f turns off the automatic override</text>
+      <text class="ts tmu" x="300" y="258">make config prints the merged result</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.4</span>The reference service's Compose layout. The base declares no ports because port lists concatenate: an overlay could add a port, never take one away without the reset tag.</figcaption>
+  </figure>
+
+  <p data-adr="ADR-0003">Before this layout, the production shape existed only as two build commands in a document, so it was never run as a whole, and the production-only bugs (a proxy buffering the stream, one rate limit for every user behind the proxy) lived exactly there. Two complete files were rejected because the shared majority drifts apart silently; Compose profiles were rejected because they switch services on and off but cannot change a service's build target, mounts or ports.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/compose.yaml#L66-L80">compose.yaml</a><span class="lines">the environment contract</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Compose substitutes <code>${VAR}</code> itself, when it parses the file, from the <code>.env</code> beside it. A variable the service does not list never reaches the container, whatever <code>.env</code> says; twenty-two of the api's settings were once silently unsettable for that reason.</p>
+        <ul class="notice">
+          <li><code>${VAR:-default}</code> substitutes when the variable is unset <em>or empty</em>; <code>${VAR-default}</code> only when unset, so an intentionally empty value stays empty.</li>
+          <li>A key listed with no value is passed when set and absent otherwise, so the code's own default applies.</li>
+          <li>A lint check now fails if any application setting is missing from this list.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="compose.yaml" data-lines="66-80"><code class="language-yaml">      # "-", not ":-": an empty value in .env must stay empty (a real provider).
+      OIDC_DISCOVERY_URL: ${OIDC_DISCOVERY_URL-http://keycloak:8080/auth/realms/triage/.well-known/openid-configuration}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-triage-web}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      # The api's other settings (app/config.py; the handbook's settings
+      # reference): passed when .env or the shell sets them, and absent
+      # otherwise, so the code's default applies - for these first ones, a
+      # default that differs in production (APP_ENV=prod, ADR-0023). A
+      # variable compose does not list never reaches the container, whatever
+      # .env says.
+      DOCS_ENABLED:
+      OTEL_TRACES_SAMPLER:
+      OTEL_TRACES_SAMPLER_ARG:
+      CHAT_RATE_LIMIT_FAIL_CLOSED:
+      PROD_CHECKS_WAIVED:</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Multi-stage builds: dependencies installed before the code for caching, and a slim, non-root final stage pinned by digest with no build tools in it."</p>
+    <p>"One base Compose file, a dev override merged automatically, and a production overlay we name explicitly, so the production shape actually runs before production."</p>
+  </aside>
+
+  <h3 id="ch12-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A port is reachable from the internet despite the host firewall</td><td data-label="Cause">Published ports are NAT-ed before the firewall's input rules</td><td data-label="Fix">Bind to 127.0.0.1, or filter in the <code>DOCKER-USER</code> chain.</td></tr>
+        <tr><td data-label="Symptom">A rebuild after a dependency change still runs the old dependencies</td><td data-label="Cause">An anonymous volume over the virtual environment or <code>node_modules</code> survives</td><td data-label="Fix">Recreate anonymous volumes (<code>--renew-anon-volumes</code>).</td></tr>
+        <tr><td data-label="Symptom">Tests run on stale dependencies</td><td data-label="Cause"><code>docker compose run</code> never rebuilds an existing image</td><td data-label="Fix"><code>run --build</code>.</td></tr>
+        <tr><td data-label="Symptom">A memory limit is exceeded with no out-of-memory kill</td><td data-label="Cause">Without a swap limit, the container may swap as much again</td><td data-label="Fix">Set the swap limit equal to the memory limit.</td></tr>
+        <tr><td data-label="Symptom">A crashed container stayed down</td><td data-label="Cause">No restart policy; or <code>docker kill</code>, which counts as a manual stop</td><td data-label="Fix"><code>unless-stopped</code>; simulate crashes by killing the process from the host.</td></tr>
+        <tr><td data-label="Symptom">An overlay's port did not replace the base's</td><td data-label="Cause">Port lists concatenate</td><td data-label="Fix">Keep ports out of the base, or use <code>!reset</code>.</td></tr>
+        <tr><td data-label="Symptom">The dev override stopped applying</td><td data-label="Cause">Any <code>-f</code> turns off the automatic merge</td><td data-label="Fix">List the override explicitly alongside other files.</td></tr>
+        <tr><td data-label="Symptom">A service crashed parsing a setting</td><td data-label="Cause"><code>${VAR:-}</code> passed an empty string, which is not the same as unset</td><td data-label="Fix">List the key with no value instead.</td></tr>
+        <tr><td data-label="Symptom"><code>docker compose up</code> rolled production back</td><td data-label="Cause">The deployed image tag was not set in the shell or <code>.env</code></td><td data-label="Fix">Record the deployed tag where Compose reads it, as the deploy script does.</td></tr>
+        <tr><td data-label="Symptom">A script cannot find a value that Compose sees</td><td data-label="Cause"><code>.env</code> is read by Compose, not by your shell</td><td data-label="Fix">Ask Compose (<code>config</code>), and fail when the answer is empty.</td></tr>
+        <tr><td data-label="Symptom">Logs are gone</td><td data-label="Cause"><code>docker run --rm</code> removed them with the container</td><td data-label="Fix">Ship logs off the host; do not rely on the container's file.</td></tr>
+        <tr><td data-label="Symptom">Files written in a bind mount are owned by root</td><td data-label="Cause">The container runs as root</td><td data-label="Fix">Run development containers as your own UID.</td></tr>
+        <tr><td data-label="Symptom">Image pulls fail across an office</td><td data-label="Cause">Docker Hub limits anonymous pulls per IP, and an office shares one</td><td data-label="Fix">Log in, or use a registry mirror.</td></tr>
+        <tr><td data-label="Symptom">The database refuses its data directory after an upgrade</td><td data-label="Cause">A new Postgres major version cannot read the old one's files</td><td data-label="Fix">Dump and restore, or <code>pg_upgrade</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch12-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Why are dependency manifests copied and installed before the application code?</p>
+      <details class="ans"><summary>Answer</summary><p>Layers are cached, and a changed instruction invalidates every layer after it. With dependencies first, a code change rebuilds only the code layer instead of reinstalling everything.</p></details>
+    </li>
+    <li>
+      <p>What do <code>EXPOSE</code>, the application's bind address and <code>-p</code> each do?</p>
+      <details class="ans"><summary>Answer</summary><p><code>EXPOSE</code> is metadata. The bind creates the listener inside the container's network namespace. <code>-p</code> creates NAT rules from the host into the container, and is the only one that opens anything on the host.</p></details>
+    </li>
+    <li>
+      <p>Why does the base Compose file declare no ports?</p>
+      <details class="ans"><summary>Answer</summary><p>Port lists from overlays are concatenated, not replaced, so a port in the base would be published in every environment. Each overlay adds the ports its environment needs.</p></details>
+    </li>
+    <li>
+      <p>Does Docker restart an unhealthy container?</p>
+      <details class="ans"><summary>Answer</summary><p>No. Restart policies act only when the process exits. Health matters to <code>depends_on</code> and to orchestrators, which replace unhealthy tasks or pods.</p></details>
+    </li>
+  </ol>
+</section>

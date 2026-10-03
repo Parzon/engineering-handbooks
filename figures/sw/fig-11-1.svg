@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="Browser to edge to nginx to api. The edge, Caddy, terminates TLS 1.3 with automatic certificates, speaks HTTP/2 and HTTP/3, redirects plain HTTP, overwrites X-Forwarded-For, passes stream chunks immediately, and holds requests for up to 5 seconds while nginx restarts. nginx serves the built frontend, forwards /api to the api with the prefix stripped, turns buffering off for the chat stream, re-resolves the api's name at runtime, answers its own 502 and 504 in the api's JSON format, refuses internal endpoints, and adds security headers. Behind a cloud load balancer, the edge is not started."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="300" fill="#ffffff"/>
+      <rect class="n-soft" x="16" y="110" width="100" height="56" rx="5"/><text class="tb" x="66" y="134" text-anchor="middle">Browser</text><text class="ts" x="66" y="152" text-anchor="middle">HTTPS</text>
+      <rect class="n-acc" x="150" y="20" width="250" height="236" rx="6"/>
+      <text class="tb" x="164" y="44">Edge (Caddy)</text>
+      <text class="ts" x="164" y="68">TLS 1.3, certificates over ACME</text>
+      <text class="ts" x="164" y="88">HTTP/2 and HTTP/3; 80 redirects to 443</text>
+      <text class="ts" x="164" y="108">overwrites X-Forwarded-For</text>
+      <text class="ts" x="164" y="128">passes stream chunks at once</text>
+      <text class="ts" x="164" y="148">holds a request up to 5 s while</text>
+      <text class="ts" x="164" y="164">nginx restarts, then retries</text>
+      <text class="ts" x="164" y="188">routes the sign-in pages to the</text>
+      <text class="ts" x="164" y="204">bundled identity provider</text>
+      <text class="ts tmu" x="164" y="236">on a cloud: the load balancer</text>
+      <rect class="n" x="434" y="20" width="230" height="236" rx="6"/>
+      <text class="tb" x="448" y="44">nginx (web)</text>
+      <text class="ts" x="448" y="68">serves the built React app</text>
+      <text class="ts" x="448" y="88">/api/* to the api, prefix stripped</text>
+      <text class="ts" x="448" y="108">the chat stream: buffering off,</text>
+      <text class="ts" x="448" y="124">120 s read timeout</text>
+      <text class="ts" x="448" y="144">re-resolves the api's name</text>
+      <text class="ts" x="448" y="164">its own 502/504 as the api's JSON</text>
+      <text class="ts" x="448" y="184">/metrics, webhook: 404 outside</text>
+      <text class="ts" x="448" y="204">security headers, 1 MB bodies</text>
+      <rect class="n" x="698" y="110" width="106" height="56" rx="5"/><text class="tb" x="751" y="134" text-anchor="middle">api</text><text class="ts" x="751" y="152" text-anchor="middle">gunicorn</text>
+      <line class="e-acc" x1="117" y1="138" x2="148" y2="138" marker-end="url(#a-acc)"/>
+      <line class="e" x1="401" y1="138" x2="432" y2="138" marker-end="url(#a)"/>
+      <line class="e" x1="665" y1="138" x2="696" y2="138" marker-end="url(#a)"/>
+      <text class="ts" x="416" y="280" text-anchor="middle">behind the edge, plain HTTP on a private network</text>
+    </svg>

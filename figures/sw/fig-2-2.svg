@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 330" role="img" aria-label="A question's path through the code: routes/chat.py checks the rate limit and the off switch; runbooks.py finds the matching runbook sections and queries.py the newest visible alerts, both limited to the asker's teams; redact.py removes credentials; triage.py builds the prompt; the audit trail records what the model was given; llm.py calls the model through the OpenAI-compatible seam; sse.py streams one JSON event per line; in the browser, lib/sse.ts parses the stream and Chat.tsx renders it."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="330" fill="#ffffff"/>
+      <rect class="n-acc" x="16" y="20" width="180" height="62" rx="5"/><text class="tm tb" x="28" y="42">routes/chat.py</text><text class="ts" x="28" y="60">rate limit; is the</text><text class="ts" x="28" y="75">assistant switched on?</text>
+      <rect class="n" x="226" y="20" width="180" height="62" rx="5"/><text class="tm tb" x="238" y="42">runbooks.py</text><text class="ts" x="238" y="60">sections that match:</text><text class="ts" x="238" y="75">keyword and meaning</text>
+      <rect class="n" x="436" y="20" width="180" height="62" rx="5"/><text class="tm tb" x="448" y="42">queries.py</text><text class="ts" x="448" y="60">the asker's newest</text><text class="ts" x="448" y="75">alerts, same query as UI</text>
+      <rect class="n" x="646" y="20" width="158" height="62" rx="5"/><text class="tm tb" x="658" y="42">redact.py</text><text class="ts" x="658" y="60">credentials removed</text><text class="ts" x="658" y="75">before any model call</text>
+      <path class="rule-strong" d="M226,92 V100 H616 V92"/>
+      <text class="ts ta tb" x="421" y="116" text-anchor="middle">only what the asker may read, enforced again by row-level security</text>
+
+      <rect class="n" x="646" y="140" width="158" height="62" rx="5"/><text class="tm tb" x="658" y="162">triage.py</text><text class="ts" x="658" y="180">the prompt, versioned;</text><text class="ts" x="658" y="195">messages built</text>
+      <rect class="n" x="436" y="140" width="180" height="62" rx="5"/><text class="tm tb" x="448" y="162">audit.py</text><text class="ts" x="448" y="180">what the model was given:</text><text class="ts" x="448" y="195">ids and hashes, no text</text>
+      <rect class="n" x="226" y="140" width="180" height="62" rx="5"/><text class="tm tb" x="238" y="162">llm.py</text><text class="ts" x="238" y="180">any OpenAI-compatible</text><text class="ts" x="238" y="195">model; timeouts, errors</text>
+      <rect class="n" x="16" y="140" width="180" height="62" rx="5"/><text class="tm tb" x="28" y="162">sse.py</text><text class="ts" x="28" y="180">one JSON event per line;</text><text class="ts" x="28" y="195">heartbeats every 15 s</text>
+
+      <rect class="n-soft" x="16" y="250" width="380" height="62" rx="5"/><text class="tb" x="28" y="272">In the browser</text><text class="tm" x="28" y="292">lib/sse.ts</text><text class="ts" x="118" y="292">parses the stream (a POST, so not EventSource)</text><text class="tm" x="28" y="306">Chat.tsx</text><text class="ts" x="118" y="306">renders tokens, citations, Stop</text>
+
+      <line class="e" x1="197" y1="51" x2="224" y2="51" marker-end="url(#a)"/>
+      <line class="e" x1="407" y1="51" x2="434" y2="51" marker-end="url(#a)"/>
+      <line class="e" x1="617" y1="51" x2="644" y2="51" marker-end="url(#a)"/>
+      <path class="e" d="M725,83 C760,100 760,120 735,138" marker-end="url(#a)"/>
+      <line class="e" x1="645" y1="171" x2="618" y2="171" marker-end="url(#a)"/>
+      <line class="e" x1="435" y1="171" x2="408" y2="171" marker-end="url(#a)"/>
+      <line class="e-acc" x1="225" y1="171" x2="198" y2="171" marker-end="url(#a-acc)"/>
+      <line class="e-acc" x1="106" y1="203" x2="106" y2="248" marker-end="url(#a-acc)"/>
+      <text class="ts" x="116" y="230">streamed over HTTP</text>
+      <text class="ts" x="436" y="272">The context is loaded before the response starts,</text>
+      <text class="ts" x="436" y="288">so a database failure is still a clean JSON 503,</text>
+      <text class="ts" x="436" y="304">and no connection is held while the model streams.</text>
+    </svg>

@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 290" role="img" aria-label="Layers from the bottom. Storage: object storage such as S3, just files. File format: Parquet, how bytes are laid out in one file, by column. Table format: Iceberg, which files make up the table at which version. Catalog: where table X is, Hive Metastore, AWS Glue, Polaris. Query and compute: Spark, Trino, Snowflake, DuckDB. Movement, beside them: Kafka, an event log; NiFi or Openflow, moving data between systems; managed connectors such as Airbyte or Fivetran. Transformation on top: dbt."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="290" fill="#ffffff"/>
+      <g class="ts">
+      <rect class="n-soft" x="16" y="232" width="560" height="38" rx="4"/><text x="28" y="256"><tspan class="tb">Storage</tspan>: object storage (S3): just files</text>
+      <rect class="n" x="16" y="188" width="560" height="38" rx="4"/><text x="28" y="212"><tspan class="tb">File format</tspan>: Parquet, columns stored together, with per-block statistics</text>
+      <rect class="n-acc" x="16" y="144" width="560" height="38" rx="4"/><text x="28" y="168"><tspan class="tb">Table format</tspan>: Iceberg, which files make up the table, at which version</text>
+      <rect class="n" x="16" y="100" width="560" height="38" rx="4"/><text x="28" y="124"><tspan class="tb">Catalog</tspan>: where is table X? Hive Metastore, AWS Glue, Polaris</text>
+      <rect class="n" x="16" y="56" width="560" height="38" rx="4"/><text x="28" y="80"><tspan class="tb">Query and compute</tspan>: Spark, Trino, Snowflake, DuckDB</text>
+      <rect class="n-good" x="16" y="12" width="560" height="38" rx="4"/><text x="28" y="36"><tspan class="tb">Transformation</tspan>: dbt, SQL models in Git, with tests</text>
+      <rect class="n-warn" x="600" y="12" width="204" height="258" rx="6"/><text x="612" y="36" class="tb">Movement</text>
+      <text x="612" y="62">Kafka: a durable,</text><text x="612" y="78">replayable event log</text>
+      <text x="612" y="108">NiFi, Openflow: move</text><text x="612" y="124">data between systems,</text><text x="612" y="140">with lineage</text>
+      <text x="612" y="170">managed connectors:</text><text x="612" y="186">Airbyte, Fivetran</text>
+      <text x="612" y="216">CDC: Debezium reads</text><text x="612" y="232">the database's log</text>
+      </g>
+    </svg>

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="Bridge networking. Each Compose project gets a bridge, a virtual switch in the kernel. Each container has its own network namespace, joined to the bridge by a veth pair, with an address from the bridge's subnet; service names resolve through Docker's DNS on that network. Traffic out is NAT-ed by rules Docker manages. A published port, -p, is one deliberate hole from the host into a container, and because the NAT happens in PREROUTING, before the host firewall's INPUT rules, a published port bypasses ufw. Bind it to 127.0.0.1, or filter in the DOCKER-USER chain."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="300" fill="#ffffff"/>
+      <rect class="zone" x="16" y="16" width="788" height="268" rx="8"/><text class="tl" x="30" y="36">THE HOST</text>
+      <rect class="n-acc" x="200" y="150" width="420" height="34" rx="4"/><text class="ts" x="410" y="172" text-anchor="middle">bridge: a virtual switch, one per Compose project; DNS by service name</text>
+      <rect class="n" x="200" y="56" width="120" height="56" rx="5"/><text class="tb" x="260" y="80" text-anchor="middle">web</text><text class="ts" x="260" y="98" text-anchor="middle">listens on 8080</text>
+      <rect class="n" x="350" y="56" width="120" height="56" rx="5"/><text class="tb" x="410" y="80" text-anchor="middle">api</text><text class="ts" x="410" y="98" text-anchor="middle">listens on 8010</text>
+      <rect class="n" x="500" y="56" width="120" height="56" rx="5"/><text class="tb" x="560" y="80" text-anchor="middle">db</text><text class="ts" x="560" y="98" text-anchor="middle">listens on 5432</text>
+      <line class="e" x1="260" y1="112" x2="260" y2="150"/><line class="e" x1="410" y1="112" x2="410" y2="150"/><line class="e" x1="560" y1="112" x2="560" y2="150"/>
+      <text class="ts" x="636" y="130">each line: a veth pair,</text><text class="ts" x="636" y="146">a virtual cable</text>
+      <rect class="n-warn" x="30" y="214" width="250" height="56" rx="5"/><text class="tb" x="42" y="236">-p 127.0.0.1:8080:8080</text><text class="ts" x="42" y="256">one deliberate hole, loopback only</text>
+      <path class="e-acc" d="M155,213 C155,180 180,167 198,167" marker-end="url(#a-acc)"/>
+      <rect class="n-bad" x="330" y="214" width="460" height="56" rx="5"/><text class="tb tr" x="342" y="236">Published ports bypass the host firewall</text><text class="ts" x="342" y="256">Docker's NAT runs before ufw's rules; filter in DOCKER-USER</text>
+      <text class="ts" x="30" y="80">EXPOSE: metadata only</text><text class="ts" x="30" y="98">the app's bind: the listener</text><text class="ts" x="30" y="116">-p: the only thing that</text><text class="ts" x="30" y="134">opens a port on the host</text>
+    </svg>

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 260" role="img" aria-label="Vector RAG embeds the question and returns chunks that look like it; it struggles when the answer is in relationships, such as which teams are hit if this database fails. GraphRAG: step one, find the question's entities, often with vector or keyword search; step two, walk their neighbors within a few hops, with the permission filter applied at every hop; step three, give the model those facts and the source chunks they link to. Some variants detect communities and pre-summarize each to answer corpus-wide questions."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="260" fill="#ffffff"/>
+      <rect class="n" x="16" y="16" width="250" height="110" rx="6"/><text class="tb" x="28" y="40">Vector RAG</text><text class="ts" x="28" y="62">chunks that look like the question</text><text class="ts" x="28" y="86">struggles when the answer is in</text><text class="ts" x="28" y="102">the relationships, or spread over</text><text class="ts" x="28" y="118">several facts</text>
+      <rect class="n-acc" x="296" y="16" width="160" height="70" rx="6"/><text class="tb" x="308" y="40">1 Entry points</text><text class="ts" x="308" y="60">the question's entities,</text><text class="ts" x="308" y="76">by vector or keyword</text>
+      <rect class="n-acc" x="476" y="16" width="160" height="70" rx="6"/><text class="tb" x="488" y="40">2 Traverse</text><text class="ts" x="488" y="60">neighbors within n hops;</text><text class="ts" x="488" y="76">permission at every hop</text>
+      <rect class="n-acc" x="656" y="16" width="148" height="70" rx="6"/><text class="tb" x="668" y="40">3 Context</text><text class="ts" x="668" y="60">the facts, plus the</text><text class="ts" x="668" y="76">chunks they link to</text>
+      <line class="e" x1="457" y1="51" x2="474" y2="51" marker-end="url(#a)"/><line class="e" x1="637" y1="51" x2="654" y2="51" marker-end="url(#a)"/>
+      <rect class="n-soft" x="296" y="106" width="508" height="44" rx="6"/><text class="ts" x="308" y="133">alert → FIRED_ON → service → DEPENDS_ON (up to 2 hops) ← COVERS ← runbook</text>
+      <text class="ts" x="16" y="182"><tspan class="tb">The answer:</tspan> runbooks for the failing service and for what it depends on, which no similarity search would group together.</text>
+      <text class="ts" x="16" y="206"><tspan class="tb">Corpus-wide questions:</tspan> some variants detect communities in the graph and pre-summarize each; those summaries go stale.</text>
+      <text class="ts" x="16" y="230"><tspan class="tb">The graph holds identity and relationships, not text:</tspan> nodes carry chunk ids; the documents stay in the document store.</text>
+    </svg>

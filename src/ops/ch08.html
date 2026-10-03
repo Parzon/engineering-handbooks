@@ -1,0 +1,253 @@
+<section class="chapter" id="ch8">
+  <header class="ch-head">
+    <span class="ch-num">8</span>
+    <p class="eyebrow">Part V · Running on AWS</p>
+    <h2>Networking on AWS</h2>
+    <p class="lede">An AWS network is built from layers you compose (a private network, subnets that a route table makes public or private, gateways for traffic in and out, and firewalls that name each other), and the safest designs leave only the load balancer reachable from the internet.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>A <strong>VPC</strong> is your own isolated network in one region. A <strong>subnet</strong> is a slice of it in one availability zone.</li>
+      <li>A subnet is public or private only because of its <strong>route table</strong>: public means it has a route to an internet gateway.</li>
+      <li>A <strong>NAT gateway</strong> lets private subnets reach out without being reachable. It costs money per hour and per gigabyte.</li>
+      <li><strong>Security groups</strong> are stateful allow-lists on each resource, and can name other security groups instead of IP addresses: the load balancer may reach the api, and only the api may reach the database.</li>
+      <li>Put the database in a subnet with no route to the internet at all, so a single security group mistake cannot expose it.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Physical firewalls and VLANs configured by a network team</td><td>VPCs, subnets and security groups defined in code</td><td>The network is reviewed and rebuilt with the application.</td></tr>
+      <tr><td data-label="Then">Firewall rules written as IP address ranges</td><td>Security groups that reference other security groups</td><td>Addresses change as tasks start and stop; group membership does not.</td></tr>
+      <tr><td data-label="Then">A DMZ host in front of an internal network</td><td>A public subnet holding only the load balancer</td><td>The same idea, with the platform managing the edge.</td></tr>
+      <tr><td data-label="Then">One data center</td><td>At least two availability zones</td><td>A zone can fail or run out of capacity; the service should not notice.</td></tr>
+      <tr><td data-label="Then">A bastion host with SSH for administration</td><td>Session Manager, with no inbound port at all</td><td>Nothing to attack, and every session recorded.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch8-router">A home router, split into AWS resources</h3>
+  <p>A home router does three jobs in one box, and AWS turns each into a separate resource you configure on its own. The mapping is a good way in.</p>
+
+  <figure class="fig wide" id="fig-8-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 272" role="img" aria-label="Home network concepts mapped to AWS: the router's doorway to the internet is an internet gateway; its outbound address translation is a NAT gateway; its firewall is security groups; the home address range is the VPC's CIDR block; a device on Wi-Fi is an instance in a private subnet; the router's DMZ host is a public subnet; guest Wi-Fi is a second subnet with restricted routing.">
+      <text class="tl" x="16" y="20">AT HOME</text>
+      <text class="tl" x="470" y="20">ON AWS</text>
+      <g>
+        <rect class="n-soft" x="16" y="30" width="330" height="30" rx="4"/><text class="ts" x="28" y="50">the router's doorway to the internet</text>
+        <rect class="n-acc" x="470" y="30" width="334" height="30" rx="4"/><text class="tb" x="482" y="50">Internet gateway</text>
+        <line class="e" x1="347" y1="45" x2="468" y2="45" marker-end="url(#a)"/>
+        <rect class="n-soft" x="16" y="64" width="330" height="30" rx="4"/><text class="ts" x="28" y="84">outbound translation for your devices</text>
+        <rect class="n-acc" x="470" y="64" width="334" height="30" rx="4"/><text class="tb" x="482" y="84">NAT gateway</text>
+        <line class="e" x1="347" y1="79" x2="468" y2="79" marker-end="url(#a)"/>
+        <rect class="n-soft" x="16" y="98" width="330" height="30" rx="4"/><text class="ts" x="28" y="118">the router's firewall</text>
+        <rect class="n-acc" x="470" y="98" width="334" height="30" rx="4"/><text class="tb" x="482" y="118">Security groups (and network ACLs)</text>
+        <line class="e" x1="347" y1="113" x2="468" y2="113" marker-end="url(#a)"/>
+        <rect class="n-soft" x="16" y="132" width="330" height="30" rx="4"/><text class="ts" x="28" y="152">the home address range, 192.168.1.0/24</text>
+        <rect class="n" x="470" y="132" width="334" height="30" rx="4"/><text class="tb" x="482" y="152">The VPC's CIDR block, such as 10.20.0.0/16</text>
+        <line class="e" x1="347" y1="147" x2="468" y2="147" marker-end="url(#a)"/>
+        <rect class="n-soft" x="16" y="166" width="330" height="30" rx="4"/><text class="ts" x="28" y="186">a laptop on the Wi-Fi</text>
+        <rect class="n" x="470" y="166" width="334" height="30" rx="4"/><text class="tb" x="482" y="186">An instance in a private subnet</text>
+        <line class="e" x1="347" y1="181" x2="468" y2="181" marker-end="url(#a)"/>
+        <rect class="n-soft" x="16" y="200" width="330" height="30" rx="4"/><text class="ts" x="28" y="220">the router's DMZ host</text>
+        <rect class="n" x="470" y="200" width="334" height="30" rx="4"/><text class="tb" x="482" y="220">A public subnet</text>
+        <line class="e" x1="347" y1="215" x2="468" y2="215" marker-end="url(#a)"/>
+        <rect class="n-soft" x="16" y="234" width="330" height="30" rx="4"/><text class="ts" x="28" y="254">guest Wi-Fi</text>
+        <rect class="n" x="470" y="234" width="334" height="30" rx="4"/><text class="tb" x="482" y="254">A second subnet with restricted routing</text>
+        <line class="e" x1="347" y1="249" x2="468" y2="249" marker-end="url(#a)"/>
+      </g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 8.1</span>The home router's jobs, and their AWS equivalents. On AWS each job is a separate resource, which is why a cloud network has more parts to configure but also more control.</figcaption>
+  </figure>
+
+  <h3 id="ch8-parts">The parts</h3>
+  <ul>
+    <li><strong>VPC.</strong> Your own isolated network, spanning one region, with an address range written in CIDR notation.</li>
+    <li><strong>Subnets.</strong> Slices of that range, each pinned to one availability zone. Routing is decided per subnet by its route table, which is the real reason subnets exist. The usual minimum is a public and a private subnet in each of two zones, because load balancers and database subnet groups both require two.</li>
+    <li><strong>Internet gateway.</strong> The doorway. A subnet with a route to it is public.</li>
+    <li><strong>NAT gateway.</strong> Lets private subnets make outbound connections, to a model provider's API or a package mirror, without accepting inbound ones. It is billed per hour and per gigabyte processed.</li>
+    <li><strong>Security groups.</strong> Stateful, per-resource, default-deny allow-lists. Stateful means a reply to an allowed request is allowed automatically. A rule can name another security group as its source.</li>
+    <li><strong>Network ACLs.</strong> A coarser, stateless filter per subnet. Most teams leave them at their defaults unless compliance requires more.</li>
+  </ul>
+
+  <h3 id="ch8-reference">The reference network</h3>
+  <p>The reference stack's network is deliberately cheap, and the code says so. It has two zones with public subnets for the load balancer, the VM and the ECS tasks, and isolated subnets for the database, with no route to the internet in either direction. There is no NAT gateway, because nothing in a private subnet needs to reach out. The trade-off is named in the code: tasks get public IP addresses so they can pull images, and they rely on security groups, not subnets, to stay unreachable.</p>
+
+  <figure class="fig wide" id="fig-8-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 330" role="img" aria-label="The reference VPC 10.20.0.0/16 in two availability zones. Public subnets hold the load balancer and the api and web tasks; isolated subnets hold the database and cache. Security groups form a chain: the internet may reach the load balancer on port 80; only the load balancer's group may reach the tasks; only the api's group may reach the database on 5432 and the cache on 6379.">
+      <rect class="zone" x="70" y="16" width="734" height="300" rx="8"/>
+      <text class="tl" x="84" y="36">VPC 10.20.0.0/16, TWO AVAILABILITY ZONES</text>
+      <rect class="n-soft" x="16" y="128" width="88" height="56" rx="5"/>
+      <text class="tb" x="60" y="152" text-anchor="middle">Internet</text>
+      <text class="ts" x="60" y="170" text-anchor="middle">users</text>
+
+      <rect class="band" x="130" y="50" width="390" height="250" rx="6"/>
+      <text class="tl" x="144" y="70">PUBLIC SUBNETS: A ROUTE TO THE INTERNET GATEWAY</text>
+      <rect class="band" x="540" y="50" width="250" height="250" rx="6"/>
+      <text class="tl" x="554" y="70">ISOLATED: LOCAL ROUTES ONLY</text>
+
+      <rect class="n-acc" x="146" y="120" width="120" height="72" rx="5"/>
+      <text class="tb" x="206" y="146" text-anchor="middle">Load balancer</text>
+      <text class="ts" x="206" y="164" text-anchor="middle">group: alb</text>
+      <text class="ts" x="206" y="180" text-anchor="middle">allows 80 from anyone</text>
+      <rect class="n" x="330" y="86" width="170" height="60" rx="5"/>
+      <text class="tb" x="415" y="110" text-anchor="middle">api tasks, 2 zones</text>
+      <text class="ts" x="415" y="128" text-anchor="middle">8010 from group alb only</text>
+      <rect class="n" x="330" y="168" width="170" height="60" rx="5"/>
+      <text class="tb" x="415" y="192" text-anchor="middle">web tasks, 2 zones</text>
+      <text class="ts" x="415" y="210" text-anchor="middle">8080 from group alb only</text>
+      <rect class="n" x="556" y="86" width="218" height="60" rx="5"/>
+      <text class="tb" x="665" y="110" text-anchor="middle">Postgres (RDS)</text>
+      <text class="ts" x="665" y="128" text-anchor="middle">5432 from group api only</text>
+      <rect class="n" x="556" y="168" width="218" height="60" rx="5"/>
+      <text class="tb" x="665" y="192" text-anchor="middle">Valkey (ElastiCache)</text>
+      <text class="ts" x="665" y="210" text-anchor="middle">6379 from group api only, TLS</text>
+
+      <line class="e-acc" x1="105" y1="156" x2="144" y2="156" marker-end="url(#a-acc)"/>
+      <path class="e-acc" d="M267,146 C300,146 300,116 328,116" marker-end="url(#a-acc)"/>
+      <path class="e-acc" d="M267,166 C300,166 300,198 328,198" marker-end="url(#a-acc)"/>
+      <line class="e-acc" x1="501" y1="116" x2="554" y2="116" marker-end="url(#a-acc)"/>
+      <path class="e-acc" d="M501,124 C528,124 528,198 554,198" marker-end="url(#a-acc)"/>
+      <text class="ts" x="146" y="262">Tasks have public IPs to pull images (no NAT gateway); their security groups admit only the load balancer.</text>
+      <text class="ts" x="146" y="280">Production variant: tasks in private subnets, a NAT gateway or VPC endpoints for outbound traffic.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 8.2</span>The reference network. Security groups name each other in a chain: internet to load balancer, load balancer to tasks, api to data. A task added by autoscaling joins its group and is covered without any rule changing.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/network.py#L1-L49">infra/aws/network.py</a></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The whole network is about forty lines. Its docstring states the design and its trade-off, and the second excerpt is a fix that only running it could have revealed.</p>
+        <ul class="notice">
+          <li>Two kinds of subnet: public, and isolated (no route out at all), each a /24 in two zones.</li>
+          <li><code>nat_gateways=0</code> saves about six cents an hour plus data charges, at the cost of public addresses on the tasks.</li>
+          <li>The zones are named in code rather than looked up, so the template can be produced without cloud credentials.</li>
+          <li>RDS refused to create the database in the first two zones for lack of capacity. Capacity is per zone and changes over time; a third isolated subnet solved it without touching anything already running.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/network.py" data-lines="1-8"><code class="language-python">"""Stages 3-5: one VPC shared by the VM and the ECS stack. A VPC itself costs nothing.
+
+Two availability zones (an ALB and an RDS subnet group both require two). Public subnets hold
+the load balancer, the VM and the Fargate tasks; isolated subnets (no route to the internet in
+either direction) hold the database. No NAT gateway: nothing in a private subnet needs to reach
+out, and one would cost ~$0.06/hour plus data. The trade-off: tasks get public IPs (each
+$0.005/hour) and rely on security groups, not subnets, to stay unreachable.
+"""</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/network.py" data-lines="14-49"><code class="language-python"># A constant, not read from the VPC: the app stack trusts proxies in this range
+# (FORWARDED_ALLOW_IPS), and a token would make it import from this stack.
+VPC_CIDR = "10.20.0.0/16"
+
+
+class NetworkStack(Stack):
+    def __init__(self, scope: Construct, cid: str, **kw) -&gt; None:
+        super().__init__(scope, cid, **kw)
+        self.vpc = ec2.Vpc(
+            self,
+            "Vpc",
+            ip_addresses=ec2.IpAddresses.cidr(VPC_CIDR),
+            # Named, not looked up: synth works without credentials.
+            availability_zones=["ap-south-1a", "ap-south-1b"],
+            nat_gateways=0,
+            subnet_configuration=[
+                ec2.SubnetConfiguration(
+                    name="public", subnet_type=ec2.SubnetType.PUBLIC, cidr_mask=24
+                ),
+                ec2.SubnetConfiguration(
+                    name="data", subnet_type=ec2.SubnetType.PRIVATE_ISOLATED, cidr_mask=24
+                ),
+            ],
+        )
+        # Added after RDS refused 1a and 1b: "no subnets exist in Availability Zones with
+        # sufficient capacity ... for db.t4g.micro; choose from ap-south-1c". Capacity is per AZ
+        # and changes; an extra isolated subnet (main route table: local routes only) gives the
+        # database a third zone without touching the subnets the VM already uses.
+        self.data_1c = ec2.Subnet(
+            self,
+            "Data1c",
+            vpc_id=self.vpc.vpc_id,
+            availability_zone="ap-south-1c",
+            cidr_block="10.20.10.0/24",
+        )
+        self.db_subnets = [*self.vpc.isolated_subnets, self.data_1c]</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch8-cidr">Address ranges in CIDR notation</h3>
+  <p>CIDR notation writes a range as an address and the number of fixed bits. <code>10.20.0.0/16</code> fixes the first 16 of 32 bits and leaves 16 free: 65,536 addresses. A smaller number after the slash is a bigger range. AWS reserves five addresses in every subnet, so a <code>/24</code> holds 251 usable ones. A subnet's range caps how many resources it can hold (one address each, not one per connection), which matters for tasks that each get their own network interface.</p>
+
+  <figure class="fig wide" id="fig-8-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 190" role="img" aria-label="An IPv4 address is 32 bits. In 10.20.0.0/16 the first 16 bits are fixed and 16 are free, giving 65,536 addresses. In a /24 subnet, 24 bits are fixed and 8 free: 256 addresses, of which AWS reserves 5, leaving 251.">
+      <text class="tb" x="16" y="34">10.20.0.0/16</text>
+      <text class="ts" x="16" y="52">the VPC</text>
+      <rect class="n-acc" x="150" y="20" width="320" height="34" rx="3"/><text class="tm" x="310" y="42" text-anchor="middle">16 fixed bits: 10.20</text>
+      <rect class="n" x="470" y="20" width="320" height="34" rx="3"/><text class="tm" x="630" y="42" text-anchor="middle">16 free bits: 65,536 addresses</text>
+      <text class="tb" x="16" y="104">10.20.10.0/24</text>
+      <text class="ts" x="16" y="122">a subnet</text>
+      <rect class="n-acc" x="150" y="90" width="480" height="34" rx="3"/><text class="tm" x="390" y="112" text-anchor="middle">24 fixed bits: 10.20.10</text>
+      <rect class="n" x="630" y="90" width="160" height="34" rx="3"/><text class="tm" x="710" y="112" text-anchor="middle">8 free: 256</text>
+      <text class="ts" x="630" y="148">minus 5 reserved by AWS:</text>
+      <text class="ts tb" x="630" y="166">251 usable</text>
+      <text class="ts" x="150" y="148">each box is a share of the 32 bits of an address</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 8.3</span>CIDR notation, drawn to scale. Every bit moved from "free" to "fixed" halves the range. Plan ranges that do not overlap with other networks you may later connect to, such as an office or another VPC.</figcaption>
+  </figure>
+
+  <h3 id="ch8-production">Toward a production network</h3>
+  <p>The production version of this design moves the tasks into private subnets with no public addresses. Outbound traffic then needs a NAT gateway, and because it is billed per gigabyte, heavy traffic such as image pulls should go through <strong>VPC endpoints</strong>: private connections to ECR and S3 that skip the NAT gateway. If a security team restricts outbound traffic, the model provider's API host must be on the allowed list, or every assistant request fails. The public DNS record points at the load balancer as an alias, never at an IP address, because the load balancer's addresses change.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Only the load balancer is public. Security groups chain from it to the tasks and from the api to the data, by group rather than by IP, and the database sits in subnets with no route to the internet at all."</p>
+  </aside>
+
+  <h3 id="ch8-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">The database will not create in a zone the catalog says it supports</td><td data-label="Cause">Capacity is per zone and temporary</td><td data-label="Fix">Add a subnet in another zone; plan for at least three possible zones for data.</td></tr>
+        <tr><td data-label="Symptom">Removing a security group rule did not cut the application off</td><td data-label="Cause">Security groups are stateful; existing connections, such as a database pool, stay open</td><td data-label="Fix">Know that revoking access does not end live sessions; stop the resource for a real outage test.</td></tr>
+        <tr><td data-label="Symptom">The bill shows large data processing charges</td><td data-label="Cause">Image pulls and S3 traffic through a NAT gateway are billed per gigabyte</td><td data-label="Fix">VPC endpoints for ECR and S3.</td></tr>
+        <tr><td data-label="Symptom">Every model call fails after a network hardening change</td><td data-label="Cause">Outbound traffic to the provider's API is no longer allowed</td><td data-label="Fix">Allow the provider's hostname explicitly; configure the corporate proxy where there is one.</td></tr>
+        <tr><td data-label="Symptom">Public IP addresses appear on the bill</td><td data-label="Cause">AWS charges for every public IPv4 address, about half a cent an hour each</td><td data-label="Fix">Private subnets in production; count public addresses in a cheap design.</td></tr>
+        <tr><td data-label="Symptom">The site breaks when the load balancer's IP changes</td><td data-label="Cause">DNS pointed at an IP address</td><td data-label="Fix">Use an alias record that points at the load balancer's name.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch8-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What makes a subnet public?</p>
+      <details class="ans"><summary>Answer</summary><p>Its route table has a route to an internet gateway. Nothing about the subnet itself is public or private; routing decides.</p></details>
+    </li>
+    <li>
+      <p>Why reference security groups rather than IP ranges in rules?</p>
+      <details class="ans"><summary>Answer</summary><p>Tasks and instances come and go with new addresses. A rule that names a group covers every current and future member, so autoscaling needs no rule changes, and the intent ("only the api may reach the database") is explicit.</p></details>
+    </li>
+    <li>
+      <p>How many usable addresses does a /24 subnet have on AWS, and why?</p>
+      <details class="ans"><summary>Answer</summary><p>251: a /24 has 256 addresses, and AWS reserves five in every subnet.</p></details>
+    </li>
+    <li>
+      <p>Why does the reference stack put its tasks in public subnets, and what keeps them safe?</p>
+      <details class="ans"><summary>Answer</summary><p>To pull images without paying for a NAT gateway. Their security groups admit traffic only from the load balancer's group, so a public address does not make them reachable. Production would move them to private subnets.</p></details>
+    </li>
+  </ol>
+</section>

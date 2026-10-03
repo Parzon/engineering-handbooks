@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 270" role="img" aria-label="Keyword search over Postgres full text finds exact rare tokens: error codes, flags, hostnames. Semantic search over embeddings finds paraphrases that share no word with the answer. Each contributes its 20 best candidates. Reciprocal rank fusion scores each candidate by the sum of 1 over 60 plus its rank in each list, so the two lists' scores need no calibration. Both lists weigh the same: a confident wrong keyword match can outrank the semantic winner; a cross-encoder reranker over the top 20 to 50 is the standard fix. If the question cannot be embedded in time, keyword search answers alone, and the result says so."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="270" fill="#ffffff"/>
+      <rect class="n" x="16" y="20" width="260" height="96" rx="6"/><text class="tb" x="28" y="44">Keyword (full-text)</text><text class="ts" x="28" y="66">exact rare tokens: error codes,</text><text class="ts" x="28" y="82">flags, hostnames</text><text class="ts tmu" x="28" y="104">blind to paraphrase</text>
+      <rect class="n" x="16" y="140" width="260" height="96" rx="6"/><text class="tb" x="28" y="164">Semantic (embeddings)</text><text class="ts" x="28" y="186">paraphrases that share no word</text><text class="ts" x="28" y="202">with the answer</text><text class="ts tmu" x="28" y="224">blurs strings it has never seen</text>
+      <rect class="n-acc" x="330" y="74" width="230" height="110" rx="6"/><text class="tb" x="342" y="98">Reciprocal rank fusion</text><text class="ts" x="342" y="122">score = Σ 1 ÷ (60 + rank)</text><text class="ts" x="342" y="142">ranks only: no score calibration</text><text class="ts" x="342" y="162">20 candidates from each list</text>
+      <path class="e" d="M277,68 C305,68 305,110 328,110" marker-end="url(#a)"/><path class="e" d="M277,188 C305,188 305,150 328,150" marker-end="url(#a)"/>
+      <rect class="n-warn" x="600" y="20" width="204" height="110" rx="6"/><text class="tb" x="612" y="44">Equal weights</text><text class="ts" x="612" y="66">a confident wrong keyword</text><text class="ts" x="612" y="82">match ("back" matching</text><text class="ts" x="612" y="98">"Roll back") outranked the</text><text class="ts" x="612" y="114">semantic winner</text>
+      <rect class="n" x="600" y="146" width="204" height="90" rx="6"/><text class="tb" x="612" y="170">The known fix</text><text class="ts" x="612" y="192">a cross-encoder reranks</text><text class="ts" x="612" y="208">the top 20 to 50, reading</text><text class="ts" x="612" y="224">question and chunk together</text>
+      <line class="e" x1="561" y1="128" x2="598" y2="128" marker-end="url(#a)"/>
+      <text class="ts" x="16" y="262"><tspan class="tb">Degrade, never fail:</tspan> if the question cannot be embedded in 5 s, keyword search answers alone, and is reported as keyword-only.</text>
+    </svg>

@@ -1,0 +1,232 @@
+<section class="chapter" id="ch16">
+  <header class="ch-head">
+    <span class="ch-num">16</span>
+    <p class="eyebrow">Part VIII · Running it</p>
+    <h2>Performance and load testing</h2>
+    <p class="lede">A load test answers a question with a number in it, on production-sized data, with load that keeps arriving whether the server keeps up or not; and the bottlenecks it finds arrive in a predictable order, starting long before the servers look busy.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Start from a target: "500 reads per second at p95 under 50 ms", not "is it fast?".</li>
+      <li>Use an open model (a fixed arrival rate) to ask about throughput; a closed model (a fixed number of users) hides latency through coordinated omission.</li>
+      <li>The shape of arrivals matters as much as the rate: the same 100 requests a second, clumped, was nearly twenty times slower.</li>
+      <li>Watch the four signals together, and the load generator's own CPU.</li>
+      <li>Change one thing at a time, and keep the before and after numbers in the pull request.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">JMeter plans in XML, built in a GUI</td><td>Load scripts as code (k6, Locust), versioned beside the service</td><td>Reviewed like code and run by anyone with one command.</td></tr>
+      <tr><td data-label="Then">Average response time</td><td>Percentiles under a fixed arrival rate</td><td>Averages hide the tail that users feel.</td></tr>
+      <tr><td data-label="Then">A performance phase before launch</td><td>A small, repeatable investigation before a risky change</td><td>Bottlenecks move with every feature; sign-in alone doubled the cost of the cheapest request.</td></tr>
+      <tr><td data-label="Then">Load tests on a shared CI runner</td><td>Load tests on a dedicated, quiet environment, on demand</td><td>A shared runner's speed varies, so a latency gate there is either flaky or toothless.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch16-models">Open and closed load</h3>
+  <figure class="fig wide" id="fig-16-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 290" role="img" aria-label="A closed model: N virtual users, each waiting for its response before sending the next. When the server stalls, they stop sending, so the requests that would have arrived during the stall are never sent and their latency never recorded: coordinated omission. An open model starts requests at a fixed rate whatever happens, like independent users, and the queue shows as latency. Measured at a fixed 20 iterations per second: k6 had to grow from 16 to 157 concurrent users to keep the rate, and exposed a 7-second p95 that a closed test with 16 users would have hidden.">
+      <rect class="n" x="16" y="16" width="384" height="190" rx="6"/><text class="tb" x="30" y="40">Closed: N users, each waits</text>
+      <text class="ts" x="30" y="62">the server stalls → users stop sending</text>
+      <line class="rule-strong" x1="30" y1="100" x2="386" y2="100"/>
+      <g class="fill-acc"><rect x="40" y="88" width="6" height="12"/><rect x="70" y="88" width="6" height="12"/><rect x="100" y="88" width="6" height="12"/><rect x="250" y="88" width="6" height="12"/><rect x="290" y="88" width="6" height="12"/><rect x="330" y="88" width="6" height="12"/></g>
+      <rect class="n-bad" x="130" y="80" width="110" height="26" rx="3"/><text class="ts" x="185" y="97" text-anchor="middle">stall: none sent</text>
+      <text class="ts" x="30" y="132">the slow period's requests are never sent,</text><text class="ts" x="30" y="148">so their latency is never recorded</text>
+      <text class="ts" x="30" y="178"><tspan class="tb tr">coordinated omission</tspan>: the percentiles look fine</text>
+      <rect class="n-acc" x="420" y="16" width="384" height="190" rx="6"/><text class="tb" x="434" y="40">Open: a fixed arrival rate</text>
+      <text class="ts" x="434" y="62">requests keep arriving, like real users</text>
+      <line class="rule-strong" x1="434" y1="100" x2="790" y2="100"/>
+      <g class="fill-acc"><rect x="444" y="88" width="6" height="12"/><rect x="474" y="88" width="6" height="12"/><rect x="504" y="88" width="6" height="12"/><rect x="534" y="88" width="6" height="12"/><rect x="564" y="88" width="6" height="12"/><rect x="594" y="88" width="6" height="12"/><rect x="624" y="88" width="6" height="12"/><rect x="654" y="88" width="6" height="12"/><rect x="684" y="88" width="6" height="12"/><rect x="714" y="88" width="6" height="12"/><rect x="744" y="88" width="6" height="12"/></g>
+      <text class="ts" x="434" y="132">a stall builds a queue, and the queue</text><text class="ts" x="434" y="148">shows as latency, honestly</text>
+      <text class="tb tg" x="434" y="178">right for "can we serve X per second?"</text>
+      <text class="ts" x="16" y="236"><tspan class="tb">Measured:</tspan> at a fixed 20 iterations per second, k6 had to grow from 16 to 157 concurrent users to hold the rate,</text>
+      <text class="ts" x="16" y="254">and exposed a 7-second p95 (a missing index, Chapter 6). A closed test with 16 users would have offered less load and</text>
+      <text class="ts" x="16" y="272">reported something far milder. A closed model is still right for concurrency questions: "how many streams can one worker hold?"</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 16.1</span>Two load models. Before trusting any tool's numbers, check which model it uses, its timer resolution, and its own CPU at the rate you need: one tool needed 534% CPU to offer 200 requests a second, where k6 needed 5%.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/tests/load/k6/alerts-read.js#L11-L33">tests/load/k6/alerts-read.js</a><span class="lines">an open model, with pass and fail thresholds</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>A k6 script: JavaScript run by a Go engine. The executor names the load model, and thresholds turn a run into a pass or a fail.</p>
+        <ul class="notice">
+          <li><code>constant-arrival-rate</code> starts iterations at a fixed rate; <code>maxVUs</code> caps how many may be in flight while the server catches up.</li>
+          <li>Each request is tagged, so each query gets its own p95 threshold.</li>
+          <li>The script runs signed in, through nginx, as users arrive; rate limits are raised for the run, or the test measures the limiter's 429s.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="tests/load/k6/alerts-read.js" data-lines="11-33"><code class="language-javascript">export const options = {
+  scenarios: {
+    // Open model: iterations start at a fixed rate whatever the response
+    // time, like independent users. A closed model (a fixed number of VUs
+    // looping) slows its own arrival rate when the server slows down, and
+    // hides the very latency it is supposed to measure ("coordinated
+    // omission"). maxVUs caps how many can be in flight at once.
+    reads: {
+      executor: 'constant-arrival-rate',
+      rate: Number(__ENV.RATE || 50),
+      timeUnit: '1s',
+      duration: __ENV.DURATION || '60s',
+      preAllocatedVUs: 50,
+      maxVUs: 1000,
+    },
+  },
+  thresholds: {
+    http_req_failed: ['rate&lt;0.01'],
+    'http_req_duration{kind:critical}': ['p(95)&lt;200'],
+    'http_req_duration{kind:recent}': ['p(95)&lt;200'],
+  },
+  summaryTrendStats: ['avg', 'p(50)', 'p(95)', 'p(99)', 'max'],
+}</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <figure class="fig wide" id="fig-16-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 200" role="img" aria-label="Arrival shape. The same 100 requests per second: spread evenly, p50 1.5 milliseconds; arriving in clumps, as 100 users pacing one request a second in step, p50 29 milliseconds. On one event loop, the last request of a burst waits for the rest. After sign-in doubled each request's CPU cost, 200 users in step saw p50 182 milliseconds against 3 for the same rate spread out.">
+      <text class="tb" x="16" y="34">Same rate: 100 requests per second</text>
+      <text class="ts" x="16" y="70">spread evenly</text><rect class="fill-good" x="180" y="56" width="6" height="22"/><text class="ts" x="196" y="72">p50 1.5 ms</text>
+      <text class="ts" x="16" y="110">in clumps</text><rect class="fill-acc" x="180" y="96" width="116" height="22"/><text class="ts" x="306" y="112">p50 29 ms</text>
+      <text class="tb" x="440" y="34">After sign-in doubled each request's cost</text>
+      <text class="ts" x="440" y="70">200 users, spread</text><rect class="fill-good" x="580" y="56" width="4" height="22"/><text class="ts" x="594" y="72">3 ms</text>
+      <text class="ts" x="440" y="110">200 users, in step</text><rect class="fill-acc" x="580" y="96" width="210" height="22"/><text class="ts" x="785" y="140" text-anchor="end">p50 182 ms</text>
+      <text class="ts" x="16" y="172">On one event loop, the last request of a burst waits for all the others. Each request's CPU cost multiplies the queue a burst</text>
+      <text class="ts" x="16" y="190">builds. Know which shape your real traffic has.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 16.2</span>Arrival shape changes the answer at the same average rate. Bars are drawn to scale within each panel.</figcaption>
+  </figure>
+
+  <h3 id="ch16-capacity">How much one service served</h3>
+  <p>The reference service was measured on one box: the production-shaped stack with two api workers on two CPUs, two million seeded alerts, and load generated through nginx by k6 on the same host. Because the generator competes for the same CPUs, the absolute numbers are that box's; the ratios are the lesson.</p>
+
+  <figure class="fig wide" id="fig-16-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 270" role="img" aria-label="Reads before sign-in: offered 500, achieved 500, p95 1.4 to 1.9 milliseconds, api at half a core. Offered 1,000, achieved 1,000, p95 173 milliseconds, one core. Offered 2,000, achieved 1,710, p95 1.78 seconds, api at its 2-core limit while Postgres used 0.93 of a core. The ceiling is api CPU, not the database. Streaming: 50 concurrent streams, first event p95 114 milliseconds; 500 streams after the fixes, first event 1.25 seconds, 239 answers a second, no failures, 2 cores saturated.">
+      <text class="tl" x="16" y="22">READS: OFFERED → ACHIEVED</text>
+      <line class="rule" x1="120" y1="40" x2="120" y2="170"/>
+      <text class="ts" x="16" y="62">500 / s</text><rect class="fill-good" x="120" y="48" width="125" height="20"/><text class="ts" x="254" y="63">500 · p95 under 2 ms · 0.5 core</text>
+      <text class="ts" x="16" y="102">1,000 / s</text><rect class="fill-acc" x="120" y="88" width="250" height="20"/><text class="ts" x="380" y="103">1,000 · p95 173 ms · 1 core</text>
+      <text class="ts" x="16" y="142">2,000 / s</text><rect class="n-bad" x="120" y="128" width="500" height="20"/><rect class="fill-acc" x="120" y="128" width="428" height="20"/><text class="ts" x="630" y="143">1,710 · p95 1.78 s</text>
+      <text class="ts" x="120" y="190">the api at its 2-core limit while Postgres used under one core: the ceiling is api CPU, not the database</text>
+      <text class="tl" x="16" y="226">STREAMING ANSWERS (MOCK MODEL)</text>
+      <text class="ts" x="16" y="248">50 streams: first event p95 114 ms, 37 answers/s · 500 streams after the fixes: 1.25 s, 239 answers/s, 0 failed, 2 cores saturated</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 16.3</span>Capacity of one two-CPU instance, before sign-in existed. Signed in, the cheapest read costs about twice as much: roughly 530 reads per second per core instead of 920. For a real model, the provider's tokens-per-minute quota binds long before the api's CPU does.</figcaption>
+  </figure>
+
+  <h3 id="ch16-order">The bottlenecks, in the order they bite</h3>
+  <figure class="fig wide" id="fig-16-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 320" role="img" aria-label="Bottlenecks in order. One: a missing index, before any real load arrives. Two: connection churn, a metastable slow state ended by a fixed pool. Three: api CPU on reads, about 530 signed-in reads per second per core. Four: api CPU on streaming, the SDK's 126 microseconds per chunk; 500 streams saturate 2 CPUs. Five: event-loop saturation turning into errors elsewhere, because every wall-clock timeout fires early; timeouts appeared at 46 percent CPU. Six: connection budgets between workers, the pooler and Postgres. Seven: the model provider's quota.">
+      <rect class="n-soft" x="16" y="16" width="788" height="36" rx="4"/><text class="tb" x="28" y="39">1</text><text class="ts" x="52" y="39">A missing index: the first bottleneck arrives before any real load does (Chapter 6)</text>
+      <rect class="n-soft" x="16" y="58" width="788" height="36" rx="4"/><text class="tb" x="28" y="81">2</text><text class="ts" x="52" y="81">Connection churn: a slow state that sustains itself; a fixed-size pool ended it (Chapter 7)</text>
+      <rect class="n-soft" x="16" y="100" width="788" height="36" rx="4"/><text class="tb" x="28" y="123">3</text><text class="ts" x="52" y="123">api CPU on reads: about 530 signed-in reads per second per core</text>
+      <rect class="n-soft" x="16" y="142" width="788" height="36" rx="4"/><text class="tb" x="28" y="165">4</text><text class="ts" x="52" y="165">api CPU on streaming: the SDK's 126 µs per chunk; 500 streams saturate two CPUs</text>
+      <rect class="n-warn" x="16" y="184" width="788" height="36" rx="4"/><text class="tb" x="28" y="207">5</text><text class="ts" x="52" y="207">Event-loop saturation becomes errors elsewhere: every wall-clock timeout fires early, from 46% CPU</text>
+      <rect class="n-soft" x="16" y="226" width="788" height="36" rx="4"/><text class="tb" x="28" y="249">6</text><text class="ts" x="52" y="249">Connection budgets: 2 workers × 20 = 40 pooler clients per replica; the pooler's 500 allows about 12 replicas</text>
+      <rect class="n-soft" x="16" y="268" width="788" height="36" rx="4"/><text class="tb" x="28" y="291">7</text><text class="ts" x="52" y="291">The model provider's quota: with a real provider, this binds first; plan capacity from it</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 16.4</span>The reference service's bottlenecks, in the order load found them. Each has a before-and-after measurement in the operations guide; the settings that came out of them are one decision record.</figcaption>
+  </figure>
+
+  <h4>A saturation cascade</h4>
+  <p>At 200 to 500 concurrent streams, errors came from everywhere at once: connection resets in nginx, thousands of rate-limiter fail-opens, Redis pool exhaustion and database pool timeouts. Each had its own cause, and they amplified each other. Workers were being recycled every ten thousand requests, closing keep-alive connections nginx was about to reuse, which nginx does not retry for a POST; the limiter's 50-millisecond budget was wall-clock time, so it included the time a busy loop took to read the reply; the Redis pool was smaller than the number of concurrent requests; and the database pool was churning. After four changes: zero errors in 10,056 answers, and more answers per second. The general lesson is that on a busy event loop every wall-clock timeout fires early, so the first symptoms of saturation are fail-opens and pool timeouts at moderate CPU, not slow responses.</p>
+
+  <figure class="fig wide" id="fig-16-5">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 190" role="img" aria-label="Where the CPU went at 300 concurrent streams, sampled by py-spy: the model provider's SDK 40.1 percent, the HTTP client 21.9 percent, the asyncio loop 18.2, pydantic 5.0, the web framework 4.5, the service's own code 2.5, SQLAlchemy 2.2, SSE encoding and logging 2.5. The SDK's client side costs 126 microseconds per chunk against 55 for the raw HTTP client plus JSON parsing; the SDK was kept.">
+      <text class="tl" x="16" y="22">SHARE OF SAMPLES AT 300 STREAMS</text>
+      <rect class="n-acc" x="16" y="34" width="309" height="40"/><text class="ts tb" x="24" y="58">provider SDK 40.1%</text>
+      <rect class="n" x="325" y="34" width="169" height="40"/><text class="ts" x="333" y="58">HTTP client 21.9%</text>
+      <rect class="n-soft" x="494" y="34" width="140" height="40"/><text class="ts" x="502" y="58">asyncio 18.2%</text>
+      <rect class="n" x="634" y="34" width="39" height="40"/>
+      <rect class="n-soft" x="673" y="34" width="35" height="40"/>
+      <rect class="n-good" x="708" y="34" width="19" height="40"/>
+      <rect class="n" x="727" y="34" width="77" height="40"/>
+      <text class="ts" x="804" y="94" text-anchor="end">pydantic 5.0 · framework 4.5 · our code 2.5 · the rest</text>
+      <text class="ts" x="16" y="130">Per streamed chunk: the SDK's client side costs <tspan class="tb">126 µs</tspan>, the raw HTTP client plus JSON parsing <tspan class="tb">55 µs</tspan>.</text>
+      <text class="ts" x="16" y="152">12,500 chunks a second × 126 µs ≈ 1.6 cores, which matches the saturation. The SDK was kept: about twice the streams</text>
+      <text class="ts" x="16" y="170">per core is not worth owning the provider's protocol, and a real provider's quota binds first.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 16.5</span>A sampling profile, summarized. In a flame graph, each box's width is its share of samples, and height is only call depth: look for wide plateaus near the top. The service's own code was 2.5% of the time.</figcaption>
+  </figure>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0009</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">Performance defaults chosen from load tests</p>
+    <dl>
+      <dt>Problem</dt><dd>Defaults inherited from libraries produced 502 bursts, early fail-opens and pool churn under load.</dd>
+      <dt>Decision</dt><dd>One index, not two; worker recycling off (it guarded against an unmeasured leak); a 200 ms limiter budget; pools sized for peak with no overflow; event-loop lag measured and alerted; the provider SDK kept.</dd>
+      <dt>See it in</dt><dd>The defaults and their comments in <a href="{{TA}}/apps/api/app/config.py">config.py</a> and <a href="{{TA}}/apps/api/gunicorn.conf.py">gunicorn.conf.py</a>.</dd>
+    </dl>
+  </aside>
+
+  <h4>The method, as a checklist</h4>
+  <ul>
+    <li>A target with a number, and seeded data at production volume: an idle <code>EXPLAIN</code> said 43 ms for a query that took seconds under load.</li>
+    <li>An open-model load, a warm-up, then a steady state long enough for the p99 to settle.</li>
+    <li>The dashboard open: rate, errors, p95 and p99, loop lag, pools, CPU per container; and the load generator's own CPU.</li>
+    <li>Database statistics reset before the run and read after; a profile during the steady state if the api's CPU is the limit.</li>
+    <li>One change at a time; before and after numbers in the pull request; a decision record if it changes a default.</li>
+  </ul>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"We load test with an open model on production-sized data, so coordinated omission can't flatter the percentiles."</p>
+    <p>"The api's CPU is the ceiling, not the database; and with a real provider, the token quota binds before either."</p>
+  </aside>
+
+  <h3 id="ch16-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">The load test looks fine; production is slow</td><td data-label="Cause">A closed model offered less load as the server slowed</td><td data-label="Fix">A fixed arrival rate.</td></tr>
+        <tr><td data-label="Symptom">A fast query in <code>EXPLAIN</code> is slow under load</td><td data-label="Cause">Forty concurrent full scans are a different workload from one</td><td data-label="Fix">Profile under realistic load and data volume.</td></tr>
+        <tr><td data-label="Symptom">Latency climbs with the generator's CPU</td><td data-label="Cause">A saturated generator measures its own queueing</td><td data-label="Fix">Watch its CPU; use an efficient tool or more machines.</td></tr>
+        <tr><td data-label="Symptom">The test measures 429s</td><td data-label="Cause">Rate limits apply to the test user</td><td data-label="Fix">Raise them for the run.</td></tr>
+        <tr><td data-label="Symptom">Errors appear at half CPU</td><td data-label="Cause">Wall-clock budgets include event-loop queueing</td><td data-label="Fix">Watch loop lag; size budgets for a busy loop.</td></tr>
+        <tr><td data-label="Symptom">Periodic 502 bursts under load</td><td data-label="Cause">Worker recycling closed connections the proxy was reusing</td><td data-label="Fix">Recycle only to contain a measured leak.</td></tr>
+        <tr><td data-label="Symptom">A memory-leak hunt reports a leak that is not there</td><td data-label="Cause">Objects in reference cycles look allocated until collected</td><td data-label="Fix">Collect before each snapshot; compare two run lengths, since a leak grows with N and a cache does not.</td></tr>
+        <tr><td data-label="Symptom">A latency gate in CI is flaky</td><td data-label="Cause">Shared runners vary from run to run</td><td data-label="Fix">Gate performance on a dedicated, quiet environment, if at all.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch16-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What is coordinated omission, and how does an open model avoid it?</p>
+      <details class="ans"><summary>Answer</summary><p>In a closed model, a stalled request delays the requests that would have been sent meanwhile, so their latencies are never recorded and the percentiles look better than reality. An open model sends at a fixed rate regardless, so the stall shows up as queueing latency.</p></details>
+    </li>
+    <li>
+      <p>Why can the same average request rate give very different latencies?</p>
+      <details class="ans"><summary>Answer</summary><p>Arrival shape: clumped arrivals queue behind each other on one event loop, so the last request of a burst waits for the rest, even though the average rate is the same.</p></details>
+    </li>
+    <li>
+      <p>In the reference service, what was the capacity ceiling for reads, and what does that imply?</p>
+      <details class="ans"><summary>Answer</summary><p>The api's CPU, not the database, which used under one core at the limit. More capacity means more CPUs or replicas; a faster database would not help.</p></details>
+    </li>
+    <li>
+      <p>Why were the first signs of saturation errors rather than slow responses?</p>
+      <details class="ans"><summary>Answer</summary><p>On a busy event loop, every timeout measured in wall-clock time fires early, because it includes the time spent waiting for the loop. Limiter fail-opens and pool timeouts appeared at moderate CPU.</p></details>
+    </li>
+  </ol>
+</section>

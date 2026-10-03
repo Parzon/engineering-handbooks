@@ -1,0 +1,140 @@
+<section class="chapter" id="ch14">
+  <header class="ch-head">
+    <span class="ch-num">14</span>
+    <p class="eyebrow">Part VII · Operating it</p>
+    <h2>Cost, teardown and lessons learned</h2>
+    <p class="lede">Cloud cost is a design property you can see per hour and per component, teardown is a procedure worth writing down and testing, and the small operational mistakes of a real build are the lessons most worth passing on.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Split stacks by what bills by the hour, so the expensive parts can be destroyed and recreated in minutes.</li>
+      <li>Know the hourly price of every component before it runs; the reference ECS stack cost about $0.17 an hour.</li>
+      <li>Teardown has an order: first stop anything that would recreate the stack, then destroy, then check for leftovers.</li>
+      <li>A failed teardown is fixed in the code too, so the next one works.</li>
+      <li>Most lost time in a real build comes from small habits: reading the failing step, chaining commands safely, never killing by pattern, never sharing a checkout.</li>
+    </ul>
+  </div>
+
+  <h3 id="ch14-cost">What it cost, per hour</h3>
+  <p>The reference ECS stack's cost is written into its own code, component by component. Roughly half is compute, and the rest is spread over the managed services that replaced containers.</p>
+
+  <figure class="fig wide" id="fig-14-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 270" role="img" aria-label="Hourly cost of the reference ECS stack, about 17 cents: two api tasks 5.2 cents; six public IPv4 addresses 3.0 cents; two web tasks 2.6 cents; the load balancer 2.4 cents; the database 2.2 cents; the cache 1.6 cents; four secrets 0.2 cents.">
+      <text class="tl" x="16" y="18">US CENTS PER HOUR, TOTAL ABOUT 17</text>
+      <line class="rule" x1="260" y1="28" x2="260" y2="240"/><text class="ts" x="260" y="258" text-anchor="middle">0</text>
+      <line class="rule" x1="410" y1="28" x2="410" y2="240"/><text class="ts" x="410" y="258" text-anchor="middle">2</text>
+      <line class="rule" x1="560" y1="28" x2="560" y2="240"/><text class="ts" x="560" y="258" text-anchor="middle">4</text>
+      <line class="rule" x1="710" y1="28" x2="710" y2="240"/><text class="ts" x="710" y="258" text-anchor="middle">6</text>
+      <text class="ts" x="16" y="48">2 api tasks (0.5 vCPU, 1 GB)</text><rect class="f1" x="260" y="34" width="390" height="20" rx="3"/><text class="ts tb" x="658" y="49">5.2</text>
+      <text class="ts" x="16" y="78">6 public IPv4 addresses</text><rect class="f1" x="260" y="64" width="225" height="20" rx="3"/><text class="ts tb" x="493" y="79">3.0</text>
+      <text class="ts" x="16" y="108">2 web tasks (0.25 vCPU, 0.5 GB)</text><rect class="f1" x="260" y="94" width="195" height="20" rx="3"/><text class="ts tb" x="463" y="109">2.6</text>
+      <text class="ts" x="16" y="138">Load balancer</text><rect class="f1" x="260" y="124" width="180" height="20" rx="3"/><text class="ts tb" x="448" y="139">2.4</text>
+      <text class="ts" x="16" y="168">Postgres, smallest RDS size</text><rect class="f1" x="260" y="154" width="165" height="20" rx="3"/><text class="ts tb" x="433" y="169">2.2</text>
+      <text class="ts" x="16" y="198">Valkey, smallest cache size</text><rect class="f1" x="260" y="184" width="120" height="20" rx="3"/><text class="ts tb" x="388" y="199">1.6</text>
+      <text class="ts" x="16" y="228">4 secrets</text><rect class="f1" x="260" y="214" width="15" height="20" rx="3"/><text class="ts tb" x="283" y="229">0.2</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 14.1</span>Where the money went, per hour, in the region used. Public IPv4 addresses, which many people assume are free, were the second-largest item: one reason production networks keep tasks on private addresses.</figcaption>
+  </figure>
+
+  <p>Two numbers put this in perspective. The whole reference deployment, a VM for about 45 minutes and the ECS stack for about three hours, came to roughly sixty cents. And the permanent parts (image repositories holding about 1.3 GB, the CI roles, the network) cost cents a month, so they stay, and the pipeline keeps copying each release into the registry.</p>
+
+  <h3 id="ch14-teardown">Teardown, in order</h3>
+  <figure class="fig wide" id="fig-14-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 220" role="img" aria-label="Teardown in three steps: first delete the repository secret that lets the deploy workflow run, otherwise the next release tag recreates the database, cache and load balancer; then destroy the application stack; then list leftovers that still cost money: instances, databases, clusters, load balancers, NAT gateways, addresses, volumes. Kept: the registry, the CI roles, the network, the CDK bootstrap resources.">
+      <rect class="n-warn" x="16" y="30" width="240" height="96" rx="6"/>
+      <text class="tb" x="30" y="54">1  Stop auto-recreation</text>
+      <text class="ts" x="30" y="74">delete the secret that lets</text>
+      <text class="ts" x="30" y="90">the deploy workflow run, or the</text>
+      <text class="ts" x="30" y="106">next tag rebuilds everything</text>
+      <rect class="n-bad" x="290" y="30" width="240" height="96" rx="6"/>
+      <text class="tb" x="304" y="54">2  Destroy the app stack</text>
+      <text class="ts" x="304" y="74">ECS, database, cache, load</text>
+      <text class="ts" x="304" y="90">balancer, secrets: everything</text>
+      <text class="ts" x="304" y="106">billed by the hour</text>
+      <rect class="n-good" x="564" y="30" width="240" height="96" rx="6"/>
+      <text class="tb" x="578" y="54">3  Check for leftovers</text>
+      <text class="ts" x="578" y="74">instances, databases, clusters,</text>
+      <text class="ts" x="578" y="90">load balancers, NAT, addresses,</text>
+      <text class="ts" x="578" y="106">volumes: all empty</text>
+      <line class="e" x1="257" y1="78" x2="288" y2="78" marker-end="url(#a)"/>
+      <line class="e" x1="531" y1="78" x2="562" y2="78" marker-end="url(#a)"/>
+      <rect class="n-soft" x="16" y="152" width="788" height="52" rx="6"/>
+      <text class="tb" x="30" y="174">Kept, free or cents a month</text>
+      <text class="ts" x="30" y="193">image repositories, the OIDC provider and CI roles, the network without NAT, the CDK bootstrap bucket. Bringing the app back: about 15 minutes.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 14.2</span>Teardown has an order. The first step is the one people forget: with the deploy workflow wired up, any later release tag would start recreating the whole stack, one approval away.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/ops.sh#L52-L60">infra/aws/ops.sh</a><span class="lines">the leftovers check</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>A small operator script holds the commands people need under time pressure. Its <code>leftovers</code> command lists everything that could still be billing after a teardown, one resource type per line, so an empty list means an empty bill.</p>
+        <ul class="notice">
+          <li>It checks stopped instances too: a stopped VM still pays for its disk.</li>
+          <li>It lists stacks in every non-deleted state, so a half-failed delete shows up.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/ops.sh" data-lines="52-60"><code class="language-bash">leftovers)
+  echo "EC2:";  aws ec2 describe-instances --filters Name=instance-state-name,Values=pending,running,stopping,stopped --query 'Reservations[].Instances[].[InstanceId,InstanceType,State.Name]' --output text
+  echo "RDS:";  aws rds describe-db-instances --query 'DBInstances[].[DBInstanceIdentifier,DBInstanceStatus]' --output text
+  echo "ECS:";  aws ecs list-clusters --query clusterArns --output text
+  echo "ALB:";  aws elbv2 describe-load-balancers --query 'LoadBalancers[].LoadBalancerName' --output text
+  echo "NAT:";  aws ec2 describe-nat-gateways --filter Name=state,Values=available,pending --query 'NatGateways[].NatGatewayId' --output text
+  echo "EIP:";  aws ec2 describe-addresses --query 'Addresses[].PublicIp' --output text
+  echo "EBS:";  aws ec2 describe-volumes --query 'Volumes[].[VolumeId,Size,State]' --output text
+  echo "Stacks:"; aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE UPDATE_ROLLBACK_COMPLETE ROLLBACK_COMPLETE --query 'StackSummaries[].StackName' --output text ;;</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p>The teardown failed once. CloudFormation deleted the database and its password secret within two seconds of each other, because the template referred to the secret only inside a dynamic reference, which does not order deletes. The database was already gone, but its delete handler could not read the password, so the stack ended in <code>DELETE_FAILED</code>. It was finished by deleting the stack again while retaining the resources that no longer existed, and fixed in code with an explicit dependency (Chapter 7). A full check afterwards found nothing left: no instances, databases, clusters, load balancers, addresses, volumes, caches, alarms, secrets or snapshots.</p>
+
+  <h3 id="ch14-lessons">Lessons from a real build</h3>
+  <p>None of these is dramatic. Together they cost more time than any of the cloud's own surprises.</p>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A security check failed on a pull request that changed nothing related</td><td data-label="Cause">A new advisory against the base image; main already had the fix</td><td data-label="Fix">Read the failing step before touching anything; update the branch.</td></tr>
+        <tr><td data-label="Symptom">A rate-limit test failed once on main and passed on its pull request</td><td data-label="Cause">The test depends on where a one-minute window falls</td><td data-label="Fix">Record it as a flake and make the timing controllable; never retry it silently.</td></tr>
+        <tr><td data-label="Symptom"><code>pkill -f pattern</code> killed the operator's own shell</td><td data-label="Cause">The pattern also matched the command line running the kill</td><td data-label="Fix">Kill by process ID, never by a pattern the killer itself contains.</td></tr>
+        <tr><td data-label="Symptom">Code that had just failed lint was committed</td><td data-label="Cause">Commands chained with <code>;</code></td><td data-label="Fix">Chain with <code>&amp;&amp;</code>.</td></tr>
+        <tr><td data-label="Symptom">A branch and its files vanished mid-task; commits appeared that nobody on the task made</td><td data-label="Cause">Another person or automated coding agent was working in the same checkout and switching branches</td><td data-label="Fix">One worktree per parallel session; check the current branch before each commit; stage explicit paths; read <code>git log</code> on main before pushing.</td></tr>
+        <tr><td data-label="Symptom">Build output containing account details was swept into a commit</td><td data-label="Cause">A broad <code>git add</code> swept in build output</td><td data-label="Fix">Ignore generated directories from the first commit; history keeps what was pushed.</td></tr>
+        <tr><td data-label="Symptom">An infrastructure pull request could not be merged by its only author</td><td data-label="Cause">Required reviews, and no second reviewer yet</td><td data-label="Fix">An administrator override, used deliberately and flagged in the pull request.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The shared-checkout incident deserves one more sentence, because coding agents make it common. The safe response was the same as for any surprise: stop, read <code>git status</code>, <code>git log</code> and the open pull requests before changing anything; follow the decision already merged rather than fighting it; recover files from Git's own history; and rebuild the change on a fresh branch from the current main.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"We know the hourly cost of every component, and everything billed by the hour lives in one stack we can destroy and recreate in about fifteen minutes. Teardown is scripted, including the leftovers check."</p>
+  </aside>
+
+  <h3 id="ch14-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Why is the first teardown step disabling the deploy workflow, not destroying the stack?</p>
+      <details class="ans"><summary>Answer</summary><p>With the deploy workflow wired up, the next release tag would start a deploy that recreates the whole stack once someone approves it. Deleting the secret that lets the deploy run makes the teardown stick.</p></details>
+    </li>
+    <li>
+      <p>Which item of the reference stack's hourly cost surprises people most, and what does it suggest?</p>
+      <details class="ans"><summary>Answer</summary><p>Public IPv4 addresses, the second-largest item. Production networks keep tasks on private addresses behind a load balancer, which also removes them from the internet.</p></details>
+    </li>
+    <li>
+      <p>What should happen after a teardown fails halfway?</p>
+      <details class="ans"><summary>Answer</summary><p>Finish it (for example by retaining resources that are already gone), check for leftovers, and fix the cause in code so the next teardown works.</p></details>
+    </li>
+  </ol>
+</section>

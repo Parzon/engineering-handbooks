@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 230" role="img" aria-label="Four steps: breaking the policy on purpose failed as expected; restoring the name failed again; reading the real subject showed it embeds owner and repository IDs; fixing the prefix made all three image copies pass with matching digests."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #146b55; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e2f1eb; stroke: #146b55; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #146b55; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #146b55; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #146b55; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="230" fill="#ffffff"/>
+      <rect class="n-warn" x="16" y="30" width="182" height="130" rx="6"/>
+      <rect class="fill-surface" x="28" y="42" width="120" height="20" rx="10"/>
+      <text class="ts tw tb" x="88" y="56" text-anchor="middle">failed, as expected</text>
+      <text class="tb" x="28" y="88">1  Break it on purpose</text>
+      <text class="ts" x="28" y="108">policy names the wrong</text>
+      <text class="ts" x="28" y="124">repository; a release tag</text>
+      <text class="ts" x="28" y="140">is pushed</text>
+
+      <rect class="n-bad" x="222" y="30" width="182" height="130" rx="6"/>
+      <rect class="fill-surface" x="234" y="42" width="96" height="20" rx="10"/>
+      <text class="ts tr tb" x="282" y="56" text-anchor="middle">failed again</text>
+      <text class="tb" x="234" y="88">2  Restore the name</text>
+      <text class="ts" x="234" y="108">re-run only the failed</text>
+      <text class="ts" x="234" y="124">jobs, no new release</text>
+
+      <rect class="n-acc" x="428" y="30" width="182" height="130" rx="6"/>
+      <rect class="fill-surface" x="440" y="42" width="80" height="20" rx="10"/>
+      <text class="ts ta tb" x="480" y="56" text-anchor="middle">the cause</text>
+      <text class="tb" x="440" y="88">3  Read the real subject</text>
+      <text class="ts" x="440" y="108">the repository's OIDC</text>
+      <text class="ts" x="440" y="124">setting: owner and repo</text>
+      <text class="ts" x="440" y="140">IDs are embedded</text>
+
+      <rect class="n-good" x="634" y="30" width="170" height="130" rx="6"/>
+      <rect class="fill-surface" x="646" y="42" width="64" height="20" rx="10"/>
+      <text class="ts tg tb" x="678" y="56" text-anchor="middle">passed</text>
+      <text class="tb" x="646" y="88">4  Fix and re-run</text>
+      <text class="ts" x="646" y="108">all three image copies</text>
+      <text class="ts" x="646" y="124">succeed; digests match</text>
+      <text class="ts" x="646" y="140">the originals</text>
+
+      <line class="e" x1="199" y1="95" x2="220" y2="95" marker-end="url(#a)"/>
+      <line class="e" x1="405" y1="95" x2="426" y2="95" marker-end="url(#a)"/>
+      <line class="e" x1="611" y1="95" x2="632" y2="95" marker-end="url(#a)"/>
+
+      <text class="ts" x="410" y="196" text-anchor="middle">Step 1 failed for the wrong reason: the policy had never matched at all.</text>
+      <text class="ts" x="410" y="214" text-anchor="middle">A negative test proves a check works only after a positive test has passed.</text>
+    </svg>

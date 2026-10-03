@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 360" role="img" aria-label="The reference service on ECS. The load balancer listens on port 80: internal paths return 404; /api/* is rewritten and sent to the api service; everything else goes to the web service. Each service runs two tasks across two zones. The api task holds dbinit and migrate init containers, a mock model sidecar and the api. The api reaches RDS Postgres and ElastiCache Valkey. Images come from ECR, secrets from Secrets Manager, logs go to CloudWatch."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #146b55; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e2f1eb; stroke: #146b55; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #146b55; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #146b55; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #146b55; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="360" fill="#ffffff"/>
+      <rect class="n-acc" x="16" y="128" width="150" height="104" rx="6"/>
+      <text class="tb" x="91" y="152" text-anchor="middle">Load balancer :80</text>
+      <text class="ts" x="91" y="174" text-anchor="middle">internal paths: 404</text>
+      <text class="ts" x="91" y="192" text-anchor="middle">/api/*: rewrite, api</text>
+      <text class="ts" x="91" y="210" text-anchor="middle">else: web</text>
+
+      <rect class="zone" x="200" y="20" width="370" height="232" rx="8"/>
+      <text class="tl" x="214" y="40">API SERVICE: 2 TO 4 TASKS, 2 ZONES</text>
+      <rect class="n" x="214" y="52" width="342" height="186" rx="5"/>
+      <text class="tb" x="228" y="74">One api task (shared localhost)</text>
+      <rect class="n-soft" x="228" y="86" width="150" height="40" rx="4"/><text class="tm" x="240" y="104">dbinit</text><text class="ts" x="240" y="119">app role; then exits</text>
+      <rect class="n-soft" x="390" y="86" width="150" height="40" rx="4"/><text class="tm" x="402" y="104">migrate</text><text class="ts" x="402" y="119">migrations; exits</text>
+      <rect class="n-soft" x="228" y="136" width="150" height="40" rx="4"/><text class="tm" x="240" y="154">mock-llm</text><text class="ts" x="240" y="169">sidecar, healthy</text>
+      <rect class="n-acc" x="390" y="136" width="150" height="88" rx="4"/><text class="tm tb" x="402" y="156">api</text><text class="ts" x="402" y="174">starts only when both</text><text class="ts" x="402" y="190">init containers succeed</text><text class="ts" x="402" y="206">and the sidecar is healthy</text>
+      <text class="ts" x="228" y="200">health check for the</text>
+      <text class="ts" x="228" y="216">load balancer: /health</text>
+
+      <rect class="zone" x="200" y="268" width="370" height="74" rx="8"/>
+      <text class="tl" x="214" y="288">WEB SERVICE: 2 TASKS</text>
+      <text class="ts" x="214" y="308">nginx serving the built app; health check /healthz</text>
+      <text class="ts" x="214" y="326">only files: the load balancer routes /api itself</text>
+
+      <path class="e-acc" d="M167,170 C185,170 185,140 212,140" marker-end="url(#a-acc)"/>
+      <path class="e" d="M167,200 C185,200 185,305 198,305" marker-end="url(#a)"/>
+
+      <rect class="n" x="612" y="40" width="192" height="56" rx="5"/><text class="tb" x="708" y="64" text-anchor="middle">RDS Postgres</text><text class="ts" x="708" y="82" text-anchor="middle">TLS required</text>
+      <rect class="n" x="612" y="110" width="192" height="56" rx="5"/><text class="tb" x="708" y="134" text-anchor="middle">ElastiCache Valkey</text><text class="ts" x="708" y="152" text-anchor="middle">shared by every task</text>
+      <line class="e" x1="557" y1="100" x2="610" y2="70" marker-end="url(#a)"/>
+      <line class="e" x1="557" y1="150" x2="610" y2="140" marker-end="url(#a)"/>
+      <rect class="n-soft" x="612" y="196" width="192" height="30" rx="4"/><text class="ts" x="708" y="216" text-anchor="middle">ECR: images, pulled at start</text>
+      <rect class="n-soft" x="612" y="232" width="192" height="30" rx="4"/><text class="ts" x="708" y="252" text-anchor="middle">Secrets Manager: at start</text>
+      <rect class="n-soft" x="612" y="268" width="192" height="30" rx="4"/><text class="ts" x="708" y="288" text-anchor="middle">CloudWatch Logs: per container</text>
+    </svg>

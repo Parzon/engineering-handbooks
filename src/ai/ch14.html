@@ -1,0 +1,174 @@
+<section class="chapter" id="ch14">
+  <header class="ch-head">
+    <span class="ch-num">14</span>
+    <p class="eyebrow">Part VII · The data platform</p>
+    <h2>Data engineering for AI</h2>
+    <p class="lede">A model answers from whatever data arrived, so the data path to an AI feature needs the same discipline as the code path: contracts, quality checks, lineage, freshness targets, idempotent backfills, and evaluation data treated as data.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>At every step from the application database to an AI feature, data can arrive late, go missing, duplicate or change shape.</li>
+      <li>Batch or streaming is a freshness requirement, not a preference.</li>
+      <li>A data contract is an agreed, versioned schema with meanings and freshness, changed with the same expand-and-contract discipline as a database migration.</li>
+      <li>Re-embedding a corpus is a backfill: idempotent, in batches, built beside the old index.</li>
+      <li>Training and evaluation data must be point-in-time correct, computed the same way as at serving time, and kept apart from anything used for tuning.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Reports read yesterday's data</td><td>Assistants answer from today's data, through retrieval</td><td>Staleness is now a wrong answer, not a late report.</td></tr>
+      <tr><td data-label="Then">Schemas changed by the producing team at will</td><td>Data contracts between producers and consumers</td><td>Downstream models and indexes break silently on a renamed column.</td></tr>
+      <tr><td data-label="Then">Pipelines judged by whether they ran</td><td>Pipelines judged by quality, freshness and lineage</td><td>A job that succeeds with bad data poisons every answer downstream.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch14-path">The path data takes to an AI feature</h3>
+  <figure class="fig wide" id="fig-14-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="The application database feeds change data capture or batch extracts; then object storage with Parquet and Iceberg; then transformation from bronze to silver to gold; then the warehouse or lakehouse; then AI uses: retrieval indexes, features, eval sets and analytics. At every arrow data can arrive late, go missing, be duplicated or change shape, and the model downstream answers from whatever arrived. Controls: quality checks at each layer, lineage, freshness monitored as a service level, and contracts on schemas.">
+      <g class="ts">
+      <rect class="n" x="16" y="30" width="120" height="56" rx="5"/><text x="76" y="54" text-anchor="middle" class="tb">application DB</text><text x="76" y="72" text-anchor="middle">OLTP</text>
+      <rect class="n" x="160" y="30" width="120" height="56" rx="5"/><text x="220" y="54" text-anchor="middle" class="tb">CDC or batch</text><text x="220" y="72" text-anchor="middle">extract</text>
+      <rect class="n" x="304" y="30" width="120" height="56" rx="5"/><text x="364" y="54" text-anchor="middle" class="tb">object storage</text><text x="364" y="72" text-anchor="middle">Parquet, Iceberg</text>
+      <rect class="n" x="448" y="30" width="120" height="56" rx="5"/><text x="508" y="54" text-anchor="middle" class="tb">dbt</text><text x="508" y="72" text-anchor="middle">bronze → gold</text>
+      <rect class="n-acc" x="592" y="30" width="212" height="56" rx="5"/><text x="698" y="54" text-anchor="middle" class="tb">AI uses</text><text x="698" y="72" text-anchor="middle">indexes, features, eval sets</text>
+      </g>
+      <g class="e"><line x1="137" y1="58" x2="158" y2="58" marker-end="url(#a)"/><line x1="281" y1="58" x2="302" y2="58" marker-end="url(#a)"/><line x1="425" y1="58" x2="446" y2="58" marker-end="url(#a)"/><line x1="569" y1="58" x2="590" y2="58" marker-end="url(#a)"/></g>
+      <g class="ts tr"><text x="148" y="108" text-anchor="middle">late</text><text x="292" y="108" text-anchor="middle">missing</text><text x="436" y="108" text-anchor="middle">duplicated</text><text x="580" y="108" text-anchor="middle">changed shape</text></g>
+      <text class="tl" x="16" y="146">AT EVERY ARROW</text>
+      <g class="ts">
+      <rect class="n-good" x="16" y="158" width="190" height="72" rx="5"/><text x="28" y="180" class="tb">quality checks</text><text x="28" y="198">not null, unique, counts</text><text x="28" y="214">vs yesterday; stop on fail</text>
+      <rect class="n-good" x="216" y="158" width="190" height="72" rx="5"/><text x="228" y="180" class="tb">lineage</text><text x="228" y="198">which answers used</text><text x="228" y="214">the bad data?</text>
+      <rect class="n-good" x="416" y="158" width="190" height="72" rx="5"/><text x="428" y="180" class="tb">freshness</text><text x="428" y="198">the newest data's age,</text><text x="428" y="214">monitored like an SLI</text>
+      <rect class="n-good" x="616" y="158" width="188" height="72" rx="5"/><text x="628" y="180" class="tb">contracts</text><text x="628" y="198">versioned schemas</text><text x="628" y="214">with meanings</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 14.1</span>From the application's database to an AI feature. Analytics on the production database competes with its users, so data is copied out; every copy is a place for it to go wrong silently.</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Choice</th><th>One side</th><th>The other</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Choice">OLTP or OLAP</td><td data-label="One">Many small reads and writes of rows, transactions, row storage, indexes (Postgres)</td><td data-label="Other">A few large scans and aggregations over history, column storage (Snowflake, BigQuery, DuckDB)</td></tr>
+        <tr><td data-label="Choice">Batch or streaming</td><td data-label="One">Hourly or nightly: simple, cheap, easy to rerun; a nightly re-index</td><td data-label="Other">Seconds fresh, harder: ordering, duplicates, late events; an assistant about current incidents</td></tr>
+        <tr><td data-label="Choice">Warehouse, lake or lakehouse</td><td data-label="One">Warehouse: managed storage and compute, enforced schemas. Lake: files, cheap, schema on read, easily a swamp</td><td data-label="Other">Lakehouse: a lake plus a table format with transactions, schemas and time travel (Chapter 13)</td></tr>
+        <tr><td data-label="Choice">Partitioning</td><td data-label="One">Split files by the column most queries filter on: a date, a tenant</td><td data-label="Other">Too fine (per hour per user) makes millions of tiny files: partition by how data is read</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch14-contracts">Contracts, backfills and freshness</h3>
+  <figure class="fig wide" id="fig-14-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="A data contract: an agreed, versioned schema, with meanings and freshness, between a producing team and its consumers, checked in CI or at ingestion. A change goes expand then contract: add the new field, let consumers move, then remove the old one, like a database migration. Backfills recompute history after a logic fix: idempotent jobs, overwriting a partition or upserting by key, are safe to rerun; append-only jobs double the data. Re-embedding the corpus after an embedding model change is a backfill, because old and new vectors cannot be mixed.">
+      <rect class="n" x="16" y="20" width="170" height="70" rx="6"/><text class="tb" x="28" y="44">producing team</text><text class="ts" x="28" y="64">changes its schema</text>
+      <rect class="n-acc" x="226" y="12" width="300" height="86" rx="6"/><text class="tb" x="238" y="36">The contract</text><text class="ts" x="238" y="58">a versioned schema, field meanings,</text><text class="ts" x="238" y="74">freshness; checked in CI or at</text><text class="ts" x="238" y="90">ingestion</text>
+      <rect class="n" x="566" y="20" width="238" height="70" rx="6"/><text class="tb" x="578" y="44">consumers</text><text class="ts" x="578" y="64">indexes, features, reports</text>
+      <line class="e" x1="187" y1="55" x2="224" y2="55" marker-end="url(#a)"/><line class="e" x1="527" y1="55" x2="564" y2="55" marker-end="url(#a)"/>
+      <text class="ts" x="16" y="122"><tspan class="tb">A change:</tspan> expand (add the new field), let consumers move, then contract (remove the old), like a schema migration.</text>
+      <rect class="n-good" x="16" y="142" width="384" height="72" rx="6"/><text class="tb" x="28" y="164">Idempotent backfill: safe to rerun</text><text class="ts" x="28" y="184">overwrite a partition, or upsert by key</text><text class="ts" x="28" y="200">re-embedding: built beside, then switched</text>
+      <rect class="n-bad" x="420" y="142" width="384" height="72" rx="6"/><text class="tb" x="432" y="164">Append-only backfill</text><text class="ts" x="432" y="184">a rerun doubles the data</text><text class="ts" x="432" y="200">mixed vectors: meaningless similarity</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 14.2</span>Contracts and backfills. A table format tracking columns by id makes a rename safe in storage; consumers still break, which is what the contract is for.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/runbooks.py#L129-L137">apps/api/app/runbooks.py</a><span class="lines">and</span><a href="{{TA}}/apps/api/app/triage.py#L125-L130">apps/api/app/triage.py</a></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Two small data-engineering decisions in the reference service: a key that records how every vector was made, and the date shown to the model beside every section.</p>
+        <ul class="notice">
+          <li>The embedding key names the model, the size and a hash of the document prefix; vectors with another key are ignored until a re-embed, because they are not comparable.</li>
+          <li>A prefix change alone moved every vector: measured, the same text with and without the prefix differed by 0.06 in distance.</li>
+          <li>Each section reaches the model with its team and its last update date, so a stale step is visible as stale.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/runbooks.py" data-lines="129-137"><code class="language-python">def embedding_key(settings: Settings) -&gt; str:
+    """How vectors are made: the model, the size asked for, and a hash of the
+    document prefix. Stored with every vector; vectors with another key are
+    not comparable, so retrieval ignores them until they are re-embedded
+    (`python -m app.cli reembed`). A prefix change alone moves every vector:
+    measured, embeddinggemma with and without its prompts gave distances
+    0.06 apart on the same text."""
+    prefix = hashlib.sha256(settings.embedding_document_prefix.encode()).hexdigest()[:8]
+    return f"{settings.embedding_model}|{settings.embedding_dimensions or 'native'}|{prefix}"</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/triage.py" data-lines="125-130"><code class="language-python">def section_text(number: int, hit: Hit, clean: Callable[[str], str]) -&gt; str:
+    """One runbook section as the model reads it, numbered for citation."""
+    return (
+        f"[R{number}] {hit.heading} (team {hit.team}, updated {hit.updated_at:%Y-%m-%d})\n"
+        f"{clean(hit.content)}"
+    )</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p><strong>Freshness</strong> is the age of the newest data, monitored like any service level. For retrieval it is the index lag: a runbook edited today but answered from last week's text. <strong>Lineage</strong> records which sources and transformations produced a table, so after a data incident it answers which answers, features or models used the bad data. <strong>Quality checks</strong> at each layer (not null, unique, accepted values, row counts against yesterday, references that resolve) stop the pipeline instead of passing bad data on.</p>
+
+  <h3 id="ch14-training">Features, training and evaluation data</h3>
+  <figure class="fig wide" id="fig-14-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Point-in-time correctness. A training row at time t may use only data that existed at t; a join that uses data from after t leaks the future, and offline results look better than production will be. Training and serving skew: a feature such as a customer's incident count over 30 days must be computed the same way for training and for serving, or the model sees different numbers live; a feature store serves precomputed features for both.">
+      <line class="rule-strong" x1="40" y1="70" x2="790" y2="70"/><text class="ts" x="790" y="60" text-anchor="end">time →</text>
+      <circle class="fill-acc" cx="420" cy="70" r="7"/><text class="ts tb" x="420" y="50" text-anchor="middle">training row at t</text>
+      <rect class="n-good" x="60" y="80" width="350" height="26" rx="3"/><text class="ts" x="235" y="98" text-anchor="middle">data known at t: allowed</text>
+      <rect class="n-bad" x="430" y="80" width="340" height="26" rx="3"/><text class="ts" x="600" y="98" text-anchor="middle">data from after t: a leak</text>
+      <text class="ts" x="16" y="136"><tspan class="tb">A leaky join</tspan> makes offline results look better than production will be.</text>
+      <rect class="n" x="16" y="152" width="384" height="62" rx="6"/><text class="tb" x="28" y="174">Training-serving skew</text><text class="ts" x="28" y="194">a feature computed one way offline and</text><text class="ts" x="28" y="208">another way live</text>
+      <rect class="n-good" x="420" y="152" width="384" height="62" rx="6"/><text class="tb" x="432" y="174">One definition for both</text><text class="ts" x="432" y="194">a feature store serves the same precomputed</text><text class="ts" x="432" y="208">features to training and serving</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 14.3</span>Two ways training data lies. Evaluation data is data too: versioned, with lineage, redacted, and kept apart from anything used to tune prompts or fine-tune models.</figcaption>
+  </figure>
+
+  <p>Personal-data rules (consent, minimization, deletion) apply to retrieval indexes, evaluation sets and training sets, not only to the source tables. A deleted document must leave the index, and a person's erased data must leave the evaluation sets built from production traffic.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Freshness is a requirement we set per use: a nightly re-index is fine for documentation, not for current incidents. We monitor index lag like any SLI."</p>
+    <p>"Backfills are idempotent and built beside the old data; a re-embedding is a backfill, because old and new vectors can't be mixed."</p>
+  </aside>
+
+  <h3 id="ch14-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">The assistant quotes last week's procedure</td><td data-label="Cause">Index lag nobody measured</td><td data-label="Fix">Freshness as a monitored target; show dates in context.</td></tr>
+        <tr><td data-label="Symptom">A rerun doubled a table</td><td data-label="Cause">An append-only backfill</td><td data-label="Fix">Overwrite partitions or upsert by key.</td></tr>
+        <tr><td data-label="Symptom">A model looked great offline and poor in production</td><td data-label="Cause">Future data leaked into training, or features computed differently live</td><td data-label="Fix">Point-in-time joins; one feature definition for both.</td></tr>
+        <tr><td data-label="Symptom">An upstream rename broke the index silently</td><td data-label="Cause">No contract between producer and consumers</td><td data-label="Fix">A versioned contract, checked at ingestion; expand and contract.</td></tr>
+        <tr><td data-label="Symptom">Similarity results became meaningless after a settings change</td><td data-label="Cause">Old and new vectors mixed</td><td data-label="Fix">Record how each vector was made; re-embed as a backfill.</td></tr>
+        <tr><td data-label="Symptom">Erased personal data still appears in answers</td><td data-label="Cause">Deletion stopped at the source tables</td><td data-label="Fix">Carry deletion to indexes, eval sets and training sets.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch14-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>When does an AI feature need streaming rather than batch data?</p>
+      <details class="ans"><summary>Answer</summary><p>When its answers must reflect changes within seconds or minutes, such as an assistant answering about current incidents. Batch suits data whose freshness requirement is hours, such as a nightly re-index of documentation.</p></details>
+    </li>
+    <li>
+      <p>What is training-serving skew, and what prevents it?</p>
+      <details class="ans"><summary>Answer</summary><p>A feature computed one way for training and another for serving, so the model sees different numbers live. One definition of each feature, served to both, for example from a feature store.</p></details>
+    </li>
+    <li>
+      <p>Why is re-embedding a corpus treated as a backfill?</p>
+      <details class="ans"><summary>Answer</summary><p>Every vector must be recomputed, and old and new vectors are not comparable, so it runs idempotently in batches, builds the new index beside the old, is evaluated, and only then switched.</p></details>
+    </li>
+  </ol>
+</section>

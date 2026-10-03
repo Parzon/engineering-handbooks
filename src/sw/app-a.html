@@ -1,0 +1,99 @@
+<p>Terms used in this handbook, each with the chapter that explains it. AI terms are in Handbook 1's glossary; delivery and cloud terms in Handbook 3's.</p>
+<dl class="glossary">
+  <dt>ADR</dt>
+  <dd>An architecture decision record: one decision, its context, the alternatives and why, kept forever and superseded rather than edited. <a class="see" href="#ch1">Chapter 1</a></dd>
+  <dt>Bind mount</dt>
+  <dd>A host directory mapped into a container, live both ways; the development pattern for hot reload. <a class="see" href="#ch12">Chapter 12</a></dd>
+  <dt>Burn rate</dt>
+  <dd>How fast an error budget is being spent relative to plan; alerts page on fast burns over short windows. <a class="see" href="#ch17">Chapter 17</a></dd>
+  <dt>Cardinality</dt>
+  <dd>The number of distinct label combinations of a metric; each is a separate time series held in memory. <a class="see" href="#ch14">Chapter 14</a></dd>
+  <dt>cgroup</dt>
+  <dd>A Linux control group: the kernel feature that limits and accounts a process group's memory, CPU and other resources. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>Compose overlay</dt>
+  <dd>A Compose file merged over a base file for one environment: development by default, production by name. <a class="see" href="#ch12">Chapter 12</a></dd>
+  <dt>Connection pool</dt>
+  <dd>A set of open database connections reused across requests, sized against the database's limit. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>Content Security Policy (CSP)</dt>
+  <dd>A response header telling the browser which sources of scripts, styles, images and connections a page may use. <a class="see" href="#ch9">Chapter 9</a></dd>
+  <dt>Coordinated omission</dt>
+  <dd>In a closed load model, requests delayed by a stall delay the requests behind them, whose latency is then never recorded. <a class="see" href="#ch16">Chapter 16</a></dd>
+  <dt>CSRF</dt>
+  <dd>Cross-site request forgery: another site making a signed-in browser send a request; blocked by checking the request's origin. <a class="see" href="#ch8">Chapter 8</a></dd>
+  <dt>Error budget</dt>
+  <dd>The failure an SLO allows over its window; while it lasts, ship; when it is spent, reliability work comes first. <a class="see" href="#ch17">Chapter 17</a></dd>
+  <dt>Event loop</dt>
+  <dd>The scheduler of an async runtime: one thread running many tasks, switching only where they wait. <a class="see" href="#ch5">Chapter 5</a></dd>
+  <dt>Event-loop lag</dt>
+  <dd>How late the event loop runs a timer: a direct measure of saturation in async services. <a class="see" href="#ch5">Chapter 5</a></dd>
+  <dt>Expand and contract</dt>
+  <dd>Changing a schema in steps (add, migrate, switch, remove) so old and new code both work throughout a deploy. <a class="see" href="#ch6">Chapter 6</a></dd>
+  <dt>EXPLAIN ANALYZE</dt>
+  <dd>Postgres's report of how it actually ran a query; meaningful only on realistic data and load. <a class="see" href="#ch6">Chapter 6</a></dd>
+  <dt>Fail open, fail closed</dt>
+  <dd>What a component does when a dependency is down: allow the request (open) or refuse it (closed). <a class="see" href="#ch15">Chapter 15</a></dd>
+  <dt>Golden signals</dt>
+  <dd>Latency, traffic, errors and saturation: the four signals that describe a service's health. <a class="see" href="#ch14">Chapter 14</a></dd>
+  <dt>Graceful shutdown</dt>
+  <dd>On SIGTERM, stop accepting new work and finish what is in flight within a grace period. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>Health check</dt>
+  <dd>An endpoint or command a platform uses to decide whether a process is alive (liveness) or should get traffic (readiness). <a class="see" href="#ch12">Chapter 12</a></dd>
+  <dt>Image digest</dt>
+  <dd>The content hash that identifies a container image exactly; a tag is a movable name. <a class="see" href="#ch12">Chapter 12</a></dd>
+  <dt>Index (database)</dt>
+  <dd>A structure that lets the database find rows without scanning the table; chosen from the queries, at a cost on writes. <a class="see" href="#ch6">Chapter 6</a></dd>
+  <dt>Keep-alive</dt>
+  <dd>Reusing one TCP connection for many requests; the side that closes idle connections first must be the proxy. <a class="see" href="#ch11">Chapter 11</a></dd>
+  <dt>Least privilege</dt>
+  <dd>Every component gets only the rights its job needs: database roles, container capabilities, network exposure. <a class="see" href="#ch9">Chapter 9</a></dd>
+  <dt>Liveness and readiness</dt>
+  <dd>Liveness: is the process alive (checks nothing external). Readiness: should traffic come here (checks hard dependencies). <a class="see" href="#ch15">Chapter 15</a></dd>
+  <dt>Metastable failure</dt>
+  <dd>A slow state that sustains itself after its trigger is gone, such as a pool stuck in overflow churn. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>Migration</dt>
+  <dd>A versioned, reviewed change to the database schema, replayed in order on every database. <a class="see" href="#ch6">Chapter 6</a></dd>
+  <dt>Modular monolith</dt>
+  <dd>One deployable with visible internal boundaries; split only for a different scaling profile, cadence or failure domain. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dt>Multi-stage build</dt>
+  <dd>A Dockerfile with several stages, so build tools stay out of the image that ships. <a class="see" href="#ch12">Chapter 12</a></dd>
+  <dt>Named volume</dt>
+  <dd>Docker-managed storage that survives a container being recreated; removed only on request. <a class="see" href="#ch12">Chapter 12</a></dd>
+  <dt>Namespace (Linux)</dt>
+  <dd>The kernel feature that gives a process a private view: its own process ids, network stack and filesystem root. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>OIDC</dt>
+  <dd>OpenID Connect: sign-in delegated to an identity provider, which returns signed tokens about the user. <a class="see" href="#ch8">Chapter 8</a></dd>
+  <dt>OOM kill</dt>
+  <dd>The kernel killing a process that exceeded its memory limit (exit code 137). <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dt>Open load model</dt>
+  <dd>A load test that starts requests at a fixed rate regardless of response times, as independent users do. <a class="see" href="#ch16">Chapter 16</a></dd>
+  <dt>p95</dt>
+  <dd>The 95th-percentile latency: 95% of requests were faster. Averages hide the tail users feel. <a class="see" href="#ch16">Chapter 16</a></dd>
+  <dt>PgBouncer</dt>
+  <dd>A connection pooler in front of Postgres; in transaction mode, a server connection is lent for one transaction at a time. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>PKCE</dt>
+  <dd>Proof Key for Code Exchange: a secret per sign-in that binds the authorization code to the client that asked for it. <a class="see" href="#ch8">Chapter 8</a></dd>
+  <dt>Rate limit</dt>
+  <dd>A cap on requests per client per time window, kept in a store shared by every worker. <a class="see" href="#ch11">Chapter 11</a></dd>
+  <dt>Request id</dt>
+  <dd>An id stamped on a request at the edge, carried through every log line, response header and error body. <a class="see" href="#ch14">Chapter 14</a></dd>
+  <dt>Reverse proxy</dt>
+  <dd>A server in front of the application that terminates TLS, routes requests and serves files. <a class="see" href="#ch11">Chapter 11</a></dd>
+  <dt>Row-level security</dt>
+  <dd>Postgres policies that filter rows per transaction, so a forgotten WHERE clause returns nothing instead of leaking. <a class="see" href="#ch7">Chapter 7</a></dd>
+  <dt>Runbook</dt>
+  <dd>Written steps for an alert or a situation: what users see, what to check first, what caused it before. <a class="see" href="#ch17">Chapter 17</a></dd>
+  <dt>Server-Sent Events (SSE)</dt>
+  <dd>A one-way stream of text events from server to browser over an ordinary HTTP response. <a class="see" href="#ch10">Chapter 10</a></dd>
+  <dt>Session cookie</dt>
+  <dd>A cookie holding an opaque token that the server looks up to identify a signed-in user. <a class="see" href="#ch8">Chapter 8</a></dd>
+  <dt>SLO</dt>
+  <dd>A service level objective: a target on a measured signal over a window, such as 99.5% of requests without error over 30 days. <a class="see" href="#ch17">Chapter 17</a></dd>
+  <dt>Span</dt>
+  <dd>One timed step in a trace, with attributes; a trace is a tree of spans for one request. <a class="see" href="#ch14">Chapter 14</a></dd>
+  <dt>Statement timeout</dt>
+  <dd>A database-side limit on how long a query may run; the server stops the work itself. <a class="see" href="#ch15">Chapter 15</a></dd>
+  <dt>Walking skeleton</dt>
+  <dd>The thinnest end-to-end version of a system, such as a health endpoint deployed by the real pipeline, built before any feature. <a class="see" href="#ch19">Chapter 19</a></dd>
+  <dt>X-Forwarded-For</dt>
+  <dd>A header carrying the client's address through proxies; trustworthy only if the outermost proxy overwrites it. <a class="see" href="#ch11">Chapter 11</a></dd>
+</dl>

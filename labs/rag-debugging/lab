@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Runs lab.py inside the dev api container of your triage-assistant checkout
+# (TRIAGE_DIR; default: a checkout next to this repository): its settings, database and api.
+set -euo pipefail
+LAB=$(cd "$(dirname "$0")" && pwd)
+cd "${TRIAGE_DIR:-$LAB/../../../triage-assistant}" && test -f compose.yaml \
+  || { echo "set TRIAGE_DIR to your triage-assistant checkout" >&2; exit 2; }
+exec docker compose exec -T api python - "$@" < "$LAB/lab.py"

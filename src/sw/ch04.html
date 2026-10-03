@@ -1,0 +1,244 @@
+<section class="chapter" id="ch4">
+  <header class="ch-head">
+    <span class="ch-num">4</span>
+    <p class="eyebrow">Part II · Foundations, refreshed</p>
+    <h2>Networks: DNS, TCP, TLS and HTTP</h2>
+    <p class="lede">Every request is a stack of protocols wrapped inside each other, HTTP inside TLS inside TCP inside IP, and knowing what each layer does, and how each one fails, turns "it can't connect" from a mystery into a short checklist.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>A request goes DNS (find the address), TCP (a reliable byte stream), TLS (encryption and identity), then HTTP (the request itself).</li>
+      <li>TLS does three jobs: confidentiality, integrity and authentication. Certificates prove identity; a key agreed per session encrypts the data, so a stolen server key cannot decrypt recorded traffic.</li>
+      <li>"Connection refused" means the path works and nothing listens; a timeout means packets vanish. They point to different places.</li>
+      <li>A server bound to <code>127.0.0.1</code> accepts only local connections; inside a container that means not even through a published port.</li>
+      <li>HTTP/2 multiplexes streams over one connection; HTTP/3 moves to QUIC over UDP to stop one lost packet from stalling every stream.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">HTTPS only on login pages</td><td>HTTPS everywhere, with free automated certificates</td><td>Certificates became free and automatic; browsers mark HTTP as unsafe.</td></tr>
+      <tr><td data-label="Then">RSA key transport</td><td>Ephemeral Diffie-Hellman in TLS 1.3, giving forward secrecy</td><td>A stolen server key must not decrypt years of recorded traffic.</td></tr>
+      <tr><td data-label="Then">HTTP/1.1, six connections per site</td><td>HTTP/2 and HTTP/3 at the edge; HTTP/1.1 behind it</td><td>Multiplexing and faster handshakes for clients; simplicity inside.</td></tr>
+      <tr><td data-label="Then">A VPN to reach internal machines; ports opened for public services</td><td>Mesh networks for private access; outbound tunnels for public exposure</td><td>Nothing listens on the open internet, and each device has a stable private address.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch4-layers">A request, layer by layer</h3>
+  <figure class="fig wide" id="fig-4-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Encapsulation: an HTTP request sits inside TLS, which sits inside TCP, which sits inside IP. IP gives addresses and routing; TCP a reliable ordered byte stream, with ports choosing the program; TLS encryption, integrity and identity; HTTP the request and response.">
+      <rect class="n-soft" x="16" y="16" width="520" height="198" rx="8"/><text class="tb" x="30" y="40">IP</text><text class="ts" x="60" y="40">addresses and routing, hop by hop</text>
+      <rect class="n" x="40" y="54" width="472" height="148" rx="7"/><text class="tb" x="54" y="78">TCP</text><text class="ts" x="90" y="78">a reliable, ordered byte stream; the port picks the program</text>
+      <rect class="n-acc" x="64" y="92" width="424" height="98" rx="6"/><text class="tb" x="78" y="116">TLS</text><text class="ts" x="110" y="116">encryption, integrity, the server's identity</text>
+      <rect class="n" x="88" y="130" width="376" height="48" rx="5"/><text class="tb" x="102" y="152">HTTP</text><text class="tm" x="146" y="152">POST /api/chat/stream</text><text class="ts" x="102" y="170">the request: method, path, headers, body</text>
+      <text class="tb" x="560" y="40">Which layer failed?</text>
+      <text class="ts" x="560" y="64">IP: no route, wrong address</text>
+      <text class="ts" x="560" y="88">TCP: refused (nothing listens)</text>
+      <text class="ts" x="560" y="106">or timeout (packets dropped)</text>
+      <text class="ts" x="560" y="130">TLS: certificate name, chain,</text>
+      <text class="ts" x="560" y="148">expiry, or protocol mismatch</text>
+      <text class="ts" x="560" y="172">HTTP: a status code from the</text>
+      <text class="ts" x="560" y="190">server or a proxy</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 4.1</span>Each layer wraps the one above. Terminating TLS means decrypting it there, usually at a proxy or load balancer, with plain HTTP behind it on a private network.</figcaption>
+  </figure>
+
+  <figure class="fig wide" id="fig-4-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 400" role="img" aria-label="The first request to a site. DNS: the client asks its resolver, which asks a root server, the top-level-domain server, and the domain's authoritative server, then caches the answer for its TTL. TCP: SYN, SYN-ACK, ACK. TLS: ClientHello with the hostname in plain text (SNI); the server picks the certificate for that name and signs the handshake; the client checks the chain, the name and the expiry; both derive a session key with ephemeral Diffie-Hellman. HTTP: the encrypted request and response.">
+      <rect class="n" x="20" y="14" width="120" height="40" rx="5"/><text class="tb" x="80" y="39" text-anchor="middle">Client</text>
+      <rect class="n" x="250" y="14" width="140" height="40" rx="5"/><text class="tb" x="320" y="39" text-anchor="middle">DNS resolver</text>
+      <rect class="n" x="560" y="14" width="140" height="40" rx="5"/><text class="tb" x="630" y="39" text-anchor="middle">Server</text>
+      <line class="rule dash" x1="80" y1="54" x2="80" y2="390"/>
+      <line class="rule dash" x1="320" y1="54" x2="320" y2="120"/>
+      <line class="rule dash" x1="630" y1="54" x2="630" y2="390"/>
+
+      <text class="tl" x="700" y="84">DNS</text>
+      <line class="e" x1="80" y1="76" x2="318" y2="76" marker-end="url(#a)"/><text class="ts" x="200" y="70" text-anchor="middle">where is example.com?</text>
+      <path class="e dash" d="M320,82 h60 v20 h-58" marker-end="url(#a)"/><text class="ts" x="388" y="96">root, top-level domain, authoritative</text>
+      <line class="e dash" x1="320" y1="116" x2="82" y2="116" marker-end="url(#a)"/><text class="ts" x="200" y="110" text-anchor="middle">an address, cached for its TTL</text>
+
+      <text class="tl" x="700" y="150">TCP</text>
+      <line class="e" x1="80" y1="142" x2="628" y2="142" marker-end="url(#a)"/><text class="ts" x="355" y="136" text-anchor="middle">SYN</text>
+      <line class="e" x1="630" y1="160" x2="82" y2="160" marker-end="url(#a)"/><text class="ts" x="355" y="154" text-anchor="middle">SYN-ACK</text>
+      <line class="e" x1="80" y1="178" x2="628" y2="178" marker-end="url(#a)"/><text class="ts" x="355" y="172" text-anchor="middle">ACK</text>
+
+      <text class="tl" x="700" y="230">TLS</text>
+      <line class="e" x1="80" y1="210" x2="628" y2="210" marker-end="url(#a)"/><text class="ts" x="355" y="204" text-anchor="middle">ClientHello: ciphers, and the hostname in plain text (SNI)</text>
+      <line class="e" x1="630" y1="236" x2="82" y2="236" marker-end="url(#a)"/><text class="ts" x="355" y="230" text-anchor="middle">certificate for that name; handshake signed with the private key</text>
+      <rect class="n-soft" x="92" y="246" width="250" height="30" rx="4"/><text class="ts" x="102" y="265">client checks: chain to a trusted root, name, expiry</text>
+      <line class="e-acc" x1="80" y1="290" x2="628" y2="290" marker-end="url(#a-acc)"/>
+      <line class="e-acc" x1="630" y1="300" x2="82" y2="300" marker-end="url(#a-acc)"/>
+      <text class="ts" x="355" y="318" text-anchor="middle">both derive the same session key (ephemeral Diffie-Hellman); it is never sent</text>
+
+      <text class="tl" x="700" y="362">HTTP</text>
+      <line class="e-good" x1="80" y1="346" x2="628" y2="346" marker-end="url(#a-good)"/><text class="ts" x="355" y="340" text-anchor="middle">request, encrypted with the session key</text>
+      <line class="e-good" x1="630" y1="372" x2="82" y2="372" marker-end="url(#a-good)"/><text class="ts" x="355" y="366" text-anchor="middle">response</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 4.2</span>The first request to a site, in order. A raw IP address skips DNS; a kept-alive connection skips TCP and TLS for later requests. SNI is why one address can serve many certificates, and it is sent before anything is encrypted.</figcaption>
+  </figure>
+
+  <h3 id="ch4-tls">What TLS actually guarantees</h3>
+  <p>Encryption solves three separate problems: <strong>confidentiality</strong> (nobody can read it), <strong>integrity</strong> (nobody can change it unnoticed) and <strong>authentication</strong> (the server is who it claims). TLS combines four tools to get all three.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Tool</th><th>What it does</th><th>Its role in TLS</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Tool">Symmetric encryption</td><td data-label="What">One shared key encrypts and decrypts; fast</td><td data-label="Role">Carries all the data, with the session key</td></tr>
+        <tr><td data-label="Tool">Asymmetric key pairs</td><td data-label="What">A public key anyone may have, a private key only the owner has; slow</td><td data-label="Role">The server signs the handshake to prove it holds the private key</td></tr>
+        <tr><td data-label="Tool">Key agreement (Diffie-Hellman)</td><td data-label="What">Two strangers derive the same secret over an open channel</td><td data-label="Role">Produces the session key without ever sending it</td></tr>
+        <tr><td data-label="Tool">Certificates</td><td data-label="What">A public key and a domain name, signed by a certificate authority whose root ships with the operating system or browser</td><td data-label="Role">Answer "whose public key is this?"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure class="fig wide" id="fig-4-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 240" role="img" aria-label="Key agreement as mixing paint. Both sides start from a public color. Each adds a secret color and sends the mixture. Each adds its own secret to the other's mixture. Both end with the same color; an eavesdropper who saw both mixtures cannot unmix them.">
+      <text class="tb" x="16" y="26">Alice</text>
+      <text class="tb" x="804" y="26" text-anchor="end">Bob</text>
+      <text class="tb" x="410" y="26" text-anchor="middle">On the open network</text>
+      <circle class="n-warn" cx="60" cy="70" r="18"/><text class="ts" x="90" y="74">public color</text>
+      <circle class="n-warn" cx="760" cy="70" r="18"/><text class="ts" x="730" y="74" text-anchor="end">public color</text>
+      <circle class="n-acc" cx="60" cy="120" r="18"/><text class="ts" x="90" y="124">+ her secret</text>
+      <circle class="n-good" cx="760" cy="120" r="18"/><text class="ts" x="730" y="124" text-anchor="end">+ his secret</text>
+      <rect class="n" x="330" y="92" width="160" height="44" rx="5"/><text class="ts" x="410" y="111" text-anchor="middle">both mixtures travel</text><text class="ts" x="410" y="127" text-anchor="middle">in the open</text>
+      <line class="e" x1="178" y1="120" x2="328" y2="114" marker-end="url(#a)"/>
+      <line class="e" x1="642" y1="120" x2="492" y2="114" marker-end="url(#a)"/>
+      <circle class="fill-acc" cx="60" cy="190" r="20"/><text class="ts" x="90" y="186">her secret + his mixture</text><text class="ts tb" x="90" y="202">= the shared key</text>
+      <circle class="fill-acc" cx="760" cy="190" r="20"/><text class="ts" x="730" y="186" text-anchor="end">his secret + her mixture</text><text class="ts tb" x="730" y="202" text-anchor="end">= the same key</text>
+      <text class="ts tr" x="410" y="186" text-anchor="middle">an eavesdropper sees both mixtures</text>
+      <text class="ts tr" x="410" y="202" text-anchor="middle">but cannot unmix them</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 4.3</span>The paint analogy for Diffie-Hellman. The key is never sent: each side computes it. Because the secrets are new for every session, recording traffic and later stealing the server's private key decrypts nothing: that is forward secrecy, which the older RSA key transport lacked.</figcaption>
+  </figure>
+
+  <p>Why a certificate cannot decrypt anything: it holds only the public key. The private key never leaves the server, and the session key does the encrypting. A machine in the middle cannot sign the handshake as <code>example.com</code> without that private key, so the client's checks fail. When both sides present certificates, the connection is <strong>mutual TLS</strong>, common between services.</p>
+  <p>Three related distinctions come up constantly. <strong>In transit</strong> means TLS, SSH or a VPN; <strong>at rest</strong> means disks, databases and object storage, usually with <strong>envelope encryption</strong>: a data key encrypts the data, and a master key in a key management service encrypts the data key. <strong>Encryption</strong> is reversible with a key; <strong>hashing</strong> is one-way (passwords are stored as salted hashes, never encrypted); <strong>encoding</strong>, such as base64, is formatting, not secrecy.</p>
+
+  <h3 id="ch4-http">HTTP: versions and status codes</h3>
+  <p>HTTP/1.1 sends one request at a time per connection, so browsers open about six. <strong>HTTP/2</strong> is binary and multiplexes many streams over one TCP connection, with header compression, but one lost packet stalls every stream on it (TCP's head-of-line blocking). <strong>HTTP/3</strong> runs over <strong>QUIC</strong>, built on UDP: loss affects only its own stream, TLS 1.3 is built in, handshakes are faster, and connections survive a change of network. The common setup is HTTP/2 or 3 between clients and the edge, and HTTP/1.1 behind it. gRPC needs HTTP/2.</p>
+
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Status</th><th>Meaning, and what it usually tells you</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Status">200, 201, 202, 204</td><td data-label="Meaning">OK; created; accepted for later processing (a webhook receiver or a queued job); no content</td></tr>
+        <tr><td data-label="Status">301, 302, 304</td><td data-label="Meaning">Moved permanently; temporarily; not modified, so the cached copy is still valid</td></tr>
+        <tr><td data-label="Status">400, 422</td><td data-label="Meaning">Malformed request; a validation failure (FastAPI's choice, not 400)</td></tr>
+        <tr><td data-label="Status">401, 403, 404</td><td data-label="Meaning">Not authenticated ("who are you?"); authenticated but not allowed; not found. Return 404, not 403, for things a caller may not even know exist</td></tr>
+        <tr><td data-label="Status">405, 409, 429</td><td data-label="Meaning">The path exists but not with that method; a conflict; rate limited</td></tr>
+        <tr><td data-label="Status">500</td><td data-label="Meaning">An unhandled exception in the application</td></tr>
+        <tr><td data-label="Status">502</td><td data-label="Meaning">The proxy got no valid response: the backend is down or crashed</td></tr>
+        <tr><td data-label="Status">503</td><td data-label="Meaning">Deliberately unavailable: overloaded, draining, or a dependency is down</td></tr>
+        <tr><td data-label="Status">504</td><td data-label="Meaning">The proxy gave up waiting: the backend is up, but too slow</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch4-reach">"I can't reach it": a method</h3>
+  <figure class="fig wide" id="fig-4-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Isolating an unreachable service, from the source outward: is the app up and bound to the right interface (ss -ltnp, and curl from the box itself proves the app); then the firewall; then a test from the client; then a control test against a service known to work. Connection refused means nothing listens; a timeout means packets are dropped.">
+      <rect class="n-acc" x="16" y="30" width="180" height="84" rx="6"/><text class="tb" x="28" y="54">1  The app itself</text><text class="ts" x="28" y="74">listening, on the right</text><text class="ts" x="28" y="90">interface? curl from the</text><text class="ts" x="28" y="106">box proves the app only</text>
+      <rect class="n" x="220" y="30" width="180" height="84" rx="6"/><text class="tb" x="232" y="54">2  The firewall</text><text class="ts" x="232" y="74">host rules, security</text><text class="ts" x="232" y="90">groups, published ports</text>
+      <rect class="n" x="424" y="30" width="180" height="84" rx="6"/><text class="tb" x="436" y="54">3  From the client</text><text class="ts" x="436" y="74">the same test from where</text><text class="ts" x="436" y="90">the user actually is</text>
+      <rect class="n" x="628" y="30" width="176" height="84" rx="6"/><text class="tb" x="640" y="54">4  A control test</text><text class="ts" x="640" y="74">a service known to work,</text><text class="ts" x="640" y="90">along the same path</text>
+      <line class="e" x1="197" y1="72" x2="218" y2="72" marker-end="url(#a)"/>
+      <line class="e" x1="401" y1="72" x2="422" y2="72" marker-end="url(#a)"/>
+      <line class="e" x1="605" y1="72" x2="626" y2="72" marker-end="url(#a)"/>
+      <rect class="n-warn" x="16" y="140" width="390" height="74" rx="6"/><text class="tb" x="28" y="162">Connection refused</text><text class="ts" x="28" y="182">a packet arrived and was rejected: the path</text><text class="ts" x="28" y="198">works and nothing listens there. Look inside.</text>
+      <rect class="n-bad" x="420" y="140" width="384" height="74" rx="6"/><text class="tb" x="432" y="162">Timeout</text><text class="ts" x="432" y="182">the packet vanished: a firewall, a frozen</text><text class="ts" x="432" y="198">process, a wrong route. Look along the path.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 4.4</span>Test from the source outward, and note where each command ran. A suspiciously perfect result, such as a 0.02 ms reply, usually means the test ran on the wrong machine.</figcaption>
+  </figure>
+
+  <p>The most common single cause is the bind address. <code>127.0.0.1</code> (the loopback interface) never leaves the machine, so a server bound there accepts only local connections; <code>0.0.0.0</code> listens on every interface. Inside a container, a server bound to loopback is unreachable even through a published port, because the published port arrives on the container's own network interface.</p>
+  <p>The opposite mistake is just as common in development: publishing a port on all interfaces. Docker's published ports are inserted into the host's packet filtering before the host firewall's rules, so a port published on <code>0.0.0.0</code> is reachable from the network even when the host firewall says otherwise.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/compose.override.yaml#L1-L14">compose.override.yaml</a><span class="lines">development ports bound to loopback</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The development overlay publishes the api's port only on the host's loopback address by default, and says why in its first lines.</p>
+        <ul class="notice">
+          <li>A developer's stack is not reachable from the office network unless they choose so with <code>BIND_ADDR</code>.</li>
+          <li>The reason given is the firewall trap: published ports bypass host firewalls such as ufw.</li>
+          <li>In the production shape only the HTTPS edge is published at all; the api, database and cache have no host ports.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="compose.override.yaml" data-lines="1-14"><code class="language-yaml"># Development overrides, merged automatically by plain `docker compose ...`.
+# Source is bind-mounted for hot reload. Ports bind to 127.0.0.1 unless
+# BIND_ADDR says otherwise, so a dev stack is not reachable from the network
+# (published ports bypass host firewalls such as ufw).
+services:
+  api:
+    build:
+      target: dev
+      # Your UID and GID for the image's `dev` user (make exports them).
+      args:
+        DEV_UID: ${DEV_UID:-1000}
+        DEV_GID: ${DEV_GID:-1000}
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:${API_PORT:-8010}:8010"</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h4>Private access without open ports</h4>
+  <p>Two tools changed how small teams reach machines. <strong>Tailscale</strong> builds a private WireGuard mesh: every device gets a stable private address, and nothing is exposed publicly. <strong>Cloudflare Tunnel</strong> runs a small agent on the machine that opens an outbound connection to Cloudflare, which maps public hostnames to local ports, so the machine never listens on the internet at all.</p>
+  <p>Below HTTP, two transports remain. <strong>TCP</strong> is reliable and ordered, with a handshake, retransmission and congestion control. <strong>UDP</strong> is fire-and-forget datagrams with none of that: low overhead for DNS, video, games and QUIC.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Refused means nothing is listening; a timeout means something on the path drops packets. We test from the server outward and say where each test ran."</p>
+    <p>"TLS 1.3 uses ephemeral key agreement, so even if the server's key leaked, recorded traffic stays private."</p>
+  </aside>
+
+  <h3 id="ch4-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">The service works on the box but nobody else can reach it</td><td data-label="Cause">It is bound to <code>127.0.0.1</code></td><td data-label="Fix">Bind to <code>0.0.0.0</code> inside the container, and publish deliberately.</td></tr>
+        <tr><td data-label="Symptom">A port the firewall blocks is reachable from the network</td><td data-label="Cause">Docker's published ports bypass the host firewall</td><td data-label="Fix">Publish on loopback, or filter in Docker's own chain.</td></tr>
+        <tr><td data-label="Symptom">A client reports a name-resolution error, not "refused", when a service is down</td><td data-label="Cause">A stopped container disappears from Docker's internal DNS</td><td data-label="Fix">Treat resolution errors as "unavailable" and answer 503.</td></tr>
+        <tr><td data-label="Symptom">A database came back but clients failed for another 15 seconds</td><td data-label="Cause">The connection pooler cached the failed DNS answer</td><td data-label="Fix">Lower the negative DNS cache time.</td></tr>
+        <tr><td data-label="Symptom">Sequential test clients look like one client</td><td data-label="Cause">Docker reuses the lowest free IP address</td><td data-label="Fix">Run clients concurrently, or identify them some other way.</td></tr>
+        <tr><td data-label="Symptom">Every local port suddenly insists on HTTPS</td><td data-label="Cause">An HSTS header was sent for <code>localhost</code></td><td data-label="Fix">Disable HSTS locally; set a long max-age only for a real domain.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch4-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What is the difference between "connection refused" and a timeout, and where does each point you?</p>
+      <details class="ans"><summary>Answer</summary><p>Refused means a packet reached the machine and was rejected, so the path works and nothing listens on that port: look inside the host or container. A timeout means packets vanished: look along the path, at firewalls, routes, or a frozen process.</p></details>
+    </li>
+    <li>
+      <p>Why can a public certificate not be used to decrypt traffic?</p>
+      <details class="ans"><summary>Answer</summary><p>It contains only the public key. The data is encrypted with a session key agreed per connection, and proving identity needs the private key, which never leaves the server.</p></details>
+    </li>
+    <li>
+      <p>What is forward secrecy, and what provides it?</p>
+      <details class="ans"><summary>Answer</summary><p>The property that a later theft of the server's private key cannot decrypt traffic recorded earlier. It comes from ephemeral Diffie-Hellman key agreement: a new secret for every session, never stored.</p></details>
+    </li>
+    <li>
+      <p>A proxy returns 502 and later 504. What does each suggest about the backend?</p>
+      <details class="ans"><summary>Answer</summary><p>502: the proxy got no valid response, so the backend is down or crashed. 504: the proxy gave up waiting, so the backend is up but too slow.</p></details>
+    </li>
+  </ol>
+</section>

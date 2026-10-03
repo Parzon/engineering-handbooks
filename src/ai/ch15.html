@@ -1,0 +1,197 @@
+<section class="chapter" id="ch15">
+  <header class="ch-head">
+    <span class="ch-num">15</span>
+    <p class="eyebrow">Part VIII · Architecture and leadership</p>
+    <h2>Making and recording decisions</h2>
+    <p class="lede">A good architecture decision starts from measurable requirements, compares real options including the simplest one, states its trade-offs plainly, and names the measurable trigger that would reopen it; writing it down is what lets the next person trust it or change it.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Think it through in order: problem, constraints, requirements, options, decision, trade-offs, risks, operations, and when to revisit.</li>
+      <li>A PRD says what and why; an RFC proposes how and gathers review before building; an ADR records a decision made, kept forever and superseded rather than edited.</li>
+      <li>What decides most choices: the requirements, the team's ability to run it, the cost at the expected scale, and how hard it is to reverse.</li>
+      <li>Cheap-to-reverse decisions can be made fast; expensive ones deserve an RFC.</li>
+      <li>Each recurring AI choice has a default and evidence that flips it.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Architecture documents written up front, rarely updated</td><td>Short decision records in the repository, one per decision</td><td>Decisions are reviewed with the code and found where the code is.</td></tr>
+      <tr><td data-label="Then">Decisions justified by best practice</td><td>Decisions justified by measured requirements, with a trigger to revisit</td><td>Today's right answer changes with traffic, models and prices.</td></tr>
+      <tr><td data-label="Then">Design reviews of finished work</td><td>A proposal reviewed before the build</td><td>Review is cheapest before anything exists.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch15-record">A decision, in the order you think it through</h3>
+  <figure class="fig wide" id="fig-15-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Nine parts. Problem: what hurts, for whom, with evidence. Constraints: what cannot change, such as budget, data residency, skills, deadlines and existing platforms. Requirements: measurable, must-have and nice-to-have. Options: at least two real ones, including the simplest thing or doing nothing. Decision and why: the requirements that decided it. Trade-offs: what we give up. Risks and how we would notice them. Operations: who runs it, what is monitored, what it costs a month, how it is rolled back. Revisit when: the measurable trigger that reopens it.">
+      <g class="ts">
+      <rect class="n" x="16" y="16" width="250" height="56" rx="5"/><text x="28" y="38" class="tb">1 Problem</text><text x="28" y="58">what hurts, for whom, evidence</text>
+      <rect class="n" x="285" y="16" width="250" height="56" rx="5"/><text x="297" y="38" class="tb">2 Constraints</text><text x="297" y="58">budget, residency, skills, dates</text>
+      <rect class="n-acc" x="554" y="16" width="250" height="56" rx="5"/><text x="566" y="38" class="tb">3 Requirements</text><text x="566" y="58">measurable: p95 &lt; 3 s, 99.5%</text>
+      <rect class="n" x="16" y="84" width="250" height="56" rx="5"/><text x="28" y="106" class="tb">4 Options</text><text x="28" y="126">two real ones, plus the simplest</text>
+      <rect class="n-acc" x="285" y="84" width="250" height="56" rx="5"/><text x="297" y="106" class="tb">5 Decision, and why</text><text x="297" y="126">the requirements that decided</text>
+      <rect class="n" x="554" y="84" width="250" height="56" rx="5"/><text x="566" y="106" class="tb">6 Trade-offs</text><text x="566" y="126">what we give up, said plainly</text>
+      <rect class="n" x="16" y="152" width="250" height="56" rx="5"/><text x="28" y="174" class="tb">7 Risks</text><text x="28" y="194">and how we would notice them</text>
+      <rect class="n" x="285" y="152" width="250" height="56" rx="5"/><text x="297" y="174" class="tb">8 Operations</text><text x="297" y="194">who runs it, cost, rollback</text>
+      <rect class="n-good" x="554" y="152" width="250" height="56" rx="5"/><text x="566" y="174" class="tb">9 Revisit when</text><text x="566" y="194">a measurable trigger</text>
+      </g>
+      <text class="ts" x="16" y="238"><tspan class="tb">Revisit when</tspan> is the part most often missing: "traffic grows tenfold", "a tenant brings its own keys", "a model fits one GPU".</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 15.1</span>The parts of a decision record. Without the last one, a sound decision lives on long after its reasons have gone.</figcaption>
+  </figure>
+
+  <figure class="fig wide" id="fig-15-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Three documents with three jobs. A PRD: what and why, for whom, and how success is measured, before building. An RFC: should we, and how, with the technical plan, reviewed before a non-trivial change. An ADR: a decision already made, short, kept forever, superseded by a new one rather than edited. In the reference repository, RFC-0001 proposed answers grounded in the team's runbooks; it was accepted and built; its decisions became ADR-0017; and an outcome section added to the RFC records what changed on the way and the costs measured.">
+      <rect class="n" x="16" y="30" width="230" height="96" rx="6"/><text class="tb" x="28" y="54">PRD</text><text class="ts" x="28" y="76">what, for whom, why, and</text><text class="ts" x="28" y="92">how success is measured</text><text class="ts tmu" x="28" y="114">before building</text>
+      <rect class="n-acc" x="296" y="30" width="230" height="96" rx="6"/><text class="tb" x="308" y="54">RFC</text><text class="ts" x="308" y="76">should we, and how: the plan,</text><text class="ts" x="308" y="92">alternatives, trade-offs</text><text class="ts tmu" x="308" y="114">reviewed before the build</text>
+      <rect class="n-good" x="576" y="30" width="228" height="96" rx="6"/><text class="tb" x="588" y="54">ADR</text><text class="ts" x="588" y="76">a decision made; short;</text><text class="ts" x="588" y="92">superseded, never edited</text><text class="ts tmu" x="588" y="114">kept forever</text>
+      <line class="e" x1="247" y1="78" x2="294" y2="78" marker-end="url(#a)"/><line class="e" x1="527" y1="78" x2="574" y2="78" marker-end="url(#a)"/><text class="ts" x="551" y="70" text-anchor="middle">built</text>
+      <text class="ts" x="16" y="164"><tspan class="tb">In the reference repository:</tspan> the RFC for answers grounded in runbooks was reviewed, accepted and built; its decisions</text>
+      <text class="ts" x="16" y="182">became the retrieval ADR; and an outcome section on the RFC records what changed on the way (numbered citations, four</text>
+      <text class="ts" x="16" y="200">sections per prompt, an explicit team filter, redaction) and the costs it had asked to measure.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 15.2</span>Which document for which job. Most decisions need only an ADR; an RFC is for changes worth reviewing before any code exists.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/docs/rfc/TEMPLATE.md#L1-L29">docs/rfc/TEMPLATE.md</a><span class="lines">the proposal template</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The template every proposal starts from. Its prompts are the questions reviewers ask anyway, asked before the work starts.</p>
+        <ul class="notice">
+          <li>Alternatives must say specifically why not, which stops the "we considered everything" paragraph.</li>
+          <li>Trade-offs ask what gets harder and what it costs, not only what gets better.</li>
+          <li>A rollout plan belongs in the proposal, so its rollback is designed rather than improvised.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="docs/rfc/TEMPLATE.md" data-lines="1-29"><code class="language-markdown"># RFC: &lt;title&gt;
+
+**Status:** draft | under review | accepted | rejected
+**Author:**
+**Reviewers:**
+**Date:**
+**Related PRD:**
+
+## Summary
+
+One paragraph.
+
+## Motivation
+
+Why does this need solving? What breaks, or stays broken, if we don't?
+
+## Proposed approach
+
+## Alternatives considered
+
+What else was on the table, and specifically why not.
+
+## Tradeoffs
+
+What this makes easier, what it makes harder, what it costs.
+
+## Open questions
+
+## Rollout plan</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch15-criteria">What decides most choices</h3>
+  <figure class="fig wide" id="fig-15-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Four criteria in order: the requirements, such as latency, freshness, isolation and compliance; the team's ability to run it; the cost at the expected scale; how hard it is to reverse. And a two-by-two of reversibility and impact: cheap to reverse and low impact, decide fast; cheap to reverse and high impact, decide fast, measure, be ready to roll back; expensive to reverse and low impact, write an ADR; expensive to reverse and high impact, write an RFC and get review before building.">
+      <text class="tl" x="16" y="22">IN ORDER</text>
+      <g class="ts">
+      <rect class="n-acc" x="16" y="32" width="330" height="40" rx="4"/><text x="28" y="56"><tspan class="tb">1</tspan> the requirements: latency, freshness, isolation</text>
+      <rect class="n" x="16" y="78" width="330" height="40" rx="4"/><text x="28" y="102"><tspan class="tb">2</tspan> the team's ability to run it</text>
+      <rect class="n" x="16" y="124" width="330" height="40" rx="4"/><text x="28" y="148"><tspan class="tb">3</tspan> the cost at the expected scale</text>
+      <rect class="n" x="16" y="170" width="330" height="40" rx="4"/><text x="28" y="194"><tspan class="tb">4</tspan> how hard it is to reverse</text>
+      </g>
+      <text class="tl" x="400" y="22">HOW MUCH PROCESS</text>
+      <g class="ts">
+      <rect class="n-good" x="470" y="32" width="160" height="80" rx="5"/><text x="482" y="56" class="tb">decide fast</text><text x="482" y="76">cheap to reverse,</text><text x="482" y="92">low impact</text>
+      <rect class="n-soft" x="640" y="32" width="164" height="80" rx="5"/><text x="652" y="56" class="tb">decide, measure</text><text x="652" y="76">cheap to reverse,</text><text x="652" y="92">high impact</text>
+      <rect class="n" x="470" y="122" width="160" height="80" rx="5"/><text x="482" y="146" class="tb">write an ADR</text><text x="482" y="166">hard to reverse,</text><text x="482" y="182">low impact</text>
+      <rect class="n-warn" x="640" y="122" width="164" height="80" rx="5"/><text x="652" y="146" class="tb">write an RFC</text><text x="652" y="166">hard to reverse,</text><text x="652" y="182">high impact</text>
+      <text x="400" y="76">cheap</text><text x="400" y="92">to undo</text><text x="400" y="166">hard</text><text x="400" y="182">to undo</text>
+      <text x="550" y="228" text-anchor="middle">lower impact</text><text x="722" y="228" text-anchor="middle">higher impact</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 15.3</span>The criteria behind most technical choices, and how much process each kind of decision deserves. Settle disagreements by agreeing the requirements first, then comparing options against them; run a spike when facts are missing.</figcaption>
+  </figure>
+
+  <h3 id="ch15-choices">The recurring AI choices</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Choice</th><th>Default</th><th>Switch when</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Choice">pgvector or a vector database</td><td data-label="Default">pgvector: one system, transactions, row-level security, joins</td><td data-label="Switch when">Hundreds of millions of vectors, measured latency or recall problems, filtering it cannot serve</td></tr>
+        <tr><td data-label="Choice">Synchronous or asynchronous</td><td data-label="Default">Synchronous, while the answer is needed now and comes in seconds</td><td data-label="Switch when">The work outlasts a request, must survive restarts, or is retried: a queue and a job id (Chapter 11)</td></tr>
+        <tr><td data-label="Choice">Serverless or containers</td><td data-label="Default">Containers on a managed platform</td><td data-label="Switch when">Short, spiky, stateless work suits functions; GPUs, long streams and steady load suit containers or VMs</td></tr>
+        <tr><td data-label="Choice">Monolith or services</td><td data-label="Default">A modular monolith</td><td data-label="Switch when">A part with its own scaling profile, deploy cadence or failure domain</td></tr>
+        <tr><td data-label="Choice">Workflow or agent</td><td data-label="Default">A workflow: the steps are known</td><td data-label="Switch when">The steps depend on what earlier steps found, and evals show the agent pays (Chapter 6)</td></tr>
+        <tr><td data-label="Choice">One agent or several</td><td data-label="Default">One agent with few, distinct tools</td><td data-label="Switch when">Context or tools outgrow one agent, or subtasks run in parallel, at several times the tokens</td></tr>
+        <tr><td data-label="Choice">Managed model API or self-hosted</td><td data-label="Default">The API</td><td data-label="Switch when">Data may not leave, sustained load keeps GPUs busy, or a fine-tuned open model is required (Chapter 3)</td></tr>
+        <tr><td data-label="Choice">Batch or streaming</td><td data-label="Default">Batch</td><td data-label="Switch when">The use needs data fresher than the batch interval (Chapter 14)</td></tr>
+        <tr><td data-label="Choice">SQL or NoSQL</td><td data-label="Default">SQL (Postgres)</td><td data-label="Switch when">A key-value access pattern at a scale one database cannot take, or records with no common shape</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p data-adr="ADR-0001">The reference repository shows these defaults chosen and recorded: its decision records cover, among others, the standard shape of every project, retrieval in Postgres rather than a separate store, the agent beside the pipeline, the model behind one seam, and the monolith with named signals for what would be split first (Handbook 2, Chapter 2). Each states the alternatives it rejected and why.</p>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"I'd write it as a decision record: the measurable requirements, two real options including the simplest, the trade-offs, how we'd run it, and the trigger that would make us revisit it."</p>
+    <p>"Our default is pgvector in Postgres; we'd move to a vector database at hundreds of millions of vectors or a filtering need it can't serve, and we'd measure that first."</p>
+  </aside>
+
+  <h3 id="ch15-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A decision outlives its reasons</td><td data-label="Cause">No "revisit when" trigger</td><td data-label="Fix">Name a measurable trigger in every record.</td></tr>
+        <tr><td data-label="Symptom">An old ADR was quietly rewritten</td><td data-label="Cause">Records edited after merge</td><td data-label="Fix">Supersede with a new record; never edit a merged one.</td></tr>
+        <tr><td data-label="Symptom">A debate goes in circles</td><td data-label="Cause">Options compared before the requirements were agreed</td><td data-label="Fix">Agree requirements first; spike to get missing facts.</td></tr>
+        <tr><td data-label="Symptom">"We considered everything" with no detail</td><td data-label="Cause">Alternatives without reasons</td><td data-label="Fix">Each alternative says specifically why not.</td></tr>
+        <tr><td data-label="Symptom">An expensive choice was made in a chat thread</td><td data-label="Cause">No threshold for review</td><td data-label="Fix">Hard-to-reverse, high-impact decisions go through an RFC.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch15-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>Answers must come from 40 million document clauses, filtered by client and jurisdiction, in under two seconds. pgvector or a vector database, and what do you measure first?</p>
+      <details class="ans"><summary>Answer</summary><p>Start from pgvector unless a measurement rules it out. First measure filtered recall and latency at that scale, with realistic filter selectivity (the overfiltering trap is the risk for small clients), and index memory. Move to a dedicated store, or partition per client, if the filtered queries cannot meet two seconds with acceptable recall.</p></details>
+    </li>
+    <li>
+      <p>Summarizing a 300-page filing takes four minutes. What does the API return, where does the work run, and how does the user get the result?</p>
+      <details class="ans"><summary>Answer</summary><p>The API returns 202 with a job id at once; a worker behind a queue does the work with a lease, retries and a dead-letter queue; the user polls the job or is notified (a webhook, an event, a message) when it is done.</p></details>
+    </li>
+    <li>
+      <p>A client's data may not leave the EU, and they want an AI feature in six weeks. Managed API in an EU region, or self-hosted?</p>
+      <details class="ans"><summary>Answer</summary><p>A managed API in an EU region, if its terms guarantee processing and retention in the region and no training on the data; six weeks rules out building a serving stack. Self-hosting becomes the answer if no provider's terms satisfy the requirement, or sustained load would keep GPUs busy.</p></details>
+    </li>
+    <li>
+      <p>Product asks for an agent that handles support tickets. When would you ship a workflow instead?</p>
+      <details class="ans"><summary>Answer</summary><p>When the steps are known (classify, look up, draft a reply for a person), when results must be predictable and auditable, or when cost and latency matter. Switch to an agent only if evals on real tickets show it handles cases the workflow cannot, at an acceptable cost.</p></details>
+    </li>
+  </ol>
+</section>

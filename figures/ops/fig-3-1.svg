@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 312" role="img" aria-label="A pull request fans out to six parallel jobs: lint, test-api, build, security, web-build and e2e. All six are required checks; when they are green and the review is approved, the merge is allowed."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #146b55; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e2f1eb; stroke: #146b55; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #146b55; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #146b55; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #146b55; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="312" fill="#ffffff"/>
+      <rect class="n-acc" x="16" y="118" width="128" height="64" rx="6"/>
+      <text class="tb" x="80" y="146" text-anchor="middle">Pull request</text>
+      <text class="ts" x="80" y="164" text-anchor="middle">every push to it</text>
+
+      <rect class="n" x="214" y="12" width="300" height="38" rx="5"/>
+      <text class="tm tb" x="226" y="36">lint</text><text class="ts" x="276" y="36">ruff, format, mypy, alert-rule tests, shell</text>
+      <rect class="n" x="214" y="58" width="300" height="38" rx="5"/>
+      <text class="tm tb" x="226" y="82">test-api</text><text class="ts" x="296" y="82">real Postgres stack, migrations, pytest</text>
+      <rect class="n" x="214" y="104" width="300" height="38" rx="5"/>
+      <text class="tm tb" x="226" y="128">build</text><text class="ts" x="276" y="128">production image: non-root, no dev tools</text>
+      <rect class="n" x="214" y="150" width="300" height="38" rx="5"/>
+      <text class="tm tb" x="226" y="174">security</text><text class="ts" x="296" y="174">secrets in every commit; image CVEs</text>
+      <rect class="n" x="214" y="196" width="300" height="38" rx="5"/>
+      <text class="tm tb" x="226" y="220">web-build</text><text class="ts" x="306" y="220">lint, unit tests, build, nginx config</text>
+      <rect class="n" x="214" y="242" width="300" height="38" rx="5"/>
+      <text class="tm tb" x="226" y="266">e2e</text><text class="ts" x="266" y="266">production stack, real browser tests</text>
+
+      <path class="e" d="M145,150 C180,150 180,31 212,31" marker-end="url(#a)"/>
+      <path class="e" d="M145,150 C180,150 180,77 212,77" marker-end="url(#a)"/>
+      <path class="e" d="M145,150 C180,150 180,123 212,123" marker-end="url(#a)"/>
+      <path class="e" d="M145,150 C180,150 180,169 212,169" marker-end="url(#a)"/>
+      <path class="e" d="M145,150 C180,150 180,215 212,215" marker-end="url(#a)"/>
+      <path class="e" d="M145,150 C180,150 180,261 212,261" marker-end="url(#a)"/>
+
+      <path class="e-good" d="M515,31 C560,31 560,150 600,150"/>
+      <path class="e-good" d="M515,77 C560,77 560,150 600,150"/>
+      <path class="e-good" d="M515,123 C560,123 560,150 600,150"/>
+      <path class="e-good" d="M515,169 C560,169 560,150 600,150"/>
+      <path class="e-good" d="M515,215 C560,215 560,150 600,150"/>
+      <path class="e-good" d="M515,261 C560,261 560,150 600,150"/>
+      <line class="e-good" x1="600" y1="150" x2="640" y2="150" marker-end="url(#a-good)"/>
+      <rect class="n-good" x="642" y="104" width="164" height="92" rx="6"/>
+      <text class="tb" x="724" y="132" text-anchor="middle">Merge allowed</text>
+      <text class="ts" x="724" y="152" text-anchor="middle">six required checks</text>
+      <text class="ts" x="724" y="168" text-anchor="middle">green, plus a code</text>
+      <text class="ts" x="724" y="184" text-anchor="middle">owner's approval</text>
+      <text class="ts" x="514" y="304" text-anchor="end">the security scan runs again at release, for vulnerabilities published since the merge</text>
+    </svg>

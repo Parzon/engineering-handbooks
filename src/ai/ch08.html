@@ -1,0 +1,226 @@
+<section class="chapter" id="ch8">
+  <header class="ch-head">
+    <span class="ch-num">8</span>
+    <p class="eyebrow">Part IV · Proving it works</p>
+    <h2>AI observability</h2>
+    <p class="lede">AI quality is per answer, so the trace of one request is the unit of diagnosis: it records what the model was given, how it was asked and what came back, while keeping the content itself out of the telemetry by default.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Trace the chain: request, retrieval (embed, search), prompt, model call, tool calls, response; one span per step, one trace per request.</li>
+      <li>OpenTelemetry's GenAI conventions name the spans and attributes: models, tokens, finish reasons, time to first chunk, prompt version.</li>
+      <li>Record enough to explain an answer later without storing it: ids, counts, ranks, hashes, versions.</li>
+      <li>The dangerous failures are silent: the request succeeds, the answer reads well, and only the trace shows the missing section.</li>
+      <li>Telemetry is a copy of the data. Content is opt-in, and a trace store ignores tenancy.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Logging the request and the response</td><td>Spans with ids, counts and versions; content only by explicit choice</td><td>Prompts and answers are the most sensitive data a system holds.</td></tr>
+      <tr><td data-label="Then">Latency as one number</td><td>Time to first chunk, time to first answer token, total</td><td>A cold model and a thinking model look the same in one number.</td></tr>
+      <tr><td data-label="Then">Vendor-specific LLM monitoring</td><td>OpenTelemetry's GenAI semantic conventions</td><td>One vocabulary across providers and backends, though still marked experimental.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch8-trace">One question, one trace</h3>
+  <figure class="fig wide" id="fig-8-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="The trace of one question. The request span carries how many alerts and sections the prompt held, how many credentials were redacted, the outcome, retrieval mode and citations. Under it: SQL for the session and row-level security settings; a retrieval span with the mode, the embedding key and each document's id, fused score, keyword rank, semantic rank and distance; under retrieval, an embeddings span and the hybrid search SQL; the alerts query; and the model span with the prompt name, version and hash, the output limit and reasoning level, the model that answered, time to first chunk, a first token event, token counts, finish reasons and outcome.">
+      <g class="ts">
+      <rect class="n-acc" x="16" y="16" width="380" height="34" rx="4"/><text x="28" y="38"><tspan class="tb">POST /chat/stream</tspan>: the request</text>
+      <rect class="n" x="46" y="58" width="350" height="28" rx="4"/><text x="58" y="77">SELECT: session, row-level security settings</text>
+      <rect class="n" x="46" y="92" width="350" height="28" rx="4"/><text x="58" y="111"><tspan class="tb">retrieval runbooks</tspan></text>
+      <rect class="n" x="76" y="126" width="320" height="28" rx="4"/><text x="88" y="145">embeddings: the question</text>
+      <rect class="n" x="76" y="160" width="320" height="28" rx="4"/><text x="88" y="179">the hybrid search's SQL</text>
+      <rect class="n" x="46" y="194" width="350" height="28" rx="4"/><text x="58" y="213">SELECT: the asker's alerts</text>
+      <rect class="n-acc" x="46" y="228" width="350" height="34" rx="4"/><text x="58" y="250"><tspan class="tb">chat {model}</tspan>: the whole stream; "first token"</text>
+      </g>
+      <text class="tl" x="420" y="30">ATTRIBUTES THAT ANSWER "WHY"</text>
+      <g class="ts">
+      <text x="420" y="54">request: alerts and sections in the prompt,</text><text x="420" y="70">redactions, outcome, citations valid and invented</text>
+      <text x="420" y="104">retrieval: mode (hybrid, keyword-only), embedding</text><text x="420" y="120">key; each document's id, score, ranks, distance</text>
+      <text x="420" y="154">embeddings: model, input tokens, error type</text>
+      <text x="420" y="196">model: prompt name, version and hash; output limit;</text><text x="420" y="212">reasoning level; the model that answered; time to</text><text x="420" y="228">first chunk; tokens; finish reasons; outcome</text>
+      </g>
+      <text class="ts tmu" x="16" y="290">Every log line of the request carries the same trace id, and so does the stream's first event.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 8.1</span>The reference service's trace of one question. The model that answered is recorded beside the one requested, because a provider can serve a dated version behind an alias.</figcaption>
+  </figure>
+
+  <h3 id="ch8-diagnose">Diagnosing a worse answer</h3>
+  <p>Compare the bad answer's trace with a good one for the same question, in three steps: what was the model given (documents, sections, prompt version); how was it asked (model, output limit, reasoning level); and what came back (finish reason, tokens, outcome). The reference project broke four settings, one at a time, and diagnosed each from telemetry alone.</p>
+
+  <figure class="fig wide" id="fig-8-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 330" role="img" aria-label="Four incidents. Embedding timeout set to one millisecond: the answer looked fine but lost its safety conditions; the trace showed the embedding span in error, retrieval keyword-only, and the 'Free space' section fifth by keyword and cut; metrics showed keyword-only searches and an alert after 15 minutes. Context set to one section: the answer invented a dangerous step; the trace showed top_k 1 and one section; no metric showed anything. Output limit of 60 tokens: the answer stopped after step one; the trace showed finish reason length and outcome truncated; a truncation metric and alert. A changed document prefix: the answer skipped freeing space; the trace showed keyword-only with no current vectors, and a new embedding key hash; metrics showed keyword-only searches and a warning to re-embed.">
+      <text class="tl" x="16" y="22">SETTING CHANGED</text><text class="tl" x="190" y="22">THE ANSWER</text><text class="tl" x="410" y="22">THE TRACE SHOWED</text><text class="tl" x="640" y="22">METRICS</text>
+      <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
+      <g class="ts">
+      <text x="16" y="54" class="tb">embedding timeout</text><text x="16" y="70">1 ms</text>
+      <text x="190" y="54">looked fine; the safety</text><text x="190" y="70">conditions were gone</text>
+      <text x="410" y="54">keyword-only; "Free space"</text><text x="410" y="70">was fifth, and cut</text>
+      <text x="640" y="54">keyword-only rises;</text><text x="640" y="70">alert after 15 min</text>
+      <line class="rule" x1="16" y1="86" x2="804" y2="86"/>
+      <text x="16" y="110" class="tb">context sections</text><text x="16" y="126">1</text>
+      <text x="190" y="110" class="tr">invented a dangerous</text><text x="190" y="126" class="tr">step</text>
+      <text x="410" y="110">top_k 1; one section</text><text x="410" y="126">in the prompt</text>
+      <text x="640" y="110" class="tb tr">nothing at all</text>
+      <line class="rule" x1="16" y1="142" x2="804" y2="142"/>
+      <text x="16" y="166" class="tb">output limit</text><text x="16" y="182">60 tokens</text>
+      <text x="190" y="166">stopped after step one</text>
+      <text x="410" y="166">finish reason "length";</text><text x="410" y="182">outcome truncated</text>
+      <text x="640" y="166">truncated answers;</text><text x="640" y="182">an alert</text>
+      <line class="rule" x1="16" y1="198" x2="804" y2="198"/>
+      <text x="16" y="222" class="tb">document prefix</text><text x="16" y="238">changed</text>
+      <text x="190" y="222">skipped how to free</text><text x="190" y="238">space</text>
+      <text x="410" y="222">no current vectors; the</text><text x="410" y="238">embedding key's hash changed</text>
+      <text x="640" y="222">keyword-only rises;</text><text x="640" y="238">"re-embed" warning</text>
+      <line class="rule" x1="16" y1="254" x2="804" y2="254"/>
+      </g>
+      <text class="ts" x="16" y="282"><tspan class="tb">Three of four answers read as competent.</tspan> Every request answered 200 and every stream ended normally.</text>
+      <text class="ts" x="16" y="302">One incident showed in no metric: only the trace recorded how many sections the model got.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 8.2</span>Four silent regressions, diagnosed from telemetry in the reference project. The missing section and the new embedding key only stood out next to a known-good trace, which is why comparing traces is the method.</figcaption>
+  </figure>
+
+  <figure class="fig wide" id="fig-8-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 220" role="img" aria-label="Time to first token has two parts. Low reasoning effort: first chunk at 0.14 seconds, about half a second of reasoning, then the answer; the model span took 1.59 seconds. High effort: first chunk still at 0.14 seconds, then 707 reasoning chunks until the first answer token at 4.10 seconds, then 84 answer chunks; 800 of 800 output tokens, finish reason length, answer truncated; the span took 4.56 seconds. Right after idle, the first chunk took 3 seconds because the model was loading.">
+      <text class="ts tb" x="16" y="44">effort low</text>
+      <rect class="n" x="120" y="30" width="21" height="22" rx="2"/><rect class="n-warn" x="141" y="30" width="75" height="22" rx="2"/><rect class="n-good" x="216" y="30" width="142" height="22" rx="2"/><text class="ts" x="366" y="46">1.59 s</text>
+      <text class="ts tb" x="16" y="96">effort high</text>
+      <rect class="n" x="120" y="82" width="21" height="22" rx="2"/><rect class="n-warn" x="141" y="82" width="594" height="22" rx="2"/><text class="ts" x="438" y="98" text-anchor="middle">707 reasoning chunks</text><rect class="n-good" x="735" y="82" width="69" height="22" rx="2"/>
+      <text class="ts" x="785" y="122" text-anchor="end">first answer token at 4.10 s; cut off at 800 tokens</text>
+      <rect class="n" x="120" y="146" width="20" height="14" rx="2"/><text class="ts" x="148" y="158">to first chunk: the provider starting (0.14 s warm; 3 s after idle, loading)</text>
+      <rect class="n-warn" x="120" y="168" width="20" height="14" rx="2"/><text class="ts" x="148" y="180">first chunk to first answer token: the model thinking</text>
+      <rect class="n-good" x="120" y="190" width="20" height="14" rx="2"/><text class="ts" x="148" y="202">the answer</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 8.3</span>One "time to first token" number conflates a cold model with a thinking one; the trace separates them, measured with a 20-billion-parameter reasoning model (drawn to scale). At high effort the answer was slower and worse: thinking used most of the output budget, and the answer was cut mid-step.</figcaption>
+  </figure>
+
+  <h3 id="ch8-privacy">Telemetry is a copy of the data</h3>
+  <figure class="fig wide" id="fig-8-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Why content stays out of traces: the service enforces team isolation twice, in its queries and in row-level security, but a trace store shows every trace to whoever can open it; it keeps data on its own retention, often at a vendor; and it escapes deletion requests. Measured with content on: one reader saw a finance user's question about a payroll export failing for 1,200 employees, and another team's runbooks; redaction had removed the password and nothing else. Three patterns: no content, the default, only ids, counts, durations and hashes; content on spans, pre-production only; content in a separate store under its own access control, with references on spans.">
+      <rect class="n-bad" x="16" y="16" width="384" height="120" rx="6"/><text class="tb tr" x="28" y="40">A trace store ignores tenancy</text>
+      <g class="ts"><text x="28" y="62">isolation is enforced twice in the service, then</text><text x="28" y="78">undone by whoever can open the trace viewer</text><text x="28" y="100">measured: a reader saw another team's question,</text><text x="28" y="116">"payroll export failed for 1,200 employees"</text></g>
+      <rect class="n-warn" x="420" y="16" width="384" height="120" rx="6"/><text class="tb" x="432" y="40">Redaction removes formats, not facts</text>
+      <g class="ts"><text x="432" y="62">it removed the password in that question,</text><text x="432" y="78">and nothing else</text><text x="432" y="100">and traces keep their own retention, often at</text><text x="432" y="116">a vendor, beyond deletion requests</text></g>
+      <text class="tl" x="16" y="166">THREE PATTERNS</text>
+      <rect class="n-good" x="16" y="178" width="250" height="56" rx="5"/><text class="tb" x="28" y="200">1 No content: the default</text><text class="ts" x="28" y="220">ids, counts, durations, hashes</text>
+      <rect class="n" x="285" y="178" width="250" height="56" rx="5"/><text class="tb" x="297" y="200">2 Content on spans</text><text class="ts" x="297" y="220">pre-production only, redacted</text>
+      <rect class="n" x="554" y="178" width="250" height="56" rx="5"/><text class="tb" x="566" y="200">3 A separate store</text><text class="ts" x="566" y="220">its own access rules; ids on spans</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 8.4</span>Why the reference service keeps content out of traces, and the conventions' three patterns. Retrieved sections already follow the third: their ids are on the span, their text stays in Postgres under row-level security. An integration test plants markers in the question, prompt, answer and runbook text, and fails if any reaches a span.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/tracing.py#L17-L22">apps/api/app/tracing.py</a><span class="lines">what spans never hold</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The tracing module states its privacy rule at the top, where anyone adding an attribute will read it.</p>
+        <ul class="notice">
+          <li>Content goes on spans only with an explicit development setting, redacted and cut short; production refuses to start with it on.</li>
+          <li>The edge proxy also strips trace headers from incoming requests, so the internet cannot choose trace ids or force sampling.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/tracing.py" data-lines="17-22"><code class="language-python">What spans never hold by default: questions, prompts, answers, alert or
+runbook text. A trace store is read by everyone who debugs, across every
+team, and keeps what it gets for its own retention: content there would
+undo the team isolation the service enforces. Spans carry ids, counts,
+durations and hashes; TRACE_CONTENT=true adds redacted content, for
+development only (ADR-0018).</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch8-cost">What tracing costs, and sampling</h3>
+  <figure class="fig wide" id="fig-8-5">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Measured on one process at 200 signed-in requests a second. Tracing off: p50 2.45 milliseconds, p95 about 2.85, p99 6.6 to 12.5. Every trace kept: p50 about 2.6, p95 5.0 to 5.9, p99 39 to 44 milliseconds, CPU up 15 to 19 percent. One trace in ten: p50 2.51, p95 2.99, p99 20.7. The median barely moves; the tail does.">
+      <text class="tl" x="16" y="22">p99 LATENCY, MILLISECONDS, 200 REQUESTS/S</text>
+      <line class="rule" x1="160" y1="34" x2="160" y2="144"/>
+      <text class="ts" x="16" y="56">tracing off</text><rect class="fill-good" x="160" y="44" width="125" height="18"/><text class="ts" x="293" y="58">6.6-12.5 (p95 2.85)</text>
+      <text class="ts" x="16" y="92">every trace</text><rect class="fill-bad" x="160" y="80" width="440" height="18"/><text class="ts" x="608" y="94">39-44 (p95 5.0-5.9)</text>
+      <text class="ts" x="16" y="128">one in ten</text><rect class="fill-acc" x="160" y="116" width="207" height="18"/><text class="ts" x="375" y="130">20.7 (p95 2.99)</text>
+      <text class="ts" x="16" y="172"><tspan class="tb">The median barely moves; the tail does.</tspan> CPU rose 15-19% when every trace was kept; the cost scales with traces kept.</text>
+      <text class="ts" x="16" y="194"><tspan class="tb">Head sampling</tspan> decides at the start, so at 10% it also keeps only 10% of failures. <tspan class="tb">Tail sampling</tspan>, in a collector,</text>
+      <text class="ts" x="16" y="212">keeps every error and slow trace plus a share of the rest. A dropped trace must not hand out a trace id.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 8.5</span>The measured cost of tracing in a Python service (bars show the upper p99), and what sampling keeps. Production keeps a tenth of traces by default; when the trace backend was down, requests did not notice, but each worker's shutdown waited for the exporter until its timeout was cut to two seconds.</figcaption>
+  </figure>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0018</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">Traces with OpenTelemetry and the GenAI conventions; no content by default</p>
+    <dl>
+      <dt>Problem</dt><dd>Metrics showed that answers got worse or slower, not which answer, what it was given, or where its time went.</dd>
+      <dt>Decision</dt><dd>One trace per request with GenAI spans for retrieval, embeddings and the model; ids, counts and hashes only, with redacted content as a development option production refuses; trace headers stripped at the edge; a tenth of traces kept in production; eval runs traced, with the service's spans under each case.</dd>
+      <dt>See it in</dt><dd><a href="{{TA}}/apps/api/app/tracing.py">tracing.py</a> and the guide, <a href="{{TA}}/docs/handbook/ai-observability.md">ai-observability.md</a>.</dd>
+    </dl>
+  </aside>
+
+  <h3 id="ch8-link">Linking the signals</h3>
+  <ul>
+    <li><strong>Versions as a metric.</strong> An info metric carries the release, the prompt (name and version), the model and the embedding model. When answers change, line the change up with this first.</li>
+    <li><strong>Trace ids everywhere.</strong> In every log line, in the stream's first event, and in eval reports: from a failing eval answer to what it was given is one click.</li>
+    <li><strong>Evals as traces.</strong> Each case run is a trace, each check an evaluation event on it, and the service's spans sit under the case. In the reference project, one failing case's trace showed both the check ("the 'Free space' section was never cited") and the cause (retrieval gave one section).</li>
+    <li><strong>Audit trail beside it.</strong> A trace is a sample, for finding where time went; the record of who did what, for every request, is the audit trail (Chapter 9).</li>
+  </ul>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Each answer has a trace with what it was given, by id and rank, the prompt version and hash, the model that answered, tokens and finish reason. No content by default: a trace store ignores tenancy."</p>
+    <p>"We diagnose a worse answer by comparing its trace with a good one; some regressions, like a smaller context, show in no metric at all."</p>
+  </aside>
+
+  <h3 id="ch8-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">Most trace ids from the app lead nowhere</td><td data-label="Cause">Unsampled requests were handed a trace id</td><td data-label="Fix">Return a trace id only for a kept trace.</td></tr>
+        <tr><td data-label="Symptom">Outside callers control sampling</td><td data-label="Cause">A parent-based sampler obeys an incoming traceparent</td><td data-label="Fix">Strip trace headers at the edge; trust them only from your own services.</td></tr>
+        <tr><td data-label="Symptom">Spans from one request appear in another</td><td data-label="Cause">A span made current inside an async generator leaks between yields</td><td data-label="Fix">Start and end spans explicitly in generators.</td></tr>
+        <tr><td data-label="Symptom">A streamed answer produces hundreds of spans</td><td data-label="Cause">Generic ASGI instrumentation makes one per body chunk</td><td data-label="Fix">A hand-written request span, or configure the instrumentation.</td></tr>
+        <tr><td data-label="Symptom">Prepared-statement caching stops working</td><td data-label="Cause">A SQL commenter makes every statement unique</td><td data-label="Fix">Turn the commenter off.</td></tr>
+        <tr><td data-label="Symptom">Traces are missing after a pre-fork server starts</td><td data-label="Cause">The tracer provider was created before the fork</td><td data-label="Fix">One provider per process, created after the fork.</td></tr>
+        <tr><td data-label="Symptom">Sensitive facts in a trace despite redaction</td><td data-label="Cause">Redaction removes secret formats, not facts</td><td data-label="Fix">No content on spans; keep content in a store with its own access rules.</td></tr>
+        <tr><td data-label="Symptom">p99 rises after enabling tracing</td><td data-label="Cause">Export serialization stalls the event loop</td><td data-label="Fix">Sample, and watch event-loop lag.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch8-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>An answer got worse with no errors anywhere. How do you find out why?</p>
+      <details class="ans"><summary>Answer</summary><p>Compare its trace with a good one for the same question: what it was given (documents and their ranks, section count, prompt version), how it was asked (model, output limit, reasoning level) and what came back (finish reason, tokens, outcome). Stop at the first difference.</p></details>
+    </li>
+    <li>
+      <p>Why does "time to first token" need to be split in two?</p>
+      <details class="ans"><summary>Answer</summary><p>Time to the first chunk measures the provider starting (queueing, loading the model); from the first chunk to the first answer token measures a reasoning model thinking. One number cannot tell a cold model from a thoughtful one.</p></details>
+    </li>
+    <li>
+      <p>Why is content kept out of traces by default?</p>
+      <details class="ans"><summary>Answer</summary><p>A trace store ignores tenancy, keeps data on its own retention (often at a vendor) and escapes deletion requests; and redaction removes secret formats, not sensitive facts.</p></details>
+    </li>
+    <li>
+      <p>What is the difference between head and tail sampling?</p>
+      <details class="ans"><summary>Answer</summary><p>Head sampling decides at the start of a trace, so it keeps failures at the same rate as everything else. Tail sampling decides at the end, in a collector holding whole traces, so it can keep every error and slow trace plus a share of the rest.</p></details>
+    </li>
+  </ol>
+</section>

@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="Left: on ECS, the execution role lets ECS pull the image from ECR and inject secrets from Secrets Manager at task start; the task role is what the code calls AWS with. Right: on EC2, the instance profile lets the ECR credential helper pull images without a password, and operators reach the VM through Session Manager rather than SSH; port 22 is closed."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #146b55; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e2f1eb; stroke: #146b55; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #146b55; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #146b55; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #146b55; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="300" fill="#ffffff"/>
+      <text class="tl" x="20" y="18">ECS TASK ON FARGATE</text>
+      <text class="tl" x="440" y="18">EC2 VIRTUAL MACHINE</text>
+      <line class="rule" x1="420" y1="10" x2="420" y2="290"/>
+
+      <rect class="n" x="20" y="36" width="150" height="48" rx="5"/>
+      <text class="tb" x="95" y="56" text-anchor="middle">Secrets Manager</text>
+      <text class="ts" x="95" y="73" text-anchor="middle">generated secrets</text>
+      <rect class="n" x="20" y="116" width="150" height="48" rx="5"/>
+      <text class="tb" x="95" y="136" text-anchor="middle">Amazon ECR</text>
+      <text class="ts" x="95" y="153" text-anchor="middle">release images</text>
+      <rect class="n-acc" x="240" y="36" width="160" height="128" rx="5"/>
+      <text class="tb" x="320" y="58" text-anchor="middle">The task</text>
+      <rect class="n" x="262" y="72" width="116" height="26" rx="4"/>
+      <text class="tm" x="320" y="89" text-anchor="middle">api</text>
+      <rect class="n" x="262" y="104" width="116" height="26" rx="4"/>
+      <text class="tm" x="320" y="121" text-anchor="middle">migrate</text>
+      <text class="ts" x="320" y="150" text-anchor="middle">env vars from secrets</text>
+      <line class="e" x1="171" y1="60" x2="238" y2="60" marker-end="url(#a)"/>
+      <text class="ts" x="205" y="52" text-anchor="middle">injected</text>
+      <line class="e" x1="171" y1="140" x2="238" y2="140" marker-end="url(#a)"/>
+      <text class="ts" x="205" y="132" text-anchor="middle">pulled</text>
+      <text class="ts" x="95" y="190" text-anchor="middle">both done by ECS, before your</text>
+      <text class="ts" x="95" y="205" text-anchor="middle">code runs: the execution role</text>
+      <rect class="n" x="240" y="228" width="160" height="48" rx="5"/>
+      <text class="tb" x="320" y="248" text-anchor="middle">S3, SQS, Bedrock</text>
+      <text class="ts" x="320" y="265" text-anchor="middle">what the code calls</text>
+      <line class="e-acc" x1="320" y1="165" x2="320" y2="226" marker-end="url(#a-acc)"/>
+      <text class="ts" x="330" y="200">as the task role</text>
+
+      <rect class="n" x="440" y="36" width="140" height="48" rx="5"/>
+      <text class="tb" x="510" y="56" text-anchor="middle">Amazon ECR</text>
+      <text class="ts" x="510" y="73" text-anchor="middle">release images</text>
+      <rect class="n" x="440" y="128" width="140" height="48" rx="5"/>
+      <text class="tb" x="510" y="148" text-anchor="middle">Session Manager</text>
+      <text class="ts" x="510" y="165" text-anchor="middle">and Run Command</text>
+      <rect class="n-acc" x="640" y="66" width="160" height="96" rx="5"/>
+      <text class="tb" x="720" y="94" text-anchor="middle">The VM</text>
+      <text class="ts" x="720" y="114" text-anchor="middle">instance profile attached</text>
+      <text class="ts" x="720" y="131" text-anchor="middle">IMDSv2 only</text>
+      <line class="e" x1="581" y1="60" x2="638" y2="84" marker-end="url(#a)"/>
+      <text class="ts" x="610" y="56" text-anchor="middle">pulled</text>
+      <line class="e" x1="581" y1="152" x2="638" y2="136" marker-end="url(#a)"/>
+      <text class="ts" x="610" y="168" text-anchor="middle">commands</text>
+      <text class="ts" x="510" y="206" text-anchor="middle">no registry password: a credential</text>
+      <text class="ts" x="510" y="221" text-anchor="middle">helper uses the instance profile</text>
+      <rect class="n-bad" x="640" y="196" width="160" height="40" rx="5"/>
+      <text class="tb tr" x="720" y="214" text-anchor="middle">SSH, port 22</text>
+      <text class="ts" x="720" y="229" text-anchor="middle">closed; no key exists</text>
+      <text class="ts" x="440" y="270">Every operator command is recorded in CloudTrail.</text>
+    </svg>

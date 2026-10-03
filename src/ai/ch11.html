@@ -1,0 +1,194 @@
+<section class="chapter" id="ch11">
+  <header class="ch-head">
+    <span class="ch-num">11</span>
+    <p class="eyebrow">Part VI · Running it</p>
+    <h2>Distributed AI systems</h2>
+    <p class="lede">Model calls are slow, flaky, paid and bursty, so any work the user's immediate answer does not need goes behind a queue, with leases, idempotent effects, jittered retries, a dead-letter queue and a circuit breaker; the patterns are classic, and the bill makes them matter more.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Ingestion, embedding, re-indexing, batch evaluation and long agent jobs go behind a queue: the request returns a job id, workers go at their own pace.</li>
+      <li>At-least-once delivery plus an idempotent effect is effectively once; a retried model call is still paid twice.</li>
+      <li>Retry only what can succeed, at one layer, with capped exponential backoff and full jitter.</li>
+      <li>A circuit breaker stops calling a failing provider; bulkheads keep one workload from starving another.</li>
+      <li>Guard every asynchronous write with a version check, or an older job can overwrite newer results.</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">Background jobs for slow reports</td><td>Queues in front of every slow, paid model call the user does not wait for</td><td>A model call can take minutes, fail with a 429, and cost money every time.</td></tr>
+      <tr><td data-label="Then">Retries as a safe default</td><td>Retries counted against a budget, at one layer</td><td>Each retry of a model call is billed; retries multiply across layers.</td></tr>
+      <tr><td data-label="Then">Cron scripts for multi-step work</td><td>Durable workflow engines for long agent jobs</td><td>Multi-step jobs must survive restarts and resume where they stopped.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch11-queue">Queues, workers and leases</h3>
+  <figure class="fig wide" id="fig-11-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 290" role="img" aria-label="The request enqueues a job and returns 202 with a job id. The queue gives each claimed job a lease, hidden for N seconds; if its worker dies, the lease expires and another worker takes it; long jobs extend the lease with a heartbeat. Workers call the model through a circuit breaker and write an idempotent, versioned effect. After N attempts a job goes to the dead-letter queue with its last error, where a person fixes the cause and redrives it. Alert on the age of the oldest job and on anything in the dead-letter queue. In Postgres, SELECT FOR UPDATE SKIP LOCKED lets workers claim different rows without blocking; the job can be committed with its data in one transaction, the outbox pattern.">
+      <rect class="n" x="16" y="40" width="120" height="70" rx="6"/><text class="tb" x="28" y="64">request</text><text class="ts" x="28" y="84">enqueue, return</text><text class="ts" x="28" y="100">202 + job id</text>
+      <rect class="n-acc" x="166" y="20" width="200" height="110" rx="6"/><text class="tb" x="178" y="44">queue</text><text class="ts" x="178" y="66">a claimed job is leased:</text><text class="ts" x="178" y="82">hidden for N seconds</text><text class="ts" x="178" y="102">worker dies → lease expires</text><text class="ts" x="178" y="118">→ another worker takes it</text>
+      <rect class="n" x="396" y="20" width="170" height="110" rx="6"/><text class="tb" x="408" y="44">workers</text><text class="ts" x="408" y="66">heartbeat extends</text><text class="ts" x="408" y="82">the lease on long jobs</text><text class="ts" x="408" y="102">bounded concurrency</text>
+      <rect class="n-warn" x="596" y="20" width="208" height="50" rx="6"/><text class="tb" x="608" y="42">circuit breaker</text><text class="ts" x="608" y="60">then the model provider</text>
+      <rect class="n-good" x="596" y="80" width="208" height="50" rx="6"/><text class="tb" x="608" y="102">idempotent effect</text><text class="ts" x="608" y="120">versioned write</text>
+      <line class="e" x1="137" y1="75" x2="164" y2="75" marker-end="url(#a)"/><line class="e" x1="367" y1="75" x2="394" y2="75" marker-end="url(#a)"/><line class="e" x1="567" y1="45" x2="594" y2="45" marker-end="url(#a)"/><line class="e" x1="567" y1="105" x2="594" y2="105" marker-end="url(#a)"/>
+      <rect class="n-bad" x="396" y="160" width="408" height="56" rx="6"/><text class="tb" x="408" y="182">dead-letter queue</text><text class="ts" x="408" y="202">after N attempts, with the last error; a person fixes and redrives</text>
+      <path class="e-bad" d="M481,131 L481,158" marker-end="url(#a-bad)"/>
+      <text class="ts" x="16" y="160"><tspan class="tb">Alert on</tspan> the age of the</text><text class="ts" x="16" y="176">oldest job (what users wait)</text><text class="ts" x="16" y="192">and on anything dead-lettered</text>
+      <text class="ts" x="16" y="248"><tspan class="tb">In Postgres:</tspan> SELECT ... FOR UPDATE SKIP LOCKED lets workers claim different rows without blocking, and the job commits</text>
+      <text class="ts" x="16" y="266">with its data in one transaction (the outbox). A broker for high volume, fan-out or replay; a workflow engine for long agent jobs.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 11.1</span>A queue for AI work. A poison job that is never dead-lettered loops forever, and here every loop is billed. Listening for database notifications does not work through a transaction-pooling proxy, so workers poll.</figcaption>
+  </figure>
+
+  <figure class="fig wide" id="fig-11-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 220" role="img" aria-label="At-most-once: acknowledge, then work; a crash loses the job. At-least-once: work, then acknowledge; a crash between the effect and the acknowledgement runs it twice, so duplicates are normal. Effectively once: at-least-once delivery plus an idempotent or transactional effect. Exactly-once belongs to the effect, not the delivery. A retried model call is still paid twice: idempotency protects the data, not the bill.">
+      <rect class="n-bad" x="16" y="16" width="250" height="110" rx="6"/><text class="tb" x="28" y="40">At most once</text><text class="ts" x="28" y="62">acknowledge, then work</text><text class="ts tr" x="28" y="86">a crash loses the job</text>
+      <rect class="n-warn" x="285" y="16" width="250" height="110" rx="6"/><text class="tb" x="297" y="40">At least once</text><text class="ts" x="297" y="62">work, then acknowledge</text><text class="ts" x="297" y="86">a crash after the effect runs it</text><text class="ts" x="297" y="102">twice: duplicates are normal</text>
+      <rect class="n-good" x="554" y="16" width="250" height="110" rx="6"/><text class="tb" x="566" y="40">Effectively once</text><text class="ts" x="566" y="62">at least once + an idempotent</text><text class="ts" x="566" y="78">or transactional effect</text><text class="ts" x="566" y="102">"exactly once" is about the effect</text>
+      <text class="ts" x="16" y="160"><tspan class="tb">Idempotency keys:</tspan> the server stores the result under the client's key and returns it to repeats; <tspan class="tb">natural keys:</tspan> content hashes.</text>
+      <text class="ts" x="16" y="182"><tspan class="tb">Dedupe jobs</tspan> by kind, document and version.</text>
+      <text class="ts tr" x="16" y="206">A retried model call is paid twice: idempotency protects the data, not the bill.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 11.2</span>Delivery guarantees. Exactly-once features in brokers cover reads and writes inside the broker, never an external side effect such as a database row or a model call.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/runbooks.py#L184-L209">apps/api/app/runbooks.py</a><span class="lines">an idempotent save that skips paid work</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Saving a runbook embeds every section, which is a paid model call. The save is idempotent by a natural key: the team and title, plus a hash of the text and of the embedding settings.</p>
+        <ul class="notice">
+          <li>Saving the same text again writes nothing, records nothing and pays for no embedding.</li>
+          <li>The database read is committed before the embedding call, so no connection is held while the model works.</li>
+          <li>The write that follows is an upsert in its own short transaction, with its audit event.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/runbooks.py" data-lines="184-209"><code class="language-python">    """Create the runbook, or replace its text (same team and title). The
+    write is audited (runbook.saved), in its own transaction: who wrote the
+    text the assistant will read, and its hash - the version a chat was
+    given. Saving the same text again writes nothing, and records nothing."""
+    if embedder.embedding_model is None:
+        raise LLMError("runbook search is off: EMBEDDING_MODEL is not set")
+    key = embedding_key(settings)
+    digest = hashlib.sha256(body.encode()).hexdigest()
+    sections = split_sections(title, body)
+
+    existing = (
+        await db.execute(
+            select(
+                Runbook.id, Runbook.body_sha256, Runbook.embedding_key, Runbook.source_url
+            ).where(Runbook.team_id == team.id, Runbook.title == title)
+        )
+    ).one_or_none()
+    if existing is not None and (existing[1], existing[2], existing[3]) == (
+        digest,
+        key,
+        source_url,
+    ):
+        return Saved(existing[0], len(sections), changed=False)
+    # End the read before the embedding call: no connection held while the
+    # model works, and the write below is its own short transaction.
+    await db.commit()</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch11-retries">Retries, breakers and bulkheads</h3>
+  <figure class="fig wide" id="fig-11-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Retries: only what can succeed, timeouts, 429 and 5xx, never a 400; honor Retry-After; capped exponential backoff with full jitter, sleep a random time between zero and the smaller of the cap and base times two to the attempt; without jitter, clients that failed together retry together. Retry at one layer: three layers of three retries make 27 calls. A circuit breaker: closed, calls pass; after N consecutive failures it opens and stops calling for a cooldown; half-open lets one trial through; success closes it. Pair it with a fallback: keyword search, a smaller model, or 'the assistant is unavailable'.">
+      <rect class="n" x="16" y="16" width="384" height="150" rx="6"/><text class="tb" x="28" y="40">Retries</text>
+      <g class="ts"><text x="28" y="62">only what can succeed: timeouts, 429, 5xx</text><text x="28" y="80">honor Retry-After; never retry a 400</text><text x="28" y="104" class="tb">sleep = random(0, min(cap, base × 2^n))</text><text x="28" y="126">no jitter: clients that failed together</text><text x="28" y="142">retry together, a thundering herd</text><text x="28" y="160" class="tr">3 layers × 3 retries = 27 calls</text></g>
+      <rect class="n" x="420" y="16" width="384" height="150" rx="6"/><text class="tb" x="432" y="40">Circuit breaker</text>
+      <circle class="dot-good" cx="470" cy="100" r="22"/><text class="ts" x="470" y="70" text-anchor="middle">closed</text>
+      <circle class="dot-bad" cx="612" cy="100" r="22"/><text class="ts" x="612" y="70" text-anchor="middle">open</text>
+      <circle class="dot-muted" cx="754" cy="100" r="22"/><text class="ts" x="754" y="70" text-anchor="middle">half-open</text>
+      <path class="e" d="M494,100 L586,100" marker-end="url(#a)"/><text class="ts" x="540" y="92" text-anchor="middle">N failures</text>
+      <path class="e" d="M636,100 L728,100" marker-end="url(#a)"/><text class="ts" x="682" y="92" text-anchor="middle">cooldown</text>
+      <path class="e-good" d="M754,124 C754,160 470,160 470,126" marker-end="url(#a-good)"/><text class="ts" x="612" y="142" text-anchor="middle">one trial succeeds</text>
+      <rect class="n-warn" x="16" y="186" width="788" height="96" rx="6"/><text class="tb" x="28" y="210">Bulkheads: separate pools, so one workload cannot starve another</text>
+      <text class="ts" x="28" y="232">A bulk re-index and the chat's question embeddings share one embedding server. Unbounded, the re-index pushes the chat's</text>
+      <text class="ts" x="28" y="250">embeddings past their timeout, and the chat silently degrades to keyword search. Fixes: separate concurrency limits or queues,</text>
+      <text class="ts" x="28" y="268">priority for interactive traffic, or separate deployments.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 11.3</span>Three patterns for a slow, paid dependency. A breaker spares the failing provider and spares workers from waiting out timeouts; queued jobs are deferred, not charged an attempt. Keep a retry budget, such as retries at most a tenth of calls.</figcaption>
+  </figure>
+
+  <p>The reference service applies the lighter versions of these patterns on its interactive path: its model client retries once, before the first token only; a slow question embedding degrades to keyword search rather than retrying; its rate limiter fails open; and when most searches fall back, an alert fires. <strong>Backpressure</strong> is the other half: when producers outrun workers, something must give, whether a bounded queue that refuses with a 503 and <code>Retry-After</code>, producers that slow down, or low-priority work dropped. A model server is a queue too: with one slot, throughput stayed flat under load, and only the wait grew.</p>
+
+  <h3 id="ch11-races">Races, locks and consistency</h3>
+  <figure class="fig wide" id="fig-11-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 230" role="img" aria-label="The stale-job race: a document is saved as version 1, then version 2; each save enqueues an embedding job; the version 1 job is slower and finishes last, overwriting version 2's vectors with stale ones. The fix: every asynchronous write checks that the document still has the hash the job was for, and writes nothing otherwise.">
+      <line class="rule-strong" x1="120" y1="40" x2="790" y2="40"/><text class="ts" x="16" y="44">document</text>
+      <circle class="fill-acc" cx="180" cy="40" r="6"/><text class="ts" x="180" y="28" text-anchor="middle">save v1</text>
+      <circle class="fill-acc" cx="300" cy="40" r="6"/><text class="ts" x="300" y="28" text-anchor="middle">save v2</text>
+      <text class="ts" x="16" y="94">job for v1</text><rect class="n-warn" x="180" y="80" width="460" height="22" rx="3"/><text class="ts" x="410" y="96" text-anchor="middle">slow embedding call</text>
+      <text class="ts" x="16" y="130">job for v2</text><rect class="n-good" x="300" y="116" width="160" height="22" rx="3"/><text class="ts" x="380" y="132" text-anchor="middle">fast</text>
+      <path class="e-bad" d="M640,91 L700,91" marker-end="url(#a-bad)"/><text class="ts tr" x="706" y="95">writes v1's</text><text class="ts tr" x="706" y="111">stale vectors</text>
+      <rect class="n-good" x="16" y="160" width="788" height="54" rx="6"/><text class="tb" x="28" y="182">The fix: a version check on every asynchronous write</text><text class="ts" x="28" y="202">write only if the document still has the hash the job was for; otherwise write nothing</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 11.4</span>The stale-job race. The same idea, a condition in the write itself, underlies optimistic locking: update where the version is the one read, and treat zero rows as a conflict.</figcaption>
+  </figure>
+
+  <ul>
+    <li><strong>Optimistic locking</strong> for rare conflicts, such as two editors of one runbook: write <code>WHERE version = :read</code>, and answer 409 on zero rows.</li>
+    <li><strong>Pessimistic locking</strong> (<code>SELECT ... FOR UPDATE</code>) for frequent conflicts or expensive retries; it holds a connection and invites deadlocks.</li>
+    <li><strong>Distributed locks</strong> (a lease with a time-to-live, or an advisory lock) can expire while their holder still works, so correctness needs a fencing token the storage checks. Prefer no lock: idempotent effects and unique constraints.</li>
+    <li><strong>Eventual consistency, stated.</strong> After an asynchronous ingest, a document is found by keyword at once and by meaning only once embedded; say so in the API ("indexing").</li>
+    <li><strong>One transaction for the change and its job or event</strong> (the outbox), never a write plus a separate publish that can half-fail.</li>
+  </ul>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Slow AI work goes behind a queue with leases and a dead-letter queue; delivery is at least once and effects are idempotent and versioned, so it's effectively once, though a retried model call is still billed twice."</p>
+    <p>"Retries at one layer with capped backoff and full jitter; a circuit breaker on the provider with a defined fallback; and bulkheads so a re-index can't starve the chat."</p>
+  </aside>
+
+  <h3 id="ch11-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A job keeps failing and the bill keeps growing</td><td data-label="Cause">A poison job with unlimited attempts</td><td data-label="Fix">Dead-letter after N attempts; alert on the dead-letter queue.</td></tr>
+        <tr><td data-label="Symptom">A provider outage turns into a storm when it recovers</td><td data-label="Cause">Retries without jitter, all at once</td><td data-label="Fix">Full jitter; a circuit breaker.</td></tr>
+        <tr><td data-label="Symptom">One failure produces dozens of calls</td><td data-label="Cause">Retries at several layers</td><td data-label="Fix">Retry at one layer, within a budget.</td></tr>
+        <tr><td data-label="Symptom">Newer content is answered with older vectors</td><td data-label="Cause">A slow job for an older version finished last</td><td data-label="Fix">Check the version in the write.</td></tr>
+        <tr><td data-label="Symptom">A retried request created two records</td><td data-label="Cause">No idempotency key on a write</td><td data-label="Fix">Idempotency keys or natural keys.</td></tr>
+        <tr><td data-label="Symptom">Interactive answers degrade during a batch job</td><td data-label="Cause">Shared capacity with no bulkhead</td><td data-label="Fix">Separate limits, priorities or deployments.</td></tr>
+        <tr><td data-label="Symptom">The queue looks healthy while users wait</td><td data-label="Cause">Watching queue length, not age</td><td data-label="Fix">Alert on the age of the oldest job.</td></tr>
+        <tr><td data-label="Symptom">Workers never wake for new jobs behind a pooler</td><td data-label="Cause">Database notifications do not cross transaction pooling</td><td data-label="Fix">Poll, or use a broker.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch11-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What does "effectively once" mean, and why is a retried model call still a problem?</p>
+      <details class="ans"><summary>Answer</summary><p>At-least-once delivery plus an idempotent or transactional effect, so duplicates do not change the result. The model call itself is still made and billed again on every retry; idempotency protects the data, not the bill.</p></details>
+    </li>
+    <li>
+      <p>What is full jitter, and what does it prevent?</p>
+      <details class="ans"><summary>Answer</summary><p>Sleeping a random time between zero and the capped exponential backoff. It spreads out retries from clients that failed together, preventing a synchronized retry storm when a dependency recovers.</p></details>
+    </li>
+    <li>
+      <p>Retry, circuit breaker, bulkhead: what does each protect against?</p>
+      <details class="ans"><summary>Answer</summary><p>A retry recovers from a transient failure. A circuit breaker stops calling a dependency that keeps failing, sparing it and your workers. A bulkhead isolates workloads so one cannot exhaust capacity another needs.</p></details>
+    </li>
+  </ol>
+</section>

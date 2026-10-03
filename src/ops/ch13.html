@@ -1,0 +1,253 @@
+<section class="chapter" id="ch13">
+  <header class="ch-head">
+    <span class="ch-num">13</span>
+    <p class="eyebrow">Part VII · Operating it</p>
+    <h2>Environments, releases and rollback</h2>
+    <p class="lede">Releasing safely means choosing how traffic moves to a new version, deciding in advance how each kind of change is undone, and reaching real users in stages that each end in something you can measure.</p>
+  </header>
+
+  <div class="glance">
+    <span class="label">At a glance</span>
+    <ul>
+      <li>Four ways to move traffic: rolling, canary, blue/green, and feature flags. They protect against different failures.</li>
+      <li>Every kind of change has its own rollback, chosen before shipping: code, schema, configuration, a feature, infrastructure.</li>
+      <li>Rollbacks roll back code, never the schema. Migrations are written expand-then-contract so the previous release runs on the newer schema.</li>
+      <li>A release that contracts what an earlier one expanded cannot be skipped over; release notes name the minimum version they can follow.</li>
+      <li>Reaching users is a staged road (a real host, real sign-in, a real model, a pilot team, then everyone), and each stage has a "done when".</li>
+    </ul>
+  </div>
+
+  <table class="tn">
+    <caption>Then and now</caption>
+    <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
+    <tbody>
+      <tr><td data-label="Then">A release night, the whole system switched at once</td><td>Rolling or canary releases during working hours</td><td>Problems surface on a fraction of traffic, while people are awake to see them.</td></tr>
+      <tr><td data-label="Then">Rollback means restoring last night's backup</td><td>Rollback means deploying the previous version; data stays</td><td>Restoring loses every write since the backup.</td></tr>
+      <tr><td data-label="Then">Schema changes need downtime</td><td>Expand, migrate, contract, across several releases</td><td>The old and new code run side by side during every rolling deploy.</td></tr>
+      <tr><td data-label="Then">A feature ships when its code ships</td><td>Code ships dark; a flag turns the feature on per tenant or percentage</td><td>Turning a feature off is faster than any redeploy.</td></tr>
+      <tr><td data-label="Then">Going live is one big step</td><td>Staged exposure, each stage with an exit criterion</td><td>Each stage tests one new kind of risk.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="ch13-strategies">Four ways to move traffic</h3>
+  <figure class="fig wide" id="fig-13-1">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Four release strategies. Rolling: instances replaced a few at a time; protects against crashes and startup failures. Canary: a small share of traffic on the new version, watched, then widened; protects against subtle regressions. Blue/green: a full second environment, traffic switched at once, the old kept for an instant switch back. Feature flag: code shipped dark and turned on per tenant or percentage without a deploy.">
+      <text class="tb" x="16" y="24">Rolling</text>
+      <text class="ts" x="16" y="42">replace instances a few at a time</text>
+      <rect class="n" x="16" y="54" width="380" height="22" rx="3"/>
+      <rect class="n-acc" x="16" y="54" width="130" height="22" rx="3"/>
+      <text class="ts" x="16" y="96">catches: crashes, failed starts</text>
+      <text class="ts" x="16" y="112">reference: the default on VM and ECS</text>
+
+      <text class="tb" x="424" y="24">Canary</text>
+      <text class="ts" x="424" y="42">a small share first, watched, then widened</text>
+      <rect class="n" x="424" y="54" width="380" height="22" rx="3"/>
+      <rect class="n-acc" x="424" y="54" width="22" height="22" rx="3"/>
+      <text class="ts ta tb" x="452" y="70">5%</text>
+      <text class="ts" x="424" y="96">catches: subtle regressions, by comparing metrics</text>
+      <text class="ts" x="424" y="112">needs: per-version metrics and enough traffic</text>
+
+      <line class="rule" x1="16" y1="134" x2="804" y2="134"/>
+      <text class="tb" x="16" y="164">Blue/green</text>
+      <text class="ts" x="16" y="182">a second full environment; switch at once</text>
+      <rect class="n" x="16" y="194" width="180" height="22" rx="3"/><text class="ts" x="106" y="210" text-anchor="middle">blue: old, kept warm</text>
+      <rect class="n-acc" x="216" y="194" width="180" height="22" rx="3"/><text class="ts" x="306" y="210" text-anchor="middle">green: new, all traffic</text>
+      <text class="ts" x="16" y="236">catches: anything, with an instant switch back</text>
+      <text class="ts" x="16" y="252">costs: double capacity during the release</text>
+
+      <text class="tb" x="424" y="164">Feature flag</text>
+      <text class="ts" x="424" y="182">code ships dark; turned on without a deploy</text>
+      <rect class="n" x="424" y="194" width="380" height="22" rx="3"/>
+      <rect class="n-acc" x="424" y="194" width="90" height="22" rx="3"/>
+      <text class="ts" x="524" y="210">on for one tenant, then more</text>
+      <text class="ts" x="424" y="236">catches: a feature that misbehaves in production</text>
+      <text class="ts" x="424" y="252">costs: flags to remove later, or they become debt</text>
+      <text class="ts" x="16" y="288">On a platform: weighted target groups (ALB), revisions with traffic splitting (Cloud Run, Container Apps), Argo Rollouts (Kubernetes).</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.1</span>Release strategies, and what each protects against. A rolling deploy is safe against crashes because readiness gates it, but it moves all traffic within seconds, so it cannot catch a regression that only shows in the numbers. That is the canary's job.</figcaption>
+  </figure>
+
+  <p>The reference service uses rolling deploys everywhere, and for subtle regressions it currently relies on "deploy, watch the dashboard for half an hour, roll back if needed", which works because rollbacks are cheap and cross migrations. The next steps, in order of effort, are a canary on one host (a second api service and a weighted upstream in nginx), then the platform's own traffic splitting with automatic analysis against the service's objectives.</p>
+
+  <h3 id="ch13-schema">Rollbacks roll back code, never the schema</h3>
+  <p>During a rolling deploy, the old and new versions run at the same time against the same database. So a schema change cannot break either of them, and it is done in steps that each leave both versions working. This is the <strong>expand and contract</strong> pattern.</p>
+
+  <figure class="fig wide" id="fig-13-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Expand and contract across four releases. Release 1 expands: adds a nullable column; old code ignores it. Release 2 writes both old and new; a backfill fills history. Release 3 reads and writes only the new. Release 4 contracts: removes the old column. Rolling back is safe between adjacent releases up to the one before a contract; skipping from release 1 straight to release 4 is not.">
+      <text class="tl" x="16" y="18">FOUR RELEASES, ONE SCHEMA CHANGE</text>
+      <rect class="n-acc" x="16" y="30" width="186" height="96" rx="6"/>
+      <text class="tb" x="30" y="54">1  Expand</text>
+      <text class="ts" x="30" y="74">add the new column,</text>
+      <text class="ts" x="30" y="90">nullable; old code</text>
+      <text class="ts" x="30" y="106">simply ignores it</text>
+      <rect class="n" x="218" y="30" width="186" height="96" rx="6"/>
+      <text class="tb" x="232" y="54">2  Write both</text>
+      <text class="ts" x="232" y="74">code writes old and new;</text>
+      <text class="ts" x="232" y="90">a backfill fills history</text>
+      <text class="ts" x="232" y="106">in batches</text>
+      <rect class="n" x="420" y="30" width="186" height="96" rx="6"/>
+      <text class="tb" x="434" y="54">3  Use only the new</text>
+      <text class="ts" x="434" y="74">code reads and writes</text>
+      <text class="ts" x="434" y="90">only the new column</text>
+      <rect class="n-warn" x="622" y="30" width="182" height="96" rx="6"/>
+      <text class="tb" x="636" y="54">4  Contract</text>
+      <text class="ts" x="636" y="74">remove the old column,</text>
+      <text class="ts" x="636" y="90">in a later release</text>
+      <line class="e" x1="203" y1="78" x2="216" y2="78" marker-end="url(#a)"/>
+      <line class="e" x1="405" y1="78" x2="418" y2="78" marker-end="url(#a)"/>
+      <line class="e" x1="607" y1="78" x2="620" y2="78" marker-end="url(#a)"/>
+
+      <path class="e-good" d="M300,140 C300,170 110,170 110,132" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="205" y="150" text-anchor="middle">roll 2 back to 1: safe</text>
+      <path class="e-good" d="M510,140 C510,170 310,170 310,132" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="410" y="150" text-anchor="middle">roll 3 back to 2: safe</text>
+      <path class="e-bad" d="M713,140 C713,222 110,222 110,134" marker-end="url(#a-bad)"/>
+      <text class="ts tr" x="410" y="248" text-anchor="middle">never skip from 1 to 4, or roll 4 back past 3: the old code needs the column that was removed</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.2</span>Expand and contract. Each release can run on the next release's schema, because it will, on the day it is rolled back to. Never rename in place: a rename is an expand, a backfill and a contract.</figcaption>
+  </figure>
+
+  <p>The rule produced one of the reference service's decision records, after a rollback failed. The procedure had been "deploy the previous tag", and the previous tag's migration tool had never heard of the revision the newer release applied. The deploy stopped before touching anything, so it failed safely, but rollback was impossible across any migration: exactly when a rollback is most likely needed.</p>
+
+  <aside class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-0015</span><span class="adr-status">accepted</span></div>
+    <p class="adr-title">Rollbacks roll back the code, never the schema</p>
+    <dl>
+      <dt>Problem</dt><dd>Rolling a release back to one with fewer migrations failed: the older migration tool could not find the database's current revision.</dd>
+      <dt>Decision</dt><dd>A deploy never reverses a migration. When the database is ahead of the image, it skips migrating, says so, and rolls out the older code on the newer schema. Reversing a migration is a separate, deliberate step, decided by a person, run with the newer image.</dd>
+      <dt>Rejected</dt><dd>Automatic downgrades: the least-tested code in any project, able to lose data, and run under pressure.</dd>
+      <dt>See it in</dt><dd><a href="{{TA}}/infra/aws/container/migrate.sh">infra/aws/container/migrate.sh</a> on ECS, and <a href="{{TA}}/scripts/deploy.sh#L87-L113">scripts/deploy.sh</a> on a VM.</dd>
+    </dl>
+  </aside>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/container/migrate.sh#L1-L12">infra/aws/container/migrate.sh</a><span class="lines">the decision, carried out on ECS</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The migration init container on ECS, in twelve lines. It asks the migration tool for the database's current revision first.</p>
+        <ul class="notice">
+          <li>If the tool cannot locate that revision, the database is ahead of this release: it prints so and exits successfully, and the older code starts on the newer schema.</li>
+          <li>Any other failure, such as a wrong password or an unreachable host, still fails the task.</li>
+          <li>Otherwise it migrates forward to the newest revision this release knows.</li>
+        </ul>
+        <p>Measured on ECS and on the VM: rollbacks across a migration, under steady traffic, with no failed requests.</p>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/container/migrate.sh" data-lines="1-12"><code class="language-bash"># Schema migrations as the owner, before the api starts (an init container).
+# On a rollback the database can be ahead of this release: alembic then cannot find the
+# current revision, and the right move is a code-only rollback, not a failed deploy.
+# Any other error (wrong password, unreachable host) still fails the task.
+export MIGRATIONS_DATABASE_URL="postgresql://${DB_OWNER_USER}:${DB_OWNER_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+if ! out=$(alembic current 2&gt;&amp;1); then
+  if printf '%s' "$out" | grep -q "Can't locate revision"; then
+    echo "the database is ahead of this release: code-only rollback, no migration"; exit 0
+  fi
+  printf '%s\n' "$out" &gt;&amp;2; exit 1
+fi
+exec alembic upgrade head</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h3 id="ch13-undo">One rollback per kind of change</h3>
+  <p>Decide, before shipping, how each kind of change will be undone, and practice it once.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Kind of change</th><th>Rollback</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Change">Application code</td><td data-label="Rollback">Deploy the previous version through the same pipeline.</td></tr>
+        <tr><td data-label="Change">Database schema</td><td data-label="Rollback">Do not. The previous version runs on the new schema; fix forward. A downgrade is a separate, deliberate decision.</td></tr>
+        <tr><td data-label="Change">Configuration</td><td data-label="Rollback">Restore the previous value, through the same reviewed path that changed it.</td></tr>
+        <tr><td data-label="Change">A new feature</td><td data-label="Rollback">Turn its flag off.</td></tr>
+        <tr><td data-label="Change">Infrastructure</td><td data-label="Rollback">Revert the pull request and apply; or fix forward. Rolling back the application never rolls back the infrastructure.</td></tr>
+        <tr><td data-label="Change">A prompt or model (AI features)</td><td data-label="Rollback">Switch the version back in configuration (Handbook 1, Chapter 12).</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Two more rules keep rollbacks honest. Releases are never skipped when one contracts what another expanded: the reference service's row-level-security release hides every row from a release two versions older, which never says who is asking, so a host must pass through the release in between. And a breaking API change is announced in the release notes, never discovered by a client.</p>
+
+  <h3 id="ch13-handover">Handing a service to an infrastructure team</h3>
+  <p>A service that can be released safely also has to be operable by someone else. These are the questions an infrastructure team asks, with the reference service's answers. Every answer points to something already in the repository.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>They ask</th><th>The reference service's answer</th></tr></thead>
+      <tbody>
+        <tr><td data-label="They ask">What runs?</td><td data-label="Answer">Three images (api, web, an HTTPS edge), one migration command, Postgres with pgvector, Valkey, a model provider, an OIDC identity provider.</td></tr>
+        <tr><td data-label="They ask">Health?</td><td data-label="Answer">A liveness endpoint that checks nothing external, a readiness endpoint that checks the database with a real query, and a proxy health check.</td></tr>
+        <tr><td data-label="They ask">Resources?</td><td data-label="Answer">For the api, 2 CPUs and 1 GiB carry about 1,000 signed-in reads a second or 500 concurrent streams; it idles at about 170 MiB. Every container has CPU and memory limits and no swap.</td></tr>
+        <tr><td data-label="They ask">Configuration?</td><td data-label="Answer">A documented settings table, secrets marked; production refuses unsafe values at startup.</td></tr>
+        <tr><td data-label="They ask">Logs, metrics, traces?</td><td data-label="Answer">JSON lines on standard output with a request id; Prometheus metrics; optional OpenTelemetry traces with ids and counts, never content.</td></tr>
+        <tr><td data-label="They ask">Deploy order and stopping?</td><td data-label="Answer">Migrations, then the api (rolling, readiness-gated), then web. On SIGTERM, up to 120 seconds of drain for streams.</td></tr>
+        <tr><td data-label="They ask">Outbound traffic?</td><td data-label="Answer">The model provider and the identity provider over HTTPS; certificates; optionally a trace collector. Nothing else.</td></tr>
+        <tr><td data-label="They ask">Scale and its limits?</td><td data-label="Answer">The api is stateless and scales out; the connection budget allows about 12 replicas before the pooler needs raising; the model provider's quota binds first in real use.</td></tr>
+        <tr><td data-label="They ask">Backups?</td><td data-label="Answer">Postgres only, copied off the host; the cache is disposable. A backup counts once it has been restored.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch13-road">The road to real users</h3>
+  <figure class="fig wide" id="fig-13-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Five stages, each ending in something measurable: 1 a cloud host behind HTTPS, done when a backup restores onto a fresh host and the time is written down; 2 the organization's identity provider, done when each role is checked by a real member; 3 a hosted model provider, done when the eval gate passes against it and a budget alarm exists; 4 a pilot team, done when objectives held and every reported bad answer is an eval case; 5 general availability, team by team, with a second host planned before the first outage.">
+      <rect class="n" x="16" y="190" width="150" height="56" rx="5"/><text class="tb" x="28" y="212">1  A real host</text><text class="ts" x="28" y="230">behind HTTPS</text>
+      <rect class="n" x="180" y="150" width="150" height="96" rx="5"/><text class="tb" x="192" y="172">2  Real sign-in</text><text class="ts" x="192" y="190">the organization's</text><text class="ts" x="192" y="206">identity provider</text>
+      <rect class="n" x="344" y="110" width="150" height="136" rx="5"/><text class="tb" x="356" y="132">3  A real model</text><text class="ts" x="356" y="150">a hosted provider,</text><text class="ts" x="356" y="166">under contract</text>
+      <rect class="n-acc" x="508" y="70" width="150" height="176" rx="5"/><text class="tb" x="520" y="92">4  A pilot team</text><text class="ts" x="520" y="110">two to four weeks,</text><text class="ts" x="520" y="126">objectives watched</text>
+      <rect class="n-good" x="672" y="30" width="132" height="216" rx="5"/><text class="tb" x="684" y="52">5  Everyone</text><text class="ts" x="684" y="70">team by team;</text><text class="ts" x="684" y="86">a second host</text><text class="ts" x="684" y="102">planned first</text>
+      <text class="tl" x="16" y="22">DONE WHEN</text>
+      <text class="ts" x="16" y="44">1: a backup restores onto a fresh host, timed: your recovery time</text>
+      <text class="ts" x="16" y="62">2: every role checked by a real member</text>
+      <text class="ts" x="16" y="80">3: the eval gate passes on the real model; a budget alarm exists</text>
+      <text class="ts" x="16" y="98">4: objectives held; every bad answer is now an eval case</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.3</span>Staged exposure. Each stage adds one new kind of risk (real infrastructure, real identity, a real model, real users) and ends in a measurable "done when", not a feeling.</figcaption>
+  </figure>
+
+  <aside class="say">
+    <span class="label">How to say it</span>
+    <p>"Every kind of change has a rehearsed rollback: code by redeploying the previous version, features by flag, and the schema never, because migrations are expand-then-contract."</p>
+    <p>"We roll out in stages, and each stage ends in a measurement: a timed restore, real sign-ins per role, the eval gate on the production model, a pilot that held its objectives."</p>
+  </aside>
+
+  <h3 id="ch13-traps">Traps</h3>
+  <div class="table-wrap">
+    <table class="grid traps stack">
+      <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Symptom">A rollback fails with "Can't locate revision"</td><td data-label="Cause">The older release's migration tool does not know the newer revision</td><td data-label="Fix">Detect a database ahead of the image and roll back the code only.</td></tr>
+        <tr><td data-label="Symptom">After an upgrade, every row seems to have vanished</td><td data-label="Cause">A release that contracts was reached by skipping the one that expanded</td><td data-label="Fix">Never skip such releases; state the minimum previous version in the release notes.</td></tr>
+        <tr><td data-label="Symptom">A downgrade under pressure loses a column's data</td><td data-label="Cause">Automatic schema reversal</td><td data-label="Fix">Never reverse migrations automatically; fix forward.</td></tr>
+        <tr><td data-label="Symptom">A regression reaches every user before anyone notices</td><td data-label="Cause">Rolling deploys move all traffic in seconds</td><td data-label="Fix">A canary compared on metrics, or a flag, for changes whose risk is in the numbers.</td></tr>
+        <tr><td data-label="Symptom">Clients break after a release</td><td data-label="Cause">A breaking API change was not announced</td><td data-label="Fix">Breaking changes go in the release notes, with the migration path.</td></tr>
+        <tr><td data-label="Symptom">Old feature flags nobody dares remove</td><td data-label="Cause">Flags without an owner or an end date</td><td data-label="Fix">Remove a flag once its feature is fully on; track flags like debt.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 id="ch13-questions">Questions</h3>
+  <ol class="qs">
+    <li>
+      <p>What does a canary catch that a rolling deploy does not?</p>
+      <details class="ans"><summary>Answer</summary><p>Regressions that do not crash anything but show in the numbers: higher error rates, slower answers, worse quality. A rolling deploy only waits for health checks, then moves all traffic within seconds.</p></details>
+    </li>
+    <li>
+      <p>Why is a column rename done across several releases?</p>
+      <details class="ans"><summary>Answer</summary><p>Because during a rolling deploy the old code still runs against the database. Adding the new column, writing both, backfilling, switching reads, and only later dropping the old column keeps every running version working at every step.</p></details>
+    </li>
+    <li>
+      <p>What should a deploy do when the database is ahead of the image it is deploying?</p>
+      <details class="ans"><summary>Answer</summary><p>Treat it as a rollback: skip migrations, say so, and run the older code on the newer schema. Reversing a migration is a separate decision made by a person.</p></details>
+    </li>
+    <li>
+      <p>Why does each stage on the road to real users need a "done when"?</p>
+      <details class="ans"><summary>Answer</summary><p>Each stage introduces one new kind of risk. A measurable exit (a timed restore, real sign-ins per role, the eval gate on the production model) proves that risk is handled before the next one is added.</p></details>
+    </li>
+  </ol>
+</section>

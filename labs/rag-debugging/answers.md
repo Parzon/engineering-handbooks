@@ -30,7 +30,7 @@ should not.
 **Diagnosis:** fusion and ranking. Each retriever did its job; the merge
 let a confident wrong keyword match win.
 
-**What would fix it** 📘:
+**What would fix it** (not built here):
 - give the semantic list more weight;
 - or, better, rerank the fused candidates with a cross-encoder, which
   reads the question and each section together.
@@ -99,8 +99,8 @@ Search ranks, for "db-1's disk is filling up. What do I do?":
 important section ranked last for this wording. A runbook's sections
 depend on each other.
 
-**What would fix it** 📘: retrieve by section, but give the model the
-neighbouring sections or the whole runbook ("small-to-big" retrieval);
+**What would fix it** (not built here): retrieve by section, but give the model the
+neighboring sections or the whole runbook ("small-to-big" retrieval);
 and rerank.
 
 ## 6. A question no runbook covers

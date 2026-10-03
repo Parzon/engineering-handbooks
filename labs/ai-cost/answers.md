@@ -94,7 +94,7 @@ it:
 - **price:** the model, the provider, a cache that stopped hitting.
 
 The lowest-risk fix is usually to undo the change (a setting). Next, cap
-the damage (output limit, rate limit), then optimise with evals.
+the damage (output limit, rate limit), then optimize with evals.
 
 ## 4. A semantic cache?
 

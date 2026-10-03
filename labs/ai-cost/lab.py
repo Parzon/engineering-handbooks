@@ -294,7 +294,7 @@ async def throughput(concurrency: int, seconds: int) -> None:
 
 async def cache() -> None:
     """Pairs of benchmark questions: close enough to share a cached answer at
-    a given distance cutoff, and whether they should (the same labelled
+    a given distance cutoff, and whether they should (the same labeled
     sections answer both). Negative questions never should."""
     settings = get_settings()
     llm = OpenAICompatibleClient(settings)

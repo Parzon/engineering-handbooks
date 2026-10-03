@@ -153,7 +153,7 @@
     <li><strong>No SSH key and no port 22.</strong> Operators use Session Manager and Run Command, which the instance's role allows and CloudTrail records.</li>
     <li><strong>No registry password.</strong> A credential helper gets ECR credentials from the instance's role.</li>
     <li><strong>Built from code.</strong> cloud-init installs Docker, creates the deploy user, clones the repository for its compose files and scripts, and generates the <code>.env</code> with random passwords at first boot. Because cloud-init runs only once, a changed recipe replaces the VM rather than editing it.</li>
-    <li><strong>Small surface.</strong> The metadata service accepts only its tokened version (IMDSv2), the disk is encrypted, and the security group admits HTTP and nothing else.</li>
+    <li><strong>Small surface.</strong> The metadata service accepts only its token-based version (IMDSv2), the disk is encrypted, and the security group admits HTTP and nothing else.</li>
   </ul>
 
   <section class="repo">

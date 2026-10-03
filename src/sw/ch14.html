@@ -75,7 +75,7 @@
         <tr><td data-label="Signal">Traffic and errors</td><td data-label="Metric"><code>http_requests_total{method, route, status}</code></td><td data-label="Why">The route is the template (<code>/alerts/{alert_id}</code>), never the raw path</td></tr>
         <tr><td data-label="Signal">Latency</td><td data-label="Metric"><code>http_request_duration_seconds</code>, a histogram</td><td data-label="Why">Percentiles are computed from buckets; for a stream, the whole stream</td></tr>
         <tr><td data-label="Signal">Saturation</td><td data-label="Metric"><code>event_loop_lag_seconds</code>, pool gauges</td><td data-label="Why">How late the loop runs a timer: timeouts appeared at 46% CPU</td></tr>
-        <tr><td data-label="Signal">The model</td><td data-label="Metric">calls by outcome, time to first token, tokens by kind</td><td data-label="Why">Tokens times price is cost; outcomes include truncated and cancelled</td></tr>
+        <tr><td data-label="Signal">The model</td><td data-label="Metric">calls by outcome, time to first token, tokens by kind</td><td data-label="Why">Tokens times price is cost; outcomes include <code>truncated</code> and <code>cancelled</code></td></tr>
         <tr><td data-label="Signal">What runs</td><td data-label="Metric"><code>app_info{version, prompt, model}</code></td><td data-label="Why">When answers change, line the change up with this first</td></tr>
         <tr><td data-label="Signal">Dependencies, host, containers</td><td data-label="Metric">exporters, node-exporter, cAdvisor</td><td data-label="Why">Database health, disk, memory and out-of-memory kills</td></tr>
       </tbody>
@@ -113,7 +113,7 @@ def route_template(scope: Scope) -&gt; str:
 
   <h3 id="ch14-dash">Dashboards and alerts as code</h3>
   <figure class="fig wide" id="fig-14-3">
-    <img src="assets/img/grafana-service-dashboard.jpg" width="1600" height="1432" loading="lazy" alt="The reference service's Grafana dashboard during a short load: rows for traffic and errors (requests per second, 5xx percentage, rate-limited requests, answers streaming now, requests by route and status, latency percentiles of non-streaming routes, p95 latency by route) and for the model (time to first token, answer duration, model calls by outcome, output tokens per second, an estimated model cost per hour of four cents, cancelled answers per minute).">
+    <img src="assets/img/grafana-service-dashboard.jpg" width="1600" height="1432" loading="lazy" alt="The reference service's Grafana dashboard during a short load: rows for traffic and errors (requests per second, 5xx percentage, rate-limited requests, answers streaming now, requests by route and status, latency percentiles of non-streaming routes, p95 latency by route) and for the model (time to first token, answer duration, model calls by outcome, output tokens per second, an estimated model cost per hour of four cents, canceled answers per minute).">
     <figcaption><span class="fig-n">Figure 14.3</span>The top two rows of the reference service's dashboard, during a short burst of traffic. Rows below these cover the dependencies (limiter, pools, PgBouncer, Postgres) and the containers and host; the current dashboard adds one for sign-in and access. Model prices are dashboard variables, so the cost panel follows the provider's price list.</figcaption>
   </figure>
 

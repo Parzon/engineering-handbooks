@@ -57,11 +57,11 @@
 
   <figure class="fig wide" id="fig-15-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="The leak, before and after. Before: a query's client-side timeout fires; the driver asks the server to cancel it; every later operation on that connection, including the rollback that returns it to the pool, waits for the server's acknowledgement with no timeout. With Postgres frozen, the acknowledgement never comes: the connection is held forever. Freezing Postgres for 20 seconds under load left 13 of 40 pooled connections stuck after it recovered. After: time is capped on the server side only, by the role's statement timeout and the pooler's query timeout; the pooler fails fast; a connection closed mid-query maps to 503; the readiness probe abandons a slow check instead of cancelling it. The same drill now leaves zero connections held.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="The leak, before and after. Before: a query's client-side timeout fires; the driver asks the server to cancel it; every later operation on that connection, including the rollback that returns it to the pool, waits for the server's acknowledgment with no timeout. With Postgres frozen, the acknowledgment never comes: the connection is held forever. Freezing Postgres for 20 seconds under load left 13 of 40 pooled connections stuck after it recovered. After: time is capped on the server side only, by the role's statement timeout and the pooler's query timeout; the pooler fails fast; a connection closed mid-query maps to 503; the readiness probe abandons a slow check instead of canceling it. The same drill now leaves zero connections held.">
       <text class="tl tr" x="16" y="22">BEFORE: A CLIENT-SIDE TIMEOUT</text>
       <rect class="n" x="16" y="34" width="170" height="54" rx="5"/><text class="ts" x="28" y="56">query times out</text><text class="ts" x="28" y="74">on the client</text>
       <rect class="n" x="216" y="34" width="170" height="54" rx="5"/><text class="ts" x="228" y="56">driver asks the server</text><text class="ts" x="228" y="74">to cancel</text>
-      <rect class="n" x="416" y="34" width="170" height="54" rx="5"/><text class="ts" x="428" y="56">rollback waits for the</text><text class="ts" x="428" y="74">acknowledgement</text>
+      <rect class="n" x="416" y="34" width="170" height="54" rx="5"/><text class="ts" x="428" y="56">rollback waits for the</text><text class="ts" x="428" y="74">acknowledgment</text>
       <rect class="n-bad" x="616" y="34" width="188" height="54" rx="5"/><text class="ts" x="628" y="56">server frozen: it never</text><text class="ts" x="628" y="74">comes; held forever</text>
       <line class="e" x1="187" y1="61" x2="214" y2="61" marker-end="url(#a)"/><line class="e" x1="387" y1="61" x2="414" y2="61" marker-end="url(#a)"/><line class="e-bad" x1="587" y1="61" x2="614" y2="61" marker-end="url(#a-bad)"/>
       <text class="ts tr" x="16" y="114">Postgres frozen 20 s under load: 13 of 40 pool connections stuck after it recovered.</text>
@@ -71,7 +71,7 @@
       <text class="ts" x="28" y="190">query time capped only on the server: the role's 10 s statement timeout, the pooler's 15 s backstop</text>
       <text class="ts" x="28" y="210">the pooler fails fast: 5 s queue, 5 s connect, 2 s login retry, 1 s for a cached "no such host"</text>
       <text class="ts" x="28" y="230">a connection closed mid-query maps to a 503; the readiness probe abandons a slow check</text>
-      <text class="ts" x="28" y="246">rather than cancelling it</text>
+      <text class="ts" x="28" y="246">rather than canceling it</text>
       <text class="ts tg" x="16" y="282">The same drill: 67,121 reads served, 28 clean 503s, 0 connections held afterwards.</text>
     </svg>
     </div>
@@ -126,7 +126,7 @@
 
   <h4>Three more rules about waiting</h4>
   <ul>
-    <li><strong>Cancel or abandon.</strong> A timeout cancels once, and cleanup after it can block again. To answer on time no matter what, run the work as a separate task, wait with a deadline, and abandon it (keep a reference, let it finish) when cancelling would trigger a cleanup that can hang.</li>
+    <li><strong>Cancel or abandon.</strong> A timeout cancels once, and cleanup after it can block again. To answer on time no matter what, run the work as a separate task, wait with a deadline, and abandon it (keep a reference, let it finish) when canceling would trigger a cleanup that can hang.</li>
     <li><strong>Propagate deadlines.</strong> Pass the remaining budget down with each call (gRPC deadlines, a per-transaction statement timeout), so no layer works longer than its caller will wait. Otherwise a timed-out client leaves work running, and a retried write can commit twice: hence idempotency keys on writes.</li>
     <li><strong>Keep the sum under the outer limit.</strong> The longest a user can wait is the sum of the timeouts along the path; the proxy's must be above it (Chapter 11).</li>
   </ul>

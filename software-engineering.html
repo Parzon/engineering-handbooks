@@ -364,7 +364,7 @@ fi</code></pre>
 
   <figure class="fig wide" id="fig-1-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 230" role="img" aria-label="Configuration flow: .env.example, committed, lists every variable; setup generates .env with fresh secrets, never committed; Compose passes only variables listed under each service's environment; the container reads them into typed settings; in production mode, unsafe values stop the service at startup with each problem named. A check in lint makes sure every setting is listed in Compose.">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Configuration flow: .env.example, committed, lists what a first run sets; setup generates .env with fresh secrets, never committed; Compose passes only variables listed under each service's environment; the container reads them into typed settings; in production mode, unsafe values stop the service at startup with each problem named. A check in lint makes sure every setting is listed in Compose.">
       <rect class="n-acc" x="16" y="40" width="140" height="70" rx="5"/><text class="tm tb" x="86" y="66" text-anchor="middle">.env.example</text><text class="ts" x="86" y="84" text-anchor="middle">committed: the</text><text class="ts" x="86" y="99" text-anchor="middle">contract</text>
       <rect class="n" x="186" y="40" width="140" height="70" rx="5"/><text class="tm tb" x="256" y="66" text-anchor="middle">.env</text><text class="ts" x="256" y="84" text-anchor="middle">secrets generated;</text><text class="ts" x="256" y="99" text-anchor="middle">never committed</text>
       <rect class="n" x="356" y="40" width="140" height="70" rx="5"/><text class="tb" x="426" y="66" text-anchor="middle">Compose</text><text class="ts" x="426" y="84" text-anchor="middle">passes only what a</text><text class="ts" x="426" y="99" text-anchor="middle">service lists</text>
@@ -535,7 +535,7 @@ fi</code></pre>
     </li>
     <li>
       <p>Why does <code>.env.example</code> belong in Git while <code>.env</code> never does?</p>
-      <details class="ans"><summary>Answer</summary><p><code>.env.example</code> is the contract: every variable, with placeholders and explanations, and no secrets. <code>.env</code> holds real values and secrets for one machine, generated from the example.</p></details>
+      <details class="ans"><summary>Answer</summary><p><code>.env.example</code> is the contract: what a first run sets, with placeholders and explanations, and no secrets (the settings reference lists every variable and its default). <code>.env</code> holds real values and secrets for one machine, generated from the example.</p></details>
     </li>
     <li>
       <p>What do code owners add to branch protection?</p>
@@ -1475,7 +1475,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
         <tr><td data-label="Symptom">Every request on a worker slows down at once, health checks included</td><td data-label="Cause">A synchronous call inside async code blocks the event loop</td><td data-label="Fix">Use async clients, or move blocking work to a thread; watch event-loop lag.</td></tr>
         <tr><td data-label="Symptom">Timeouts and fail-opens fire at moderate CPU</td><td data-label="Cause">On a busy loop, wall-clock timers fire late</td><td data-label="Fix">Treat loop lag as the saturation signal; scale before it rises.</td></tr>
         <tr><td data-label="Symptom">A probe with a 2-second timeout took over 10 seconds</td><td data-label="Cause"><code>asyncio.timeout()</code> cancels once, and the cleanup after it can block again</td><td data-label="Fix">Run the check as a task, wait with a deadline, and abandon it rather than cancel.</td></tr>
-        <tr><td data-label="Symptom">A cancelled stream kept the model call running and billing</td><td data-label="Cause">The response never closed the async generator</td><td data-label="Fix">Close generators explicitly (<code>contextlib.aclosing</code>) and stop the upstream call in <code>finally</code>.</td></tr>
+        <tr><td data-label="Symptom">A canceled stream kept the model call running and billing</td><td data-label="Cause">The response never closed the async generator</td><td data-label="Fix">Close generators explicitly (<code>contextlib.aclosing</code>) and stop the upstream call in <code>finally</code>.</td></tr>
         <tr><td data-label="Symptom">A request-scoped database session held its connection for a whole streamed answer</td><td data-label="Cause">FastAPI's yield dependencies close after a streamed response has been sent</td><td data-label="Fix">Scope the session to the function, and load data before streaming.</td></tr>
         <tr><td data-label="Symptom">The request id is missing from error responses</td><td data-label="Cause">Starlette's exception handler runs outside your middleware</td><td data-label="Fix">Handle errors inside the middleware that sets the id.</td></tr>
         <tr><td data-label="Symptom">A runtime check vanished in production</td><td data-label="Cause"><code>assert</code> is removed under <code>python -O</code></td><td data-label="Fix">Use an explicit check and <code>raise</code>.</td></tr>
@@ -3343,7 +3343,7 @@ CMD ["gunicorn", "app.asgi:app", "-c", "gunicorn.conf.py"]</code></pre>
   <p>The integration suite starts its own Compose project, with its own containers, network and volumes, so tests never see development data and everything is deleted afterwards. Before the tests run, the migrations build the schema, and a check fails if the models and the migrations disagree. The test database runs with durability turned off, because throwaway data does not need it and every commit then skips the disk flush. Timeouts and limits are set small (a 1-second model read timeout, 0.2-second heartbeats, five requests a minute) so failure paths are fast to test.</p>
   <ul>
     <li><strong>Do not mock the database.</strong> Real SQL through the real driver and pooler; a mocked session would have missed both of the big database bugs.</li>
-    <li><strong>Do not mock the provider's SDK.</strong> The mock model is an HTTP server speaking the provider's API, so tests exercise the real SDK, its retries, its streaming and its exceptions; it can also hang, drop mid-stream or return 429 on demand, and it counts cancelled streams.</li>
+    <li><strong>Do not mock the provider's SDK.</strong> The mock model is an HTTP server speaking the provider's API, so tests exercise the real SDK, its retries, its streaming and its exceptions; it can also hang, drop mid-stream or return 429 on demand, and it counts canceled streams.</li>
     <li><strong>Do not fake time when the test is about time.</strong> Heartbeat and timeout tests use small real durations, because the bugs live in the interaction with the event loop.</li>
     <li><strong>Prefer fakes to mocks.</strong> A fake is a small working implementation; a mock records calls and ties the test to the implementation.</li>
   </ul>
@@ -3562,7 +3562,7 @@ async def test_other_teams_alerts_are_not_found_not_forbidden(
         <tr><td data-label="Signal">Traffic and errors</td><td data-label="Metric"><code>http_requests_total{method, route, status}</code></td><td data-label="Why">The route is the template (<code>/alerts/{alert_id}</code>), never the raw path</td></tr>
         <tr><td data-label="Signal">Latency</td><td data-label="Metric"><code>http_request_duration_seconds</code>, a histogram</td><td data-label="Why">Percentiles are computed from buckets; for a stream, the whole stream</td></tr>
         <tr><td data-label="Signal">Saturation</td><td data-label="Metric"><code>event_loop_lag_seconds</code>, pool gauges</td><td data-label="Why">How late the loop runs a timer: timeouts appeared at 46% CPU</td></tr>
-        <tr><td data-label="Signal">The model</td><td data-label="Metric">calls by outcome, time to first token, tokens by kind</td><td data-label="Why">Tokens times price is cost; outcomes include truncated and cancelled</td></tr>
+        <tr><td data-label="Signal">The model</td><td data-label="Metric">calls by outcome, time to first token, tokens by kind</td><td data-label="Why">Tokens times price is cost; outcomes include <code>truncated</code> and <code>cancelled</code></td></tr>
         <tr><td data-label="Signal">What runs</td><td data-label="Metric"><code>app_info{version, prompt, model}</code></td><td data-label="Why">When answers change, line the change up with this first</td></tr>
         <tr><td data-label="Signal">Dependencies, host, containers</td><td data-label="Metric">exporters, node-exporter, cAdvisor</td><td data-label="Why">Database health, disk, memory and out-of-memory kills</td></tr>
       </tbody>
@@ -3600,7 +3600,7 @@ def route_template(scope: Scope) -&gt; str:
 
   <h3 id="ch14-dash">Dashboards and alerts as code</h3>
   <figure class="fig wide" id="fig-14-3">
-    <img src="assets/img/grafana-service-dashboard.jpg" width="1600" height="1432" loading="lazy" alt="The reference service's Grafana dashboard during a short load: rows for traffic and errors (requests per second, 5xx percentage, rate-limited requests, answers streaming now, requests by route and status, latency percentiles of non-streaming routes, p95 latency by route) and for the model (time to first token, answer duration, model calls by outcome, output tokens per second, an estimated model cost per hour of four cents, cancelled answers per minute).">
+    <img src="assets/img/grafana-service-dashboard.jpg" width="1600" height="1432" loading="lazy" alt="The reference service's Grafana dashboard during a short load: rows for traffic and errors (requests per second, 5xx percentage, rate-limited requests, answers streaming now, requests by route and status, latency percentiles of non-streaming routes, p95 latency by route) and for the model (time to first token, answer duration, model calls by outcome, output tokens per second, an estimated model cost per hour of four cents, canceled answers per minute).">
     <figcaption><span class="fig-n">Figure 14.3</span>The top two rows of the reference service's dashboard, during a short burst of traffic. Rows below these cover the dependencies (limiter, pools, PgBouncer, Postgres) and the containers and host; the current dashboard adds one for sign-in and access. Model prices are dashboard variables, so the cost panel follows the provider's price list.</figcaption>
   </figure>
 
@@ -3790,11 +3790,11 @@ def route_template(scope: Scope) -&gt; str:
 
   <figure class="fig wide" id="fig-15-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="The leak, before and after. Before: a query's client-side timeout fires; the driver asks the server to cancel it; every later operation on that connection, including the rollback that returns it to the pool, waits for the server's acknowledgement with no timeout. With Postgres frozen, the acknowledgement never comes: the connection is held forever. Freezing Postgres for 20 seconds under load left 13 of 40 pooled connections stuck after it recovered. After: time is capped on the server side only, by the role's statement timeout and the pooler's query timeout; the pooler fails fast; a connection closed mid-query maps to 503; the readiness probe abandons a slow check instead of cancelling it. The same drill now leaves zero connections held.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="The leak, before and after. Before: a query's client-side timeout fires; the driver asks the server to cancel it; every later operation on that connection, including the rollback that returns it to the pool, waits for the server's acknowledgment with no timeout. With Postgres frozen, the acknowledgment never comes: the connection is held forever. Freezing Postgres for 20 seconds under load left 13 of 40 pooled connections stuck after it recovered. After: time is capped on the server side only, by the role's statement timeout and the pooler's query timeout; the pooler fails fast; a connection closed mid-query maps to 503; the readiness probe abandons a slow check instead of canceling it. The same drill now leaves zero connections held.">
       <text class="tl tr" x="16" y="22">BEFORE: A CLIENT-SIDE TIMEOUT</text>
       <rect class="n" x="16" y="34" width="170" height="54" rx="5"/><text class="ts" x="28" y="56">query times out</text><text class="ts" x="28" y="74">on the client</text>
       <rect class="n" x="216" y="34" width="170" height="54" rx="5"/><text class="ts" x="228" y="56">driver asks the server</text><text class="ts" x="228" y="74">to cancel</text>
-      <rect class="n" x="416" y="34" width="170" height="54" rx="5"/><text class="ts" x="428" y="56">rollback waits for the</text><text class="ts" x="428" y="74">acknowledgement</text>
+      <rect class="n" x="416" y="34" width="170" height="54" rx="5"/><text class="ts" x="428" y="56">rollback waits for the</text><text class="ts" x="428" y="74">acknowledgment</text>
       <rect class="n-bad" x="616" y="34" width="188" height="54" rx="5"/><text class="ts" x="628" y="56">server frozen: it never</text><text class="ts" x="628" y="74">comes; held forever</text>
       <line class="e" x1="187" y1="61" x2="214" y2="61" marker-end="url(#a)"/><line class="e" x1="387" y1="61" x2="414" y2="61" marker-end="url(#a)"/><line class="e-bad" x1="587" y1="61" x2="614" y2="61" marker-end="url(#a-bad)"/>
       <text class="ts tr" x="16" y="114">Postgres frozen 20 s under load: 13 of 40 pool connections stuck after it recovered.</text>
@@ -3804,7 +3804,7 @@ def route_template(scope: Scope) -&gt; str:
       <text class="ts" x="28" y="190">query time capped only on the server: the role's 10 s statement timeout, the pooler's 15 s backstop</text>
       <text class="ts" x="28" y="210">the pooler fails fast: 5 s queue, 5 s connect, 2 s login retry, 1 s for a cached "no such host"</text>
       <text class="ts" x="28" y="230">a connection closed mid-query maps to a 503; the readiness probe abandons a slow check</text>
-      <text class="ts" x="28" y="246">rather than cancelling it</text>
+      <text class="ts" x="28" y="246">rather than canceling it</text>
       <text class="ts tg" x="16" y="282">The same drill: 67,121 reads served, 28 clean 503s, 0 connections held afterwards.</text>
     </svg>
     </div>
@@ -3859,7 +3859,7 @@ def route_template(scope: Scope) -&gt; str:
 
   <h4>Three more rules about waiting</h4>
   <ul>
-    <li><strong>Cancel or abandon.</strong> A timeout cancels once, and cleanup after it can block again. To answer on time no matter what, run the work as a separate task, wait with a deadline, and abandon it (keep a reference, let it finish) when cancelling would trigger a cleanup that can hang.</li>
+    <li><strong>Cancel or abandon.</strong> A timeout cancels once, and cleanup after it can block again. To answer on time no matter what, run the work as a separate task, wait with a deadline, and abandon it (keep a reference, let it finish) when canceling would trigger a cleanup that can hang.</li>
     <li><strong>Propagate deadlines.</strong> Pass the remaining budget down with each call (gRPC deadlines, a per-transaction statement timeout), so no layer works longer than its caller will wait. Otherwise a timed-out client leaves work running, and a retried write can commit twice: hence idempotency keys on writes.</li>
     <li><strong>Keep the sum under the outer limit.</strong> The longest a user can wait is the sum of the timeouts along the path; the proxy's must be above it (Chapter 11).</li>
   </ul>
@@ -4219,7 +4219,7 @@ def route_template(scope: Scope) -&gt; str:
         <tr><td data-label="SLO">Availability</td><td data-label="Measured as">the share of api requests not answered 5xx</td><td data-label="Target">99.5%: a budget of 3.6 hours of errors a month</td></tr>
         <tr><td data-label="SLO">Read latency</td><td data-label="Measured as">p95 of the alert list's request duration</td><td data-label="Target">under 300 ms</td></tr>
         <tr><td data-label="SLO">Time to first word</td><td data-label="Measured as">p95 of the model's time to first token</td><td data-label="Target">under 3 s</td></tr>
-        <tr><td data-label="SLO">Answers completed</td><td data-label="Measured as">model calls ending ok or truncated, among those not cancelled</td><td data-label="Target">99%</td></tr>
+        <tr><td data-label="SLO">Answers completed</td><td data-label="Measured as">model calls ending ok or truncated, among those not canceled</td><td data-label="Target">99%</td></tr>
         <tr><td data-label="SLO">Answer quality</td><td data-label="Measured as">the eval suite on the production model, per release</td><td data-label="Target">the gate passes; safety cases 100%</td></tr>
       </tbody>
     </table>
@@ -5044,7 +5044,7 @@ production because each question costs money (ADR-0023). Its
 <tr><td data-label="Symptom">Every request on a worker slows down at once, health checks included</td><td data-label="Fix">Use async clients, or move blocking work to a thread; watch event-loop lag.</td><td data-label="Chapter"><a href="#ch5">5 · Concurrency and the Python backend</a></td></tr>
 <tr><td data-label="Symptom">Timeouts and fail-opens fire at moderate CPU</td><td data-label="Fix">Treat loop lag as the saturation signal; scale before it rises.</td><td data-label="Chapter"><a href="#ch5">5 · Concurrency and the Python backend</a></td></tr>
 <tr><td data-label="Symptom">A probe with a 2-second timeout took over 10 seconds</td><td data-label="Fix">Run the check as a task, wait with a deadline, and abandon it rather than cancel.</td><td data-label="Chapter"><a href="#ch5">5 · Concurrency and the Python backend</a></td></tr>
-<tr><td data-label="Symptom">A cancelled stream kept the model call running and billing</td><td data-label="Fix">Close generators explicitly (<code>contextlib.aclosing</code>) and stop the upstream call in <code>finally</code>.</td><td data-label="Chapter"><a href="#ch5">5 · Concurrency and the Python backend</a></td></tr>
+<tr><td data-label="Symptom">A canceled stream kept the model call running and billing</td><td data-label="Fix">Close generators explicitly (<code>contextlib.aclosing</code>) and stop the upstream call in <code>finally</code>.</td><td data-label="Chapter"><a href="#ch5">5 · Concurrency and the Python backend</a></td></tr>
 <tr><td data-label="Symptom">A request-scoped database session held its connection for a whole streamed answer</td><td data-label="Fix">Scope the session to the function, and load data before streaming.</td><td data-label="Chapter"><a href="#ch5">5 · Concurrency and the Python backend</a></td></tr>
 <tr><td data-label="Symptom">The request id is missing from error responses</td><td data-label="Fix">Handle errors inside the middleware that sets the id.</td><td data-label="Chapter"><a href="#ch5">5 · Concurrency and the Python backend</a></td></tr>
 <tr><td data-label="Symptom">A runtime check vanished in production</td><td data-label="Fix">Use an explicit check and <code>raise</code>.</td><td data-label="Chapter"><a href="#ch5">5 · Concurrency and the Python backend</a></td></tr>

@@ -404,7 +404,7 @@
       <tr><td data-label="Then">Centralized version control: one server, locks, commits straight to trunk</td><td>Git: every clone is a full copy, and changes arrive through pull requests</td><td>Cheap branches and offline work, with review built into the flow.</td></tr>
       <tr><td data-label="Then">Long-lived feature and release branches (GitFlow)</td><td>Trunk-based: branches live for hours or days, main is always deployable</td><td>Long branches drift and make merges painful; services ship continuously.</td></tr>
       <tr><td data-label="Then">Code review by meeting or email, sometimes after the merge</td><td>Review in the pull request, before the merge, beside CI results</td><td>A reviewer sees the diff, the tests and the evidence together.</td></tr>
-      <tr><td data-label="Then">Every small commit kept on trunk, with merge commits everywhere</td><td>Squash merges: one commit per change on main, and a linear history</td><td>One change is one revertable commit; the detail stays in the pull request.</td></tr>
+      <tr><td data-label="Then">Every small commit kept on trunk, with merge commits everywhere</td><td>Squash merges: one commit per change on main, and a linear history</td><td>One change is one revertible commit; the detail stays in the pull request.</td></tr>
       <tr><td data-label="Then">Tickets and commits linked by hand, or not at all</td><td>An issue number in the branch name and <code>Closes #12</code> in the pull request link them automatically</td><td>Traceability nobody has to remember to maintain.</td></tr>
       <tr><td data-label="Then">Review rules held in people's heads</td><td>Branch protection, code owners and a pull request template</td><td>Rules that are enforced are followed by humans and AI coding tools alike.</td></tr>
     </tbody>
@@ -743,7 +743,7 @@
       <text class="ts" x="80" y="164" text-anchor="middle">every push to it</text>
 
       <rect class="n" x="214" y="12" width="300" height="38" rx="5"/>
-      <text class="tm tb" x="226" y="36">lint</text><text class="ts" x="276" y="36">ruff, format, mypy, alert-rule tests, shell</text>
+      <text class="tm tb" x="226" y="36">lint</text><text class="ts" x="276" y="36">ruff, mypy, alert rules, shell, settings</text>
       <rect class="n" x="214" y="58" width="300" height="38" rx="5"/>
       <text class="tm tb" x="226" y="82">test-api</text><text class="ts" x="296" y="82">real Postgres stack, migrations, pytest</text>
       <rect class="n" x="214" y="104" width="300" height="38" rx="5"/>
@@ -2094,7 +2094,7 @@ Compared with a hand-built VM:
     <li><strong>No SSH key and no port 22.</strong> Operators use Session Manager and Run Command, which the instance's role allows and CloudTrail records.</li>
     <li><strong>No registry password.</strong> A credential helper gets ECR credentials from the instance's role.</li>
     <li><strong>Built from code.</strong> cloud-init installs Docker, creates the deploy user, clones the repository for its compose files and scripts, and generates the <code>.env</code> with random passwords at first boot. Because cloud-init runs only once, a changed recipe replaces the VM rather than editing it.</li>
-    <li><strong>Small surface.</strong> The metadata service accepts only its tokened version (IMDSv2), the disk is encrypted, and the security group admits HTTP and nothing else.</li>
+    <li><strong>Small surface.</strong> The metadata service accepts only its token-based version (IMDSv2), the disk is encrypted, and the security group admits HTTP and nothing else.</li>
   </ul>
 
   <section class="repo">

@@ -454,7 +454,7 @@ def normalise(lines: list[str]) -> str:
     return textwrap.dedent("\n".join(l.rstrip() for l in lines)).strip("\n")
 
 
-BRITISH = re.compile(r"\b(?:[Bb]ehaviours?|[Oo]rganisations?|[Ll]icences?|[Cc]atalogue[ds]?|[Ll]abelled|[Nn]eighbours?|[Rr]ecognis\w*|[Nn]ormalis\w*|[Oo]ptimis(?:e|ed|es|ing|ation)|[Ss]ummaris\w*|[Ss]anitis\w*|[Aa]uthoris\w*|[Mm]inimis\w*|[Dd]efences?|[Jj]udgement|[Gg]rey|[Cc]olours?|[Ff]avour\w*|[Cc]entres?|[Pp]ractised|[Mm]odelled|[Ww]hilst|[Aa]mongst|for ever)\b")
+BRITISH = re.compile(r"\b(?:[Bb]ehaviours?|[Oo]rganisations?|[Ll]icences?|[Cc]atalogue[ds]?|[Ll]abelled|[Nn]eighbours?|[Rr]ecognis\w*|[Nn]ormalis\w*|[Oo]ptimis(?:e|ed|es|ing|ation)|[Ss]ummaris\w*|[Ss]anitis\w*|[Aa]uthoris\w*|[Mm]inimis\w*|[Dd]efences?|[Jj]udgement|[Gg]rey|[Cc]olours?|[Ff]avour\w*|[Cc]entres?|[Pp]ractised|[Mm]odelled|[Ww]hilst|[Aa]mongst|for ever|LABELLED|[Mm]aths|[Cc]ancell(?:ed|ing)|[Aa]cknowledgement)\b")
 EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿⭐✅❌]")
 FORBIDDEN = [
     (re.compile(r"\b\d{12}\b"), "a 12-digit number (an AWS account id?)"),
@@ -564,6 +564,21 @@ def check() -> int:
         for word in ("—",):
             if word in text:
                 problems.append(f"{book}: em dash used {text.count(word)} times")
+    # The rest of what is published: the landing page, the README and the labs.
+    for f in [ROOT / "index.html", ROOT / "README.md", *sorted((ROOT / "labs").rglob("*.md"))]:
+        raw = f.read_text()
+        if f.suffix == ".md":
+            text = re.sub(r"```.*?```|`[^`\n]*`|\]\([^)]*\)", " ", raw, flags=re.S)
+        else:
+            text = strip_tags(re.sub(r"<style>.*?</style>|<pre.*?</pre>|<code>.*?</code>|href=\"[^\"]*\"", " ", raw, flags=re.S))
+        name = f.relative_to(ROOT)
+        if EMOJI.search(text):
+            problems.append(f"{name}: emoji {EMOJI.findall(text)[:5]}")
+        for word in sorted(set(re.findall(BRITISH, text))):
+            problems.append(f"{name}: British spelling: {word}")
+        for rx, what in FORBIDDEN:
+            for hit in sorted(set(rx.findall(text)))[:5]:
+                problems.append(f"{name}: {what}: {hit!r}")
     for p in problems:
         print("PROBLEM", p)
     print(f"{len(problems)} problem(s)")

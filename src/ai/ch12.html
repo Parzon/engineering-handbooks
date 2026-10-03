@@ -113,7 +113,7 @@
   </figure>
 
   <h3 id="ch12-slo">Service levels for an AI feature</h3>
-  <p>An <strong>SLI</strong> is what is measured (the share of requests answered without error; the p95 time to first token); an <strong>SLO</strong> is the internal target over a window (99.5% over 30 days; that p95 under three seconds), whose gap to 100% is the error budget; an <strong>SLA</strong> is the contractual promise, set looser than the SLO. AI adds quality indicators: the eval pass rate per release, refusal and fallback rates, the grounded share of sampled answers, and the cost per request. The reference service's proposed objectives include answers completed (99% of model calls not cancelled ending well) and answer quality (the gate passes on the production model each release, with safety cases at 100%), beside availability and latency (Handbook 2, Chapter 17).</p>
+  <p>An <strong>SLI</strong> is what is measured (the share of requests answered without error; the p95 time to first token); an <strong>SLO</strong> is the internal target over a window (99.5% over 30 days; that p95 under three seconds), whose gap to 100% is the error budget; an <strong>SLA</strong> is the contractual promise, set looser than the SLO. AI adds quality indicators: the eval pass rate per release, refusal and fallback rates, the grounded share of sampled answers, and the cost per request. The reference service's proposed objectives include answers completed (99% of model calls not canceled ending well) and answer quality (the gate passes on the production model each release, with safety cases at 100%), beside availability and latency (Handbook 2, Chapter 17).</p>
 
   <h3 id="ch12-checklist">The end-to-end checklist</h3>
   <figure class="fig wide" id="fig-12-4">

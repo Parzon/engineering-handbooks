@@ -81,7 +81,7 @@
   <p>The integration suite starts its own Compose project, with its own containers, network and volumes, so tests never see development data and everything is deleted afterwards. Before the tests run, the migrations build the schema, and a check fails if the models and the migrations disagree. The test database runs with durability turned off, because throwaway data does not need it and every commit then skips the disk flush. Timeouts and limits are set small (a 1-second model read timeout, 0.2-second heartbeats, five requests a minute) so failure paths are fast to test.</p>
   <ul>
     <li><strong>Do not mock the database.</strong> Real SQL through the real driver and pooler; a mocked session would have missed both of the big database bugs.</li>
-    <li><strong>Do not mock the provider's SDK.</strong> The mock model is an HTTP server speaking the provider's API, so tests exercise the real SDK, its retries, its streaming and its exceptions; it can also hang, drop mid-stream or return 429 on demand, and it counts cancelled streams.</li>
+    <li><strong>Do not mock the provider's SDK.</strong> The mock model is an HTTP server speaking the provider's API, so tests exercise the real SDK, its retries, its streaming and its exceptions; it can also hang, drop mid-stream or return 429 on demand, and it counts canceled streams.</li>
     <li><strong>Do not fake time when the test is about time.</strong> Heartbeat and timeout tests use small real durations, because the bugs live in the interaction with the event loop.</li>
     <li><strong>Prefer fakes to mocks.</strong> A fake is a small working implementation; a mock records calls and ties the test to the implementation.</li>
   </ul>

@@ -162,6 +162,6 @@ If one question in twenty fails:
 
 To keep every failure, decide at the end: **tail sampling**, in an
 OpenTelemetry Collector (keep errors and slow traces, plus a share of the
-rest). Not built here 📘.
+rest). Not built here.
 
 The cost of keeping everything, measured: see the AI observability chapter.

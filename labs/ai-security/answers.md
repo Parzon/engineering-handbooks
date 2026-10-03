@@ -37,7 +37,7 @@ Likewise masks (`****`), references (`$DB_PASSWORD`, `${...}`) and
 placeholders (`<your password>`) are not secrets. The shell's own
 `PWD=/home/...` is a directory.
 
-**What redaction can never catch.** A secret with no recognisable format,
+**What redaction can never catch.** A secret with no recognizable format,
 no telling name and no telling position: a random string alone on a line,
 or a password said in prose ("it's the name of the dog"). Redaction is a
 list of patterns, a floor under the prompt's own rule, never a guarantee.
@@ -128,7 +128,7 @@ update or delete anyway.
 database container as `POSTGRES_USER`, the schema **owner**. The owner has
 every privilege on its tables, and row-level security does not apply to it.
 
-**Trustworthy even against the owner** (📘 not built here): copy each event
+**Trustworthy even against the owner** (not built here): copy each event
 somewhere the database's administrators cannot change. Two options:
 - **an append-only store** outside the database, such as object storage
   with a retention lock, or a separate logging account;

@@ -273,7 +273,7 @@ fi</code></pre>
 
   <figure class="fig wide" id="fig-1-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 230" role="img" aria-label="Configuration flow: .env.example, committed, lists every variable; setup generates .env with fresh secrets, never committed; Compose passes only variables listed under each service's environment; the container reads them into typed settings; in production mode, unsafe values stop the service at startup with each problem named. A check in lint makes sure every setting is listed in Compose.">
+    <svg viewBox="0 0 820 230" role="img" aria-label="Configuration flow: .env.example, committed, lists what a first run sets; setup generates .env with fresh secrets, never committed; Compose passes only variables listed under each service's environment; the container reads them into typed settings; in production mode, unsafe values stop the service at startup with each problem named. A check in lint makes sure every setting is listed in Compose.">
       <rect class="n-acc" x="16" y="40" width="140" height="70" rx="5"/><text class="tm tb" x="86" y="66" text-anchor="middle">.env.example</text><text class="ts" x="86" y="84" text-anchor="middle">committed: the</text><text class="ts" x="86" y="99" text-anchor="middle">contract</text>
       <rect class="n" x="186" y="40" width="140" height="70" rx="5"/><text class="tm tb" x="256" y="66" text-anchor="middle">.env</text><text class="ts" x="256" y="84" text-anchor="middle">secrets generated;</text><text class="ts" x="256" y="99" text-anchor="middle">never committed</text>
       <rect class="n" x="356" y="40" width="140" height="70" rx="5"/><text class="tb" x="426" y="66" text-anchor="middle">Compose</text><text class="ts" x="426" y="84" text-anchor="middle">passes only what a</text><text class="ts" x="426" y="99" text-anchor="middle">service lists</text>
@@ -444,7 +444,7 @@ fi</code></pre>
     </li>
     <li>
       <p>Why does <code>.env.example</code> belong in Git while <code>.env</code> never does?</p>
-      <details class="ans"><summary>Answer</summary><p><code>.env.example</code> is the contract: every variable, with placeholders and explanations, and no secrets. <code>.env</code> holds real values and secrets for one machine, generated from the example.</p></details>
+      <details class="ans"><summary>Answer</summary><p><code>.env.example</code> is the contract: what a first run sets, with placeholders and explanations, and no secrets (the settings reference lists every variable and its default). <code>.env</code> holds real values and secrets for one machine, generated from the example.</p></details>
     </li>
     <li>
       <p>What do code owners add to branch protection?</p>

@@ -113,7 +113,7 @@ BOOKS = {
             ("Part III · Identity", [("ch05", "Identity without keys")]),
             ("Part IV · Getting code onto servers", [("ch06", "The deployment ladder, and one VM done properly"), ("ch07", "Infrastructure as code")]),
             ("Part V · Running on AWS", [("ch08", "Networking on AWS"), ("ch09", "Containers on ECS Fargate"), ("ch10", "Kubernetes and EKS"), ("ch11", "The same ideas on Azure and Google Cloud")]),
-            ("Part VI · The reference build", [("ch12", "Case studies from a real deployment")]),
+            ("Part VI · The reference build", [("ch12", "The reference build, end to end")]),
             ("Part VII · Operating it", [("ch13", "Environments, releases and rollback"), ("ch14", "Cost, teardown and lessons learned")]),
         ],
     },

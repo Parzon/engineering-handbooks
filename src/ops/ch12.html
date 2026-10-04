@@ -2,17 +2,20 @@
   <header class="ch-head">
     <span class="ch-num">12</span>
     <p class="eyebrow">Part VI · The reference build</p>
-    <h2>Case studies from a real deployment</h2>
-    <p class="lede">The reference service was taken from container images to a load-balanced, autoscaled ECS deployment in nine measured stages, and each stage either proved a property or exposed a failure worth knowing about before it happens to you.</p>
+    <h2>The reference build, end to end</h2>
+    <p class="lede">How it all comes together: one change from issue to production, the infrastructure code that runs it on AWS, and what ten measured stages of building and breaking it taught.</p>
   </header>
 
   <div class="glance">
     <span class="label">At a glance</span>
     <ul>
+      <li>A change travels one path, issue to production, and every gate on it is a file in the repository or a setting that cannot be skipped.</li>
+      <li>Five CDK stacks and two workflows hold the whole deployment. Read them in the order a release travels, and they explain how a version tag becomes a running service.</li>
       <li>Every stage ended in evidence: a digest compared, requests counted during a deploy, a metric read from the load balancer.</li>
       <li>Most failures were configuration, and several were invisible until something was measured.</li>
       <li>A client-side probe reported an outage that never happened: judge availability from server-side metrics.</li>
       <li>The finished loop: one version tag, and the release is live on ECS 8 minutes 37 seconds later, with no failed requests.</li>
+      <li>A last stage held the code to its own written rules and found eight gaps on the path to AWS; each was fixed and shown before and after.</li>
       <li>The whole reference deployment, VM and ECS stacks included, cost about sixty cents of cloud time, because everything billed by the hour was torn down after each session.</li>
     </ul>
   </div>
@@ -20,8 +23,8 @@
   <h3 id="ch12-stages">The stages</h3>
   <figure class="fig wide" id="fig-12-1">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="Nine stages, each with what it proved: 0 account access; 1 images in ECR with immutable tags; 2 keyless CI; 3 a VM with no SSH, upgraded and rolled back with no failed requests; 4 ECS with RDS behind a load balancer; 5 rolling deploys, rollback and an automatic rollback of a bad release; 6 a tag goes live through the pipeline alone; 7 scaling, drift, autoscaling and outage drills; 8 observability.">
-      <line class="rule-strong" x1="40" y1="40" x2="40" y2="290"/>
+    <svg viewBox="0 0 820 328" role="img" aria-label="Ten stages, each with what it proved: 0 account access; 1 images in ECR with immutable tags; 2 keyless CI; 3 a VM with no SSH, upgraded and rolled back with no failed requests; 4 ECS with RDS behind a load balancer; 5 rolling deploys, rollback and an automatic rollback of a bad release; 6 a tag goes live through the pipeline alone; 7 scaling, drift, autoscaling and outage drills; 8 observability; 9 a review against the code's own rules, each fix shown before and after.">
+      <line class="rule-strong" x1="40" y1="40" x2="40" y2="318"/>
       <circle class="fill-acc" cx="40" cy="44" r="6"/><text class="tb" x="60" y="49">0  Account access</text><text class="ts" x="330" y="49">a new account is not usable until verified; check with read-only calls</text>
       <circle class="fill-acc" cx="40" cy="72" r="6"/><text class="tb" x="60" y="77">1  Images and ECR</text><text class="ts" x="330" y="77">same digest as the source registry; overwriting a tag refused</text>
       <circle class="fill-acc" cx="40" cy="100" r="6"/><text class="tb" x="60" y="105">2  Keyless CI</text><text class="ts" x="330" y="105">OIDC roles; a trust policy fixed from the real token (Chapter 5)</text>
@@ -31,10 +34,465 @@
       <circle class="fill-acc" cx="40" cy="212" r="6"/><text class="tb" x="60" y="217">6  Tag to live, no human step</text><text class="ts" x="330" y="217">8 min 37 s, 967 probes, 0 failed; rollback by the same pipeline</text>
       <circle class="fill-acc" cx="40" cy="240" r="6"/><text class="tb" x="60" y="245">7  Scale, drift, drills</text><text class="ts" x="330" y="245">a shared-state bug; drift found; autoscaling; outages survived</text>
       <circle class="fill-acc" cx="40" cy="268" r="6"/><text class="tb" x="60" y="273">8  Observability</text><text class="ts" x="330" y="273">logs per container, load balancer metrics, alarms</text>
+      <circle class="fill-acc" cx="40" cy="296" r="6"/><text class="tb" x="60" y="301">9  A review, then the fixes</text><text class="ts" x="330" y="301">eight gaps against the code's own rules; each fixed, shown before and after</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 12.1</span>The reference build, stage by stage. Each stage built on the last and ended with a measurement. The sections below tell the stories behind the ones that taught the most.</figcaption>
+    <figcaption><span class="fig-n">Figure 12.1</span>The reference build, stage by stage. Each stage built on the last and ended with a measurement. After the path and the code, the sections below tell the stories behind the stages that taught the most.</figcaption>
   </figure>
+
+  <h3 id="ch12-change">One change, from issue to production</h3>
+  <p>Every change to the reference service takes the same path, and each step is held by a file in the repository or a setting on GitHub, not by anyone's memory. Chapters 2 to 5 explain the pieces one at a time. Here is the whole path in one place, with the file to read at each step. The timings are from a real release: the fixes in the version this handbook quotes took exactly this path.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Step</th><th>What happens</th><th>Held by</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Step">1 · Issue</td><td data-label="What happens">The problem, and how to tell it is fixed. Every change starts from one.</td><td data-label="Held by"><a href="{{TATREE}}/.github/ISSUE_TEMPLATE">.github/ISSUE_TEMPLATE</a>: a bug form and a feature form</td></tr>
+        <tr><td data-label="Step">2 · Branch and commits</td><td data-label="What happens">A branch named <code>type/&lt;issue&gt;-&lt;short-desc&gt;</code>, such as <code>feat/12-post-alerts</code>; commits in Conventional Commits form (<code>fix:</code>, <code>docs:</code>).</td><td data-label="Held by"><a href="{{TA}}/CONTRIBUTING.md">CONTRIBUTING.md</a></td></tr>
+        <tr><td data-label="Step">3 · Push</td><td data-label="What happens">A pre-push hook runs lint, types and unit tests in containers, about 10 seconds, before anything leaves the machine.</td><td data-label="Held by"><a href="{{TA}}/scripts/git-hooks/pre-push">scripts/git-hooks/pre-push</a>, installed by <code>make hooks</code></td></tr>
+        <tr><td data-label="Step">4 · Pull request</td><td data-label="What happens">The template asks for <code>Closes #N</code>, what changed and why, how it was verified, and a checklist. The code owners file requests the owner's review.</td><td data-label="Held by"><a href="{{TA}}/.github/pull_request_template.md">pull_request_template.md</a>, <a href="{{TA}}/.github/CODEOWNERS">CODEOWNERS</a></td></tr>
+        <tr><td data-label="Step">5 · CI</td><td data-label="What happens">Six jobs: lint, the api tests on a real stack, the production image, the security scans, the web build and the browser tests. Five start at once; the image waits for lint. All six are required, on a branch up to date with main. About three minutes.</td><td data-label="Held by"><a href="{{TA}}/.github/workflows/ci.yml">ci.yml</a>; branch protection on main</td></tr>
+        <tr><td data-label="Step">6 · Merge</td><td data-label="What happens">One approval from a code owner, then a squash merge: one commit per change on a linear main. <code>Closes #N</code> closes the issue. GitHub never lets authors approve their own pull requests, so a solo owner merges with the administrator bypass, deliberately (Chapter 2).</td><td data-label="Held by">branch protection; the repository allows squash merges only</td></tr>
+        <tr><td data-label="Step">7 · Tag</td><td data-label="What happens"><code>git tag -a vX.Y.Z</code> on main, then push the tag. Only that pattern starts a release; any other tag starts nothing.</td><td data-label="Held by">the release workflow's trigger</td></tr>
+        <tr><td data-label="Step">8 · Release</td><td data-label="What happens">Checks that the tag is on main, scans again, builds each image natively for two processor types, publishes them to GitHub's registry, smoke-tests what it published, copies it to ECR through OIDC, and writes the release notes. About four minutes.</td><td data-label="Held by"><a href="{{TA}}/.github/workflows/release.yml">release.yml</a></td></tr>
+        <tr><td data-label="Step">9 · Deploy</td><td data-label="What happens">Starts when the release succeeds, waits for the reviewer the <code>aws-demo</code> environment requires, assumes the deploy role through OIDC, and runs <code>cdk deploy</code> with the new version: a rolling update with the circuit breaker armed, then a smoke test through the load balancer. About nine and a half minutes when the deploy created the stack from nothing; about four for an update.</td><td data-label="Held by"><a href="{{TA}}/.github/workflows/deploy.yml">deploy.yml</a>, <a href="{{TATREE}}/infra/aws">infra/aws</a></td></tr>
+        <tr><td data-label="Step">10 · Rollback</td><td data-label="What happens">The same deploy, started by hand with the previous version. The infrastructure stays; the image changes.</td><td data-label="Held by">the deploy workflow's manual trigger</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Two properties make the path trustworthy. No step depends on someone remembering it: each gate is a file reviewed like code, or a setting only an administrator can override. And every step leaves evidence another person can read later: the issue, the pull request with its checks, the release with its notes, the deploy with its approval.</p>
+
+  <h3 id="ch12-code">The infrastructure code, end to end</h3>
+  <p>Everything AWS runs comes from one folder, <code>infra/aws</code>: a single CDK application of five stacks (Chapter 7). Three cost nothing or almost nothing and stay up between sessions: the image registry, the identity that lets CI reach AWS, and the network. Two are billed by the hour and are built for a session and destroyed after it: the single VM of Chapter 6, and the application stack, which holds everything a request touches. Read in the order a release travels, these files are a complete account of how a version tag becomes a running service.</p>
+
+  <figure class="fig wide" id="fig-12-2">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 404" role="img" aria-label="The deployment as code. On GitHub, a version tag starts release.yml, which builds, scans, publishes and smoke-tests the images; its ecr job, as the ECR role, copies them into the registry stack's repositories. After the release succeeds, deploy.yml waits for approval and, as the deploy role, runs cdk deploy on the application stack, then smoke-tests through the load balancer. Both workflows reach AWS with GitHub's OIDC tokens, through the identity stack triage-cicd, which holds the two roles. The infra/aws folder is one CDK app of five stacks: triage-cicd, triage-registry (ECR repositories with immutable tags), triage-network (a VPC over two zones without NAT), triage-vm (one VM without SSH) and triage-app (the load balancer, ECS, RDS, Valkey, secrets and alarms). The VM and the application stack use the registry's images and the network. The first three stacks cost nothing or only storage, and stay up; the VM and the application stack are billed by the hour and torn down after each session.">
+      <rect class="zone" x="16" y="20" width="180" height="370" rx="8"/>
+      <text class="tl" x="28" y="40">GITHUB</text>
+      <rect class="n-acc" x="28" y="52" width="156" height="44" rx="5"/>
+      <text class="tb" x="106" y="71" text-anchor="middle">A version tag</text>
+      <text class="ts" x="106" y="88" text-anchor="middle">vX.Y.Z on main</text>
+      <line class="e" x1="106" y1="97" x2="106" y2="115" marker-end="url(#a)"/>
+      <rect class="n" x="28" y="118" width="156" height="98" rx="5"/>
+      <text class="tm tb" x="40" y="138">release.yml</text>
+      <text class="ts" x="40" y="157">build, scan, publish</text>
+      <text class="ts" x="40" y="173">smoke-test the images</text>
+      <text class="ts" x="40" y="189">ecr job, as the ECR role:</text>
+      <text class="ts" x="40" y="205">copy them to ECR</text>
+      <line class="e" x1="106" y1="217" x2="106" y2="237" marker-end="url(#a)"/>
+      <text class="ts tmu" x="116" y="231">if it succeeds</text>
+      <rect class="n" x="28" y="240" width="156" height="138" rx="5"/>
+      <text class="tm tb" x="40" y="260">deploy.yml</text>
+      <text class="ts" x="40" y="279">waits for approval</text>
+      <text class="ts" x="40" y="295">as the deploy role:</text>
+      <text class="ts" x="40" y="311">cdk deploy triage-app</text>
+      <text class="ts" x="40" y="327">rolling, with a breaker</text>
+      <text class="ts" x="40" y="343">smoke test through</text>
+      <text class="ts" x="40" y="359">the load balancer</text>
+
+      <rect class="zone" x="256" y="20" width="334" height="370" rx="8"/>
+      <text class="tl" x="268" y="40">INFRA/AWS: ONE CDK APP OF FIVE STACKS</text>
+      <rect class="n-soft" x="268" y="52" width="272" height="52" rx="5"/>
+      <text class="tb" x="280" y="72">triage-cicd</text><text class="tm ts" x="528" y="72" text-anchor="end">cicd.py</text>
+      <text class="ts" x="280" y="91">trusts GitHub's OIDC; ECR and deploy roles</text>
+      <rect class="n" x="268" y="120" width="272" height="52" rx="5"/>
+      <text class="tb" x="280" y="140">triage-registry</text><text class="tm ts" x="528" y="140" text-anchor="end">registry.py</text>
+      <text class="ts" x="280" y="159">ECR repositories, immutable tags</text>
+      <rect class="n" x="268" y="188" width="272" height="52" rx="5"/>
+      <text class="tb" x="280" y="208">triage-network</text><text class="tm ts" x="528" y="208" text-anchor="end">network.py</text>
+      <text class="ts" x="280" y="227">VPC over two zones; no NAT gateway</text>
+      <rect class="n" x="268" y="256" width="272" height="52" rx="5"/>
+      <text class="tb" x="280" y="276">triage-vm</text><text class="tm ts" x="528" y="276" text-anchor="end">vm.py</text>
+      <text class="ts" x="280" y="295">one VM running compose, no SSH</text>
+      <rect class="n-acc" x="268" y="324" width="272" height="52" rx="5"/>
+      <text class="tb" x="280" y="344">triage-app</text><text class="tm ts" x="528" y="344" text-anchor="end">service.py</text>
+      <text class="ts" x="280" y="363">ALB, ECS, RDS, Valkey, secrets, alarms</text>
+
+      <path class="e" d="M197,38 C234,38 228,76 265,76" marker-end="url(#a)"/>
+      <text class="ts" x="226" y="32" text-anchor="middle">OIDC</text>
+      <path class="e-acc" d="M185,197 C228,197 224,146 265,146" marker-end="url(#a-acc)"/>
+      <path class="e-acc" d="M185,303 C228,303 224,350 265,350" marker-end="url(#a-acc)"/>
+
+      <line class="e" x1="540" y1="282" x2="562" y2="282"/>
+      <line class="e" x1="540" y1="350" x2="562" y2="350"/>
+      <line class="e" x1="562" y1="146" x2="562" y2="350"/>
+      <line class="e" x1="562" y1="146" x2="543" y2="146" marker-end="url(#a)"/>
+      <line class="e" x1="562" y1="214" x2="543" y2="214" marker-end="url(#a)"/>
+      <text class="ts tmu" x="578" y="248" text-anchor="middle" transform="rotate(-90 578 248)">use the images, network</text>
+
+      <line class="rule" x1="606" y1="56" x2="606" y2="236"/>
+      <text class="tl" x="620" y="72">ALWAYS UP</text>
+      <text class="ts" x="620" y="92">free, or storage only:</text>
+      <text class="ts" x="620" y="108">identity, images and the</text>
+      <text class="ts" x="620" y="124">network wait between</text>
+      <text class="ts" x="620" y="140">sessions</text>
+      <line class="rule" x1="606" y1="256" x2="606" y2="376"/>
+      <text class="tl" x="620" y="272">HOURLY, TORN DOWN</text>
+      <text class="ts" x="620" y="292">built for a session and</text>
+      <text class="ts" x="620" y="308">destroyed after it</text>
+      <rect class="n-soft" x="620" y="322" width="190" height="54" rx="4"/>
+      <text class="ts" x="630" y="343">container/*.sh: task start-up</text>
+      <text class="ts" x="630" y="363">ops.sh: deploy, logs, leftovers</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.2</span>The deployment as code. Both workflows reach AWS with GitHub's OIDC tokens, as roles the identity stack holds: the release copies images into the registry, and the deploy updates the application stack alone. The VM and the application stack use the registry's images and the network, and the identity stack limits the ECR role to the registry's repositories.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/README.md#L15-L24">infra/aws/README.md</a><span class="lines">and the registry stack,</span><a href="{{TA}}/infra/aws/registry.py#L14-L33">infra/aws/registry.py</a></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The folder's README draws the path of a request in ten lines, from the load balancer to the containers of one task. The registry stack is the first thing a release touches.</p>
+        <ul class="notice">
+          <li>The load balancer routes <code>/api</code>, which nginx does in compose. nginx finds the api through Docker's DNS server, which Fargate does not have, so on ECS it only serves files.</li>
+          <li>Image tags are immutable: once pushed, a tag always names the same bytes. The first stage tested it by trying to overwrite one.</li>
+          <li>Lifecycle rules keep storage flat: untagged images expire after 7 days, and each repository keeps at most 20 images.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/README.md" data-lines="15-24"><code class="language-plaintext">internet -&gt; ALB :80 -+- /api/metrics, /api/alerts/alertmanager -&gt; 404
+                     +- /api/*  -&gt; rewritten to /* -&gt; api task (target health: /health)
+                     +- else    -&gt; web task, nginx serving the built app (target health: /healthz)
+
+api task (containers share localhost):
+  dbinit, migrate   init containers: the app's least-privileged DB role, then migrations as owner
+  mock-llm          sidecar
+  api               starts after both init containers succeed and the sidecar is healthy
+Valkey: one ElastiCache node shared by every api task (rate limits must be counted once).
+2 tasks per service, one per AZ; the api scales to 4 on requests per target.</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/registry.py" data-lines="14-33"><code class="language-python">for name in IMAGES:
+    self.repos[name] = ecr.Repository(
+        self,
+        name,
+        repository_name=f"triage-assistant-{name}",
+        image_scan_on_push=True,
+        # Tags are immutable: a tag, once pushed, always means the same bytes.
+        image_tag_mutability=ecr.TagMutability.IMMUTABLE,
+        # Throwaway account: `cdk destroy` must leave nothing behind.
+        removal_policy=RemovalPolicy.DESTROY,
+        empty_on_delete=True,
+        lifecycle_rules=[
+            ecr.LifecycleRule(
+                description="expire untagged images after 7 days",
+                tag_status=ecr.TagStatus.UNTAGGED,
+                max_image_age=Duration.days(7),
+            ),
+            ecr.LifecycleRule(description="keep the last 20 images", max_image_count=20),
+        ],
+    )</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L117-L170">infra/aws/service.py</a><span class="lines">who may talk to whom, and the database</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The application stack starts with its boundaries. Each security group admits traffic from another group, never from an address range, so the rules follow the services wherever their tasks land.</p>
+        <ul class="notice">
+          <li>Only the load balancer's group is open to the internet, on port 80. The api and web tasks accept traffic from the load balancer alone. The database and the cache accept it from the api alone, and may not open connections of their own.</li>
+          <li>The database lives in subnets with no route to the internet, encrypted, with credentials that Secrets Manager generated (Chapter 5).</li>
+          <li>Each setting a production database would change carries a <code>production:</code> comment: Multi-AZ, deletion protection, longer backups, a final snapshot.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="117-139"><code class="language-python"># --- Who may talk to whom: security groups reference each other, not IP ranges ---------
+alb_sg = ec2.SecurityGroup(self, "AlbSg", vpc=vpc, description="internet to ALB port 80")
+alb_sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80), "HTTP")
+api_sg = ec2.SecurityGroup(self, "ApiSg", vpc=vpc, description="ALB to api tasks port 8010")
+api_sg.add_ingress_rule(alb_sg, ec2.Port.tcp(8010), "from the ALB only")
+web_sg = ec2.SecurityGroup(self, "WebSg", vpc=vpc, description="ALB to web tasks port 8080")
+web_sg.add_ingress_rule(alb_sg, ec2.Port.tcp(8080), "from the ALB only")
+db_sg = ec2.SecurityGroup(
+    self,
+    "DbSg",
+    vpc=vpc,
+    description="api tasks to Postgres port 5432",
+    allow_all_outbound=False,
+)
+db_sg.add_ingress_rule(api_sg, ec2.Port.tcp(5432), "from api tasks only")
+cache_sg = ec2.SecurityGroup(
+    self,
+    "CacheSg",
+    vpc=vpc,
+    description="api tasks to Valkey port 6379",
+    allow_all_outbound=False,
+)
+cache_sg.add_ingress_rule(api_sg, ec2.Port.tcp(6379), "from api tasks only")</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="147-170"><code class="language-python"># --- Database: managed Postgres in subnets with no internet route ---------------------
+db = rds.DatabaseInstance(
+    self,
+    "Db",
+    instance_identifier="triage-db",
+    engine=rds.DatabaseInstanceEngine.postgres(version=rds.PostgresEngineVersion.VER_17),
+    instance_type=ec2.InstanceType.of(
+        ec2.InstanceClass.BURSTABLE4_GRAVITON, ec2.InstanceSize.MICRO
+    ),
+    vpc=vpc,
+    vpc_subnets=ec2.SubnetSelection(subnets=db_subnets),
+    availability_zone="ap-south-1c",  # where RDS had capacity (network.py)
+    security_groups=[db_sg],
+    credentials=rds.Credentials.from_secret(owner),
+    database_name=DB_NAME,
+    allocated_storage=20,
+    storage_type=rds.StorageType.GP2,
+    storage_encrypted=True,
+    multi_az=False,  # production: True (a standby in the other AZ, ~2x the price)
+    backup_retention=Duration.days(1),  # production: 7-35 days, and a restore rehearsed
+    delete_automated_backups=True,  # production: False
+    deletion_protection=False,  # production: True
+    removal_policy=RemovalPolicy.DESTROY,  # production: SNAPSHOT
+)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L348-L366">infra/aws/service.py</a><span class="lines">the api container's settings, and its start script,</span><a href="{{TA}}/infra/aws/container/api.sh">container/api.sh</a></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The api container's environment is where the load balancer and the application meet. Five of these values changed when a review held the code to its own rules (below).</p>
+        <ul class="notice">
+          <li><code>ROOT_PATH</code> is <code>/api</code> because the load balancer rewrites <code>/api/ready</code> to <code>/ready</code> before the api sees it, as nginx does in compose.</li>
+          <li><code>FORWARDED_ALLOW_IPS</code> is the VPC's range. The load balancer appends the client's address to <code>X-Forwarded-For</code>, so only the addresses it added can be believed.</li>
+          <li>One worker per half-CPU task, with a pool of ten connections: four tasks then hold at most forty database connections.</li>
+          <li>The keep-alive outlasts the load balancer's 130-second idle timeout, and the graceful shutdown ends inside the 120-second stop timeout (Figure 12.3).</li>
+          <li>ECS injects each secret as its own variable; <code>api.sh</code> builds the database URL from them before it starts gunicorn.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="348-366"><code class="language-python">environment={
+    **db_env,
+    "APP_ENV": "prod",
+    "APP_VERSION": tag,
+    "ROOT_PATH": "/api",  # the ALB strips /api, as nginx does in compose
+    # Whose X-Forwarded-For to believe: the ALB's addresses, i.e. the VPC. Not "*":
+    # an ALB appends the client to what the client sent, so with "*" the left-most
+    # entry, which the client wrote, became its address (the sign-in rate limit's key).
+    "FORWARDED_ALLOW_IPS": VPC_CIDR,
+    # One worker per usable CPU, rounded up (gunicorn.conf.py): a 0.5 vCPU task runs
+    # one, and capacity comes from tasks. The pool keeps the connection budget.
+    "WEB_CONCURRENCY": "1",
+    "DB_POOL_SIZE": "10",  # x 1 worker x 4 tasks: inside a db.t4g.micro's ~80
+    # Idle connections: the ALB keeps them 130 s (idle_timeout), so the api must keep
+    # them longer, or the ALB reuses one the api has just closed and answers 502.
+    "GUNICORN_KEEPALIVE": "140",
+    # In-flight requests get 110 s after SIGTERM, inside the 120 s stop timeout.
+    "GUNICORN_GRACEFUL_TIMEOUT": "110",
+    "REDIS_URL": redis_url,</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/container/api.sh" data-lines="1-4"><code class="language-bash"># The api reads one DATABASE_URL; ECS injects the secret as separate values, so compose
+# it here. The generated passwords have no punctuation, so they need no URL-encoding.
+export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+exec gunicorn app.asgi:app -c gunicorn.conf.py</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <figure class="fig wide" id="fig-12-3">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Three orderings the AWS stack keeps, on one scale of 0 to 150 seconds. Idle connections: the load balancer keeps them 130 seconds, so the api and nginx keep them 140; before the review they closed at 75 and 65. A task leaving: the deregistration delay of 130 seconds covers the longest answer of 120; at 30 seconds, longer answers were cut. After SIGTERM: gunicorn's graceful timeout of 110 seconds ends inside the 120-second stop timeout, after which ECS kills the process.">
+      <text class="tb" x="16" y="24">Idle connections: the side behind closes last</text>
+      <text class="ts" x="16" y="56">else a 502 on a</text>
+      <text class="ts" x="16" y="72">reused connection</text>
+      <line class="rule-strong" x1="210" y1="52" x2="780" y2="52"/>
+      <circle class="dot-muted" cx="457" cy="52" r="6"/><circle class="dot-muted" cx="495" cy="52" r="6"/>
+      <text class="ts tmu" x="476" y="76" text-anchor="middle">before: nginx 65 s, api 75 s</text>
+      <circle class="fill-acc" cx="704" cy="52" r="6"/><text class="ts" x="704" y="40" text-anchor="middle">load balancer 130 s</text>
+      <circle class="fill-good" cx="742" cy="52" r="6"/><text class="ts" x="790" y="76" text-anchor="end">api and nginx 140 s</text>
+
+      <text class="tb" x="16" y="114">A task leaving: the drain covers the longest answer</text>
+      <text class="ts" x="16" y="146">deregistration</text>
+      <text class="ts" x="16" y="162">delay</text>
+      <rect class="fill-acc" x="210" y="134" width="494" height="14" rx="2"/>
+      <text class="ts" x="712" y="146">130 s</text>
+      <rect class="n-soft" x="210" y="154" width="114" height="10" rx="2"/>
+      <text class="ts tmu" x="332" y="163">before: 30 s, longer answers were cut</text>
+      <line class="rule dash" x1="666" y1="126" x2="666" y2="172"/>
+      <text class="ts" x="666" y="186" text-anchor="middle">longest answer 120 s</text>
+
+      <text class="tb" x="16" y="214">After SIGTERM: the graceful shutdown ends inside the stop timeout</text>
+      <text class="ts" x="16" y="246">gunicorn graceful</text>
+      <text class="ts" x="16" y="262">timeout</text>
+      <rect class="fill-good" x="210" y="234" width="418" height="14" rx="2"/>
+      <text class="ts" x="210" y="228">110 s</text>
+      <line class="rule dash" x1="666" y1="226" x2="666" y2="262"/>
+      <text class="ts" x="666" y="276" text-anchor="middle">stop timeout 120 s, then SIGKILL</text>
+
+      <line class="rule" x1="210" y1="290" x2="780" y2="290"/>
+      <text class="ts tmu" x="210" y="300" text-anchor="middle">0</text>
+      <text class="ts tmu" x="438" y="300" text-anchor="middle">60</text>
+      <text class="ts tmu" x="780" y="300" text-anchor="end">150 s</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 12.3</span>Three orderings the AWS stack keeps, drawn to scale. Break the first and the load balancer answers 502 on a connection the api has just closed. Break the second and deploys cut long answers: with a 30-second delay, three of four ninety-second answers ended mid-stream when their task stopped; with 130 seconds, none did. Break the third and ECS kills the process before its requests finish.</figcaption>
+  </figure>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L519-L549">infra/aws/service.py</a><span class="lines">routing at the load balancer</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>Two listener rules and a default carry the routing the edge does in compose, checked in priority order.</p>
+        <ul class="notice">
+          <li>Priority 5 answers 404 for the metrics and alert-webhook paths, so the internet never reaches them. Where Prometheus and Alertmanager run, in the compose stacks, they call the api from inside the network.</li>
+          <li>Priority 10 sends <code>/api/*</code> to the api's target group, and a URL rewrite strips the prefix.</li>
+          <li>Everything else falls through to the web service.</li>
+          <li>The rewrite is newer than the CDK construct for listener rules, so it is set on the CloudFormation resource directly: an escape hatch, used when a construct lags the service.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="519-549"><code class="language-python">elbv2.ApplicationListenerRule(
+    self,
+    "Internal",
+    listener=listener,
+    priority=5,
+    conditions=[
+        elbv2.ListenerCondition.path_patterns(["/api/metrics", "/api/alerts/alertmanager"])
+    ],
+    action=elbv2.ListenerAction.fixed_response(
+        404, content_type="application/json", message_body='{"error":"not_found"}'
+    ),
+)
+api_rule = elbv2.ApplicationListenerRule(
+    self,
+    "Api",
+    listener=listener,
+    priority=10,
+    conditions=[elbv2.ListenerCondition.path_patterns(["/api/*"])],
+    action=elbv2.ListenerAction.forward([api_tg]),
+)
+# URL rewrite (ALB, 2025): /api/ready -&gt; /ready. Not in the CDK L2 yet, so set it on the
+# CloudFormation resource directly (an "escape hatch").
+api_rule.node.default_child.add_property_override(
+    "Transforms",
+    [
+        {
+            "Type": "url-rewrite",
+            "UrlRewriteConfig": {"Rewrites": [{"Regex": "^/api/(.*)$", "Replace": "/$1"}]},
+        }
+    ],
+)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L551-L584">infra/aws/service.py</a><span class="lines">scaling and alarms</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The service grows with its load and reports when it is unwell.</p>
+        <ul class="notice">
+          <li>Autoscaling runs two to four api tasks, adding one while each serves over 1,000 requests a minute. The ceiling comes from the database's connection limit, not from the load.</li>
+          <li>Scale-out waits one minute between steps and scale-in five, so the count does not flap.</li>
+          <li>The two alarms watch what users feel: unhealthy targets and 5xx responses. Neither notifies anyone yet; in production they page the on-call through SNS.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="551-584"><code class="language-python"># --- autoscaling: more api tasks while each serves over 1,000 requests a minute --------
+# Bounded by the database: 4 tasks x 1 worker x DB_POOL_SIZE 10 = 40 connections, inside
+# a db.t4g.micro's ~80. Scale-in waits longer than scale-out, so it does not flap.
+scaling = api_svc.auto_scale_task_count(min_capacity=2, max_capacity=4)
+scaling.scale_on_request_count(
+    "Requests",
+    requests_per_target=1000,
+    target_group=api_tg,
+    scale_out_cooldown=Duration.seconds(60),
+    scale_in_cooldown=Duration.seconds(300),
+)
+
+# --- alarms (the first 10 are free); production: an SNS topic to the on-call ------------
+cw.Alarm(
+    self,
+    "ApiUnhealthy",
+    alarm_name="triage-api-unhealthy-targets",
+    metric=api_tg.metrics.unhealthy_host_count(period=Duration.minutes(1)),
+    threshold=0,
+    comparison_operator=cw.ComparisonOperator.GREATER_THAN_THRESHOLD,
+    evaluation_periods=2,
+    treat_missing_data=cw.TreatMissingData.NOT_BREACHING,
+)
+cw.Alarm(
+    self,
+    "Api5xx",
+    alarm_name="triage-api-5xx",
+    metric=api_tg.metrics.http_code_target(
+        elbv2.HttpCodeTarget.TARGET_5XX_COUNT, period=Duration.minutes(1)
+    ),
+    threshold=5,
+    evaluation_periods=1,
+    treat_missing_data=cw.TreatMissingData.NOT_BREACHING,
+)</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/.github/workflows/deploy.yml#L78-L94">.github/workflows/deploy.yml</a><span class="lines">the last mile: a release onto the stack</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p>The deploy workflow (Chapter 5 shows how it gets its credentials) ends in one command: <code>cdk deploy triage-app</code> with the release's version.</p>
+        <ul class="notice">
+          <li><code>--exclusively</code> deploys the application stack alone. The other stacks are deployed once, from a workstation, and rarely change.</li>
+          <li>CloudFormation waits until ECS reports the service stable. A release whose tasks keep failing is rolled back by the circuit breaker, and the step fails.</li>
+          <li>The smoke test calls the readiness endpoint through the load balancer, the path a user's request takes.</li>
+          <li>The infrastructure code comes from main and the image from the release, so rolling the application back never rolls the infrastructure back.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path=".github/workflows/deploy.yml" data-lines="78-94"><code class="language-yaml"># Rolling deploy; CloudFormation waits until ECS is stable. A release whose tasks keep
+# failing is rolled back by the ECS deployment circuit breaker, and this step fails.
+- name: cdk deploy triage-app
+  working-directory: infra/aws
+  run: |
+    CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
+    export CDK_DEFAULT_ACCOUNT
+    uv sync --frozen
+    npx --yes aws-cdk@2.1143.0 deploy triage-app --exclusively --require-approval never \
+      -c tag="$TAG" --outputs-file outputs.json
+- id: smoke
+  name: Smoke test through the load balancer
+  working-directory: infra/aws
+  run: |
+    url=$(jq -r '."triage-app".Url' outputs.json)
+    echo "url=$url" &gt;&gt; "$GITHUB_OUTPUT"
+    curl -fsS --retry 5 --retry-delay 5 --retry-all-errors "$url/api/ready"</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <h4>From demonstration to production</h4>
+  <p>The stack is sized for a throwaway account. Every place production differs is marked in the code with a <code>production:</code> comment or listed in the folder's README, so this list is the code's own:</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Area</th><th>In the reference build</th><th>In production</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Area">Entry</td><td data-label="Reference">HTTP on port 80, no certificate</td><td data-label="Production">HTTPS with an ACM certificate, port 80 redirecting to it, and AWS WAF in front</td></tr>
+        <tr><td data-label="Area">Sign-in and model</td><td data-label="Reference">no identity provider, reported as degraded; the mock model and insecure cookies, both waived by name in the production checks</td><td data-label="Production">the organization's OIDC provider, a model provider and HTTPS, with nothing waived</td></tr>
+        <tr><td data-label="Area">Database</td><td data-label="Reference">one zone, one day of backups, deleted with the stack</td><td data-label="Production">Multi-AZ, deletion protection, 7 to 35 days of backups and a rehearsed restore, a final snapshot</td></tr>
+        <tr><td data-label="Area">Cache</td><td data-label="Reference">one node, no AUTH user</td><td data-label="Production">a replica in the other zone with automatic failover, and an AUTH user</td></tr>
+        <tr><td data-label="Area">Network</td><td data-label="Reference">tasks in public subnets with public addresses, no NAT gateway</td><td data-label="Production">private subnets, with a NAT gateway or VPC endpoints for ECR and logs</td></tr>
+        <tr><td data-label="Area">Containers</td><td data-label="Reference">a writable root filesystem; ECS Exec on</td><td data-label="Production">a read-only root with a writable <code>/tmp</code>; ECS Exec off, or limited to the on-call role and logged</td></tr>
+        <tr><td data-label="Area">Operations</td><td data-label="Reference">logs kept 3 days; alarms notify nobody; secrets deleted with the stack</td><td data-label="Production">log retention set by what incidents need; alarms page the on-call; secrets retained</td></tr>
+      </tbody>
+    </table>
+  </div>
 
   <h3 id="ch12-images">Images: the same bytes in a second place</h3>
   <p>The release images already existed in GitHub's registry, built for two processor types. They were copied into ECR as whole multi-architecture indexes, and the index digest in ECR matched the original exactly. Then a deliberate test: pushing a different image over an existing version tag. ECR refused, because the repositories have immutable tags, and the digest behind the tag was unchanged. A tag in that registry always names the same bytes.</p>
@@ -50,7 +508,7 @@
   <h3 id="ch12-false">An outage that never happened</h3>
   <p>During the bad-release drill, a probe on a developer's machine sent a request twice a second and reported 15 failures. The timeline did not fit: failures began after the bad task was already gone and continued after the rollback. Splitting curl's timings showed why.</p>
 
-  <figure class="fig wide" id="fig-12-2">
+  <figure class="fig wide" id="fig-12-4">
     <div class="fig-scroll">
     <svg viewBox="0 0 820 230" role="img" aria-label="Left, what the client-side probe saw: 15 failed requests, with DNS lookups taking 5.01 seconds and TCP connects 1.03 seconds because of the local resolver chain and a lost packet. Right, what the load balancer recorded over the same window: 1,478 requests, zero load balancer 5xx, zero target 5xx, zero connection errors, and a maximum response time of 0.475 seconds.">
       <rect class="n-bad" x="16" y="30" width="380" height="180" rx="6"/>
@@ -71,13 +529,13 @@
       <text class="ts" x="440" y="178">slowest response: <tspan class="tb">0.475 s</tspan></text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 12.2</span>The same window, from two sides. The failures were in the client's own network path, not the service. Availability is judged from server-side metrics; real teams add synthetic checks that run from inside the cloud.</figcaption>
+    <figcaption><span class="fig-n">Figure 12.4</span>The same window, from two sides. The failures were in the client's own network path, not the service. Availability is judged from server-side metrics; real teams add synthetic checks that run from inside the cloud.</figcaption>
   </figure>
 
   <h3 id="ch12-loop">The whole loop, with no human step</h3>
   <p>With the deploy workflow in place, the only human action was pushing a version tag (the environment has since gained a required reviewer, so a release now also waits for one approval). Everything after it ran on its own: the release built, scanned, published and smoke-tested the images and copied them to ECR; the deploy workflow then ran in the gated environment, applied the infrastructure code with the new version, waited for ECS to be stable, and smoke-tested through the load balancer.</p>
 
-  <figure class="fig wide" id="fig-12-3">
+  <figure class="fig wide" id="fig-12-5">
     <div class="fig-scroll">
     <svg viewBox="0 0 820 180" role="img" aria-label="Release took 4 minutes 20 seconds and the deploy 4 minutes 14 seconds: 8 minutes 37 seconds from tag to live. A later rollback through the same pipeline took 4 minutes 6 seconds.">
       <text class="tl" x="16" y="18">MINUTES FROM THE VERSION TAG</text>
@@ -95,7 +553,7 @@
       <text class="ts" x="455" y="109">no rebuild: the older images already exist</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 12.3</span>Tag to live in 8 minutes 37 seconds, with 967 probe requests during the deploy and none failed. A rollback is only the deploy half, with an older version: 4 minutes 6 seconds. Over both, the load balancer counted 1,311 requests with no errors.</figcaption>
+    <figcaption><span class="fig-n">Figure 12.5</span>Tag to live in 8 minutes 37 seconds, with 967 probe requests during the deploy and none failed. A rollback is only the deploy half, with an older version: 4 minutes 6 seconds. Over both, the load balancer counted 1,311 requests with no errors.</figcaption>
   </figure>
 
   <p>Three design choices made this loop safe to leave unattended. The infrastructure code always comes from main while the image comes from the release, so rolling the application back never rolls the infrastructure back. Deploys share a concurrency group without cancellation, so two deploys queue rather than race. And workflow inputs reach shell commands only through environment variables, never interpolated into the script text, which closes a script-injection route.</p>
@@ -131,9 +589,28 @@
   <p>Those 1,453 expected warnings are how alert fatigue starts. Alert on symptoms users feel (5xx responses, latency, unhealthy targets), not on log warnings. The load balancer is the source of truth for users, and its totals for the session were: 42,434 requests, no load balancer errors, no connection errors to targets, 281 server errors from the api, every one of them during the two deliberate database outages (honest 503s from readiness), and 107 client errors, which were the rate-limit tests' 429s.</p>
   <p>Not built, but worth knowing: Container Insights for per-task CPU and memory, tracing through X-Ray or any OpenTelemetry backend (the api already exports OTLP), and CloudWatch Synthetics, which runs probes from inside AWS and would have avoided the false outage above.</p>
 
+  <h3 id="ch12-review">A review against its own rules</h3>
+  <p>The last stage read the whole service against what its own comments and chapters say. Eight gaps were on the path to AWS. Each was reproduced first, then fixed, then shown: on AWS where it could be, otherwise locally.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>The rule the code broke</th><th>Before</th><th>After</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Rule">Trust only the proxies in front</td><td data-label="Before">The api trusted every proxy (<code>*</code>), and the load balancer appends to <code>X-Forwarded-For</code>: a client could choose its own address, and so its own sign-in rate-limit bucket</td><td data-label="After">36 sign-ins, each with a forged address: 30 allowed, 6 refused, and the real address logged for all 36</td></tr>
+        <tr><td data-label="Rule">The drain covers the longest request</td><td data-label="Before">A 30-second deregistration delay: three of four ninety-second answers cut when their task stopped</td><td data-label="After">130 seconds: four of four completed</td></tr>
+        <tr><td data-label="Rule">The side behind closes idle connections last</td><td data-label="Before">The api closed them at 75 seconds and nginx at 65, behind a load balancer that keeps them 130</td><td data-label="After">140 seconds for both</td></tr>
+        <tr><td data-label="Rule">Migrations never collide</td><td data-label="Before">Two tasks starting together ran the same migrations: one of the two failed, three times in three</td><td data-label="After">A database lock: on the first deploy, one task ran all nine migrations, the other none, and both succeeded</td></tr>
+        <tr><td data-label="Rule">One worker per CPU</td><td data-label="Before">Two workers in a half-CPU task, against the server's own configuration file</td><td data-label="After">One worker per task; capacity comes from tasks</td></tr>
+        <tr><td data-label="Rule">Public logs name no account</td><td data-label="Before">The role ARNs were variables, printed with every step's inputs: the account ID in 51 log lines per release and 3 to 5 per deploy</td><td data-label="After">Secrets, masked: none in either</td></tr>
+        <tr><td data-label="Rule">A person approves every deploy</td><td data-label="Before">The deploy workflow's comment said so; the environment had no reviewer, and deploys ran unattended</td><td data-label="After">The deploy waited for approval</td></tr>
+        <tr><td data-label="Rule">The security scan blocks merges</td><td data-label="Before">The CI file's comment said so; the scan was not a required check</td><td data-label="After">Required: six checks in all</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>None of these failed a test or raised an alarm. Each was a rule written down, in a comment or a chapter, that the code did not keep. A team can run the same review: read the comments and documents as claims, and test them like code.</p>
+
   <aside class="say">
     <span class="label">How to say it</span>
-    <p>"We proved each property with traffic flowing: zero failed requests across deploys, an automatic rollback of a bad release, a lost task and a database outage absorbed. And we learned to trust the load balancer's numbers over a laptop's."</p>
+    <p>"Every change takes one path, from issue to production, and every gate on it is code or a setting nobody can skip. We proved each property with traffic flowing: zero failed requests across deploys, an automatic rollback of a bad release, a lost task and a database outage absorbed. And every way this demo differs from production is marked in the code."</p>
   </aside>
 
   <h3 id="ch12-traps">Traps</h3>
@@ -144,6 +621,8 @@
         <tr><td data-label="Symptom">Most services answer "not signed up" on a brand-new cloud account</td><td data-label="Cause">Activation (payment and phone verification) has not finished propagating</td><td data-label="Fix">Finish verification, then check access with read-only calls before building.</td></tr>
         <tr><td data-label="Symptom">A monitoring probe reports failures the service never had</td><td data-label="Cause">The probe's own DNS or network path</td><td data-label="Fix">Split the client's timings; compare with load balancer metrics; probe from inside the cloud.</td></tr>
         <tr><td data-label="Symptom">A probe killed mid-run prints no summary</td><td data-label="Cause">It was stopped with a signal it did not handle</td><td data-label="Fix">Trap the termination signal and print the counts.</td></tr>
+        <tr><td data-label="Symptom">A client chose its own rate-limit bucket</td><td data-label="Cause">The api trusted every proxy, and the load balancer appends to the forwarded header</td><td data-label="Fix">Trust only the load balancer's addresses: the VPC range.</td></tr>
+        <tr><td data-label="Symptom">Long answers cut during every deploy</td><td data-label="Cause">The deregistration delay was shorter than the longest request</td><td data-label="Fix">Set it to the longest request; ECS sends SIGTERM only after it ends.</td></tr>
         <tr><td data-label="Symptom">An alert channel full of expected warnings</td><td data-label="Cause">Alerting on log levels rather than user-facing symptoms</td><td data-label="Fix">Alert on 5xx, latency and unhealthy targets.</td></tr>
       </tbody>
     </table>
@@ -151,6 +630,18 @@
 
   <h3 id="ch12-questions">Questions</h3>
   <ol class="qs">
+    <li>
+      <p>Trace a bug fix from issue to production. Which file or setting holds each gate?</p>
+      <details class="ans"><summary>Answer</summary><p>The issue form; <code>CONTRIBUTING.md</code> for the branch and commit names; the pre-push hook for lint, types and unit tests; the pull request template and the code owners file; <code>ci.yml</code>, with branch protection requiring all six jobs on an up-to-date branch; the squash-only merge setting; the tag pattern that starts <code>release.yml</code>; <code>release.yml</code> for scanning, building, smoke-testing and copying to ECR; <code>deploy.yml</code>, gated by the <code>aws-demo</code> environment's reviewer, for <code>cdk deploy</code> and the smoke test. A rollback is <code>deploy.yml</code> run by hand with the previous version.</p></details>
+    </li>
+    <li>
+      <p>On ECS, why does the load balancer route <code>/api</code> rather than nginx?</p>
+      <details class="ans"><summary>Answer</summary><p>In compose, nginx finds the api by name through Docker's embedded DNS server, which Fargate does not have. So on ECS nginx only serves files, and the load balancer does the edge's routing: a rule sends <code>/api/*</code> to the api's target group and rewrites the path, and another answers 404 for the internal paths.</p></details>
+    </li>
+    <li>
+      <p>The load balancer keeps idle connections 130 seconds, and the longest answer takes 120. What must the api's keep-alive, the deregistration delay and gunicorn's graceful timeout be, and why?</p>
+      <details class="ans"><summary>Answer</summary><p>Keep-alive above 130 seconds (140), so the load balancer never reuses a connection the api has just closed. A deregistration delay of at least 120 seconds (130), because the load balancer drops whatever is in flight when the delay ends, before ECS sends SIGTERM. A graceful timeout below the 120-second stop timeout (110), or ECS kills the process before its requests finish.</p></details>
+    </li>
     <li>
       <p>A synthetic check from your laptop reports an outage. What do you look at before declaring an incident?</p>
       <details class="ans"><summary>Answer</summary><p>The server-side metrics for the same window, starting with the load balancer's request count and error counts, and the client's own timings: a slow DNS lookup or connect points at the client's network, not the service.</p></details>

@@ -140,7 +140,7 @@ permissions:
 
   <figure class="fig wide" id="fig-3-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="The release workflow: verify the tag is on main and scan an amd64 build of it; build three images on two architectures natively, each pushed by digest with provenance and an SBOM; merge the digests under one set of tags per image; smoke-test the published images on both architectures and, once they pass, copy them to ECR; the deploy starts only if the whole release succeeded.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="The release workflow: verify the tag is on main and scan an amd64 build of it; build three images on two architectures natively, each pushed by digest with provenance and an SBOM; merge the digests under one set of tags per image; smoke-test and scan the published images on both architectures and, once both pass, copy them to ECR; the deploy starts only if the whole release succeeded.">
       <rect class="n-acc" x="16" y="116" width="110" height="64" rx="6"/>
       <text class="tb" x="71" y="144" text-anchor="middle">Tag pushed</text>
       <text class="tm" x="71" y="164" text-anchor="middle">v0.8.2</text>
@@ -170,9 +170,9 @@ permissions:
       <text class="ts" x="537" y="176" text-anchor="middle">0.8.2, 0.8, sha-…</text>
 
       <rect class="n-good" x="620" y="40" width="186" height="70" rx="6"/>
-      <text class="tb" x="713" y="64" text-anchor="middle">Smoke test</text>
-      <text class="ts" x="713" y="82" text-anchor="middle">pull what was published,</text>
-      <text class="ts" x="713" y="98" text-anchor="middle">run it on amd64 and arm64</text>
+      <text class="tb" x="713" y="64" text-anchor="middle">Smoke test and scan</text>
+      <text class="ts" x="713" y="82" text-anchor="middle">pull what was published, run</text>
+      <text class="ts" x="713" y="98" text-anchor="middle">and scan it, amd64 and arm64</text>
       <rect class="n" x="620" y="186" width="186" height="70" rx="6"/>
       <text class="tb" x="713" y="210" text-anchor="middle">Copy to ECR</text>
       <text class="ts" x="713" y="228" text-anchor="middle">keyless (Chapter 5), the</text>
@@ -183,12 +183,12 @@ permissions:
       <line class="e" x1="455" y1="135" x2="476" y2="148" marker-end="url(#a)"/>
       <path class="e" d="M597,135 C610,135 605,75 618,75" marker-end="url(#a)"/>
       <line class="e" x1="713" y1="111" x2="713" y2="183" marker-end="url(#a)"/>
-      <text class="ts" x="721" y="152">once it passes</text>
+      <text class="ts" x="721" y="152">once both pass</text>
       <text class="ts" x="600" y="286" text-anchor="middle">when the whole release succeeds, the deploy workflow starts (Chapter 13)</text>
       <line class="e-acc" x1="713" y1="257" x2="713" y2="270" marker-end="url(#a-acc)"/>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 3.2</span>The release workflow. It builds each image once per processor type, joins them under the release tags, and then tests what it published, not what it built. The copy to ECR waits for the smoke test, because ECR tags are immutable: an image that failed it must never land there. The deploy starts only if the whole release succeeded.</figcaption>
+    <figcaption><span class="fig-n">Figure 3.2</span>The release workflow. It builds each image once per processor type, joins them under the release tags, and then tests what it published, not what it built. The copy to ECR waits for the smoke test and the scan of what was published, because ECR tags are immutable: an image that failed either must never land there. The deploy starts only if the whole release succeeded.</figcaption>
   </figure>
 
   <p>Each step guards against a specific failure. Checking that the tag points at a commit on main stops anyone releasing code that never passed review. Scanning again at release catches vulnerabilities published after the merge. Testing the published images, rather than the build outputs, proves the registry holds what the team thinks it holds. Two gaps remain. The release-time scan and image check run on images the verify job builds for them on its amd64 machine, from the same commit: neither the arm64 images nor the exact published bytes are scanned. Scanning the pushed index by digest, once per architecture, would close that gap. And the copy to ECR does not wait for the smoke test, so a release that fails it still lands in ECR under a tag that can never be re-pushed. Only the deploy waits. Making the copy depend on the smoke test would close the gap.</p>
@@ -200,7 +200,7 @@ permissions:
         <p>Two parts of the release workflow carry most of its guarantees.</p>
         <ul class="notice">
           <li><code>git merge-base --is-ancestor</code> fails unless the tagged commit is already on main.</li>
-          <li>The image check and the vulnerability scan run again at release time, on an amd64 build of the tagged commit made for them, not on the images that are published.</li>
+          <li>The image check and the vulnerability scan run again at release time, on an amd64 build of the tagged commit made for them. Then every published image is scanned again, for each platform: the arm64 images are built on their own machines, and were never scanned before. The copy to ECR waits for that scan and for the smoke test.</li>
           <li>A tag push publishes each build by digest; a pull request only builds, to a cache.</li>
           <li><code>provenance</code> and <code>sbom</code> store, next to the image in the registry, which commit and workflow built it and what it contains.</li>
         </ul>

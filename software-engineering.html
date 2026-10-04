@@ -49,7 +49,7 @@
   <div class="series-list">
     <a href="ai-engineering.html"><span class="n">1 · AI Engineering &amp; Architecture</span><span>The new layer: models, retrieval, agents, evaluation, safety.</span></a><div class="here"><span class="n">2 · Modern Software Engineering</span><span>Your skills, brought up to date: the service and its repository.</span></div><a href="cloud-delivery.html"><span class="n">3 · Cloud Delivery &amp; DevOps</span><span>From a laptop to production: pipelines, identity, the cloud.</span></a>
   </div>
-  <p class="edition">Edition 1 · Reference implementation: <code>triage-assistant</code> at <code>handbook-1 (3fc2c43)</code></p>
+  <p class="edition">Edition 1 · Reference implementation: <code>triage-assistant</code> at <code>handbook-1 (5b4f80d)</code></p>
 </header>
 
 <section class="front" id="how-to-read">
@@ -164,7 +164,7 @@
 
       <rect class="n" x="419" y="210" width="385" height="176" rx="6"/>
       <text class="tl" x="433" y="232">KNOWLEDGE: WHY IS IT LIKE THIS?</text>
-      <text class="tm" x="433" y="258">docs/adr/</text><text class="ts" x="530" y="258">26 decision records</text>
+      <text class="tm" x="433" y="258">docs/adr/</text><text class="ts" x="530" y="258">28 decision records</text>
       <text class="tm" x="433" y="282">docs/prd/, docs/rfc/</text><text class="ts" x="600" y="282">what and why; how</text>
       <text class="tm" x="433" y="306">docs/runbooks/</text><text class="ts" x="560" y="306">procedures under pressure</text>
       <text class="tm" x="433" y="330">docs/handbook/</text><text class="ts" x="560" y="330">how it works here</text>
@@ -385,7 +385,7 @@ fi</code></pre>
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/app/config.py#L366-L393">apps/api/app/config.py</a><span class="lines">what production refuses</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/app/config.py#L372-L399">apps/api/app/config.py</a><span class="lines">what production refuses</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The production checks are a function that returns every problem by name, each with a message that says what is wrong and how to fix it. Startup fails if any is present, unless a deployment waives a check by name, explicitly.</p>
@@ -397,7 +397,7 @@ fi</code></pre>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/config.py" data-lines="366-393"><code class="language-python">def production_problems(settings: Settings) -&gt; dict[str, str]:
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/config.py" data-lines="372-399"><code class="language-python">def production_problems(settings: Settings) -&gt; dict[str, str]:
     """The production checks these settings fail: name -&gt; what is wrong."""
     problems: dict[str, str] = {}
     public = _host(settings.public_url)
@@ -1617,7 +1617,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     <li><strong>Add, don't change.</strong> A nullable column, or one with a constant default, is instant (metadata only). A volatile default, such as <code>gen_random_uuid()</code> or <code>clock_timestamp()</code>, rewrites the whole table under an exclusive lock. Renames and type changes become expand and contract across releases (Handbook 3, Chapter 13).</li>
     <li><strong>Build indexes concurrently.</strong> A plain <code>CREATE INDEX</code> blocks writes for the whole build. <code>CONCURRENTLY</code> does not, but cannot run inside a transaction, and if it fails midway it leaves an invalid index to drop before retrying.</li>
     <li><strong>Add foreign keys in two steps.</strong> <code>NOT VALID</code> is instant and applies to new rows; <code>VALIDATE CONSTRAINT</code> in its own transaction then checks existing rows without blocking writes. The reference teams migration used all three patterns on 2 million rows in 1.5 seconds under load, with no failed request.</li>
-    <li><strong>Keep the lock timeout for the whole run.</strong> Alembic wraps a run in one transaction, and an autocommit block commits it. A <code>SET LOCAL</code> ends with that commit: the reference once set its timeout that way, and measured, it read 5 s at the start of a run and 0 inside the first block, after it, and in every later migration, so a run past the teams migration enabled row-level security on <code>alerts</code>, which takes an exclusive lock, with no timeout. It now uses a plain <code>SET</code> on the run's own connection, which lasts for the session: 5 s at every step, <code>CREATE INDEX CONCURRENTLY</code> included (one that gives up leaves an invalid index, to drop before retrying).</li>
+    <li><strong>Keep the lock timeout for the whole run.</strong> Alembic wraps a run in one transaction, and an autocommit block commits it. A <code>SET LOCAL</code> ends with that commit: the reference once set its timeout that way, and measured, it read 5 s at the start of a run and 0 inside the first block, after it, and in every later migration, so a run past the teams migration enabled row-level security on <code>alerts</code>, which takes an exclusive lock, with no timeout. It now uses a plain <code>SET</code> on the run's own connection, which lasts for the session: 5 s at every step, <code>CREATE INDEX CONCURRENTLY</code> included (one that gives up leaves an invalid index, to drop before retrying). Every test run now checks it: probe migrations through the real migration setup, failing if the timeout is ever not 5 s.</li>
     <li><strong>Name every constraint</strong>, or the tool cannot write a downgrade that drops it.</li>
     <li><strong>Migrations run as the schema owner, directly</strong> against Postgres. The application's own role can read and write rows but cannot change the schema.</li>
     <li><strong>One run at a time.</strong> Where every copy of the service migrates as it starts (an init container per task), two can start together, and two runs at once collided: one failed, three times in three. The fix is an advisory lock, and the first two versions failed in instructive ways. A transaction lock is released when a <code>CONCURRENTLY</code> migration commits midway. A blocking session lock makes the waiting run hold a snapshot that <code>CREATE INDEX CONCURRENTLY</code> waits for, and Postgres reports a deadlock. What works is a session lock on a separate connection, polled, so the waiting run holds nothing.</li>
@@ -1902,7 +1902,7 @@ Zero-downtime shape, the pattern for any index on a table in use:
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/app/db.py#L75-L105">apps/api/app/db.py</a><span class="lines">and the policies in</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/migrations/versions/20260923_ce83ff21ab01_row_level_security_on_alerts.py#L37-L67">migrations/…_row_level_security_on_alerts.py</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/app/db.py#L105-L135">apps/api/app/db.py</a><span class="lines">and the policies in</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/migrations/versions/20260923_ce83ff21ab01_row_level_security_on_alerts.py#L37-L67">migrations/…_row_level_security_on_alerts.py</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The database session tells Postgres who is asking at the start of every transaction, and the migration defines one policy per command.</p>
@@ -1915,7 +1915,7 @@ Zero-downtime shape, the pattern for any index on a table in use:
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/db.py" data-lines="88-105"><code class="language-python">def _set_config(values: dict[str, str]) -&gt; Select[Any]:
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/db.py" data-lines="118-135"><code class="language-python">def _set_config(values: dict[str, str]) -&gt; Select[Any]:
     return select(*(func.set_config(k, v, True) for k, v in values.items()))
 
 
@@ -1995,6 +1995,7 @@ def upgrade() -&gt; None:
       <tbody>
         <tr><td data-label="Symptom">The pooler looks healthy but every query fails</td><td data-label="Cause">It authenticated with md5 while Postgres requires SCRAM; <code>pg_isready</code> does not authenticate</td><td data-label="Fix">Configure SCRAM; make the readiness check run a real query.</td></tr>
         <tr><td data-label="Symptom">One user's tenant setting appears in another user's request</td><td data-label="Cause">A session-level <code>SET</code> through transaction pooling</td><td data-label="Fix">Transaction-local <code>set_config(..., true)</code>, with a test.</td></tr>
+        <tr><td data-label="Symptom">After a network fault, every request waits for a pooled connection</td><td data-label="Cause">The container came back on another address; its pooled connections hang, holding their slots</td><td data-label="Fix">A TCP user timeout on database connections, so dead ones fail and are replaced (Chapter 15).</td></tr>
         <tr><td data-label="Symptom">Per-session timeouts silently do nothing</td><td data-label="Cause">Transaction pooling discards session settings</td><td data-label="Fix">Set timeouts on the database role.</td></tr>
         <tr><td data-label="Symptom">Latency stays high after a burst is over</td><td data-label="Cause">Overflow connections discarded and recreated: a metastable loop</td><td data-label="Fix">A fixed-size pool with no overflow.</td></tr>
         <tr><td data-label="Symptom">A pool-usage gauge said 2 while 10 requests were stuck</td><td data-label="Cause">It counted checkout events, which fire only after the connection's pre-ping succeeds</td><td data-label="Fix">Sample the pool's own accounting.</td></tr>
@@ -2405,7 +2406,7 @@ SQL</code></pre>
     <dl>
       <dt>Problem</dt><dd>Safe production settings lived in a checklist, and a checklist is skipped under pressure.</dd>
       <dt>Decision</dt><dd>Production mode changes some defaults on purpose (API docs off, a tenth of traces kept, the chat's rate limiter failing closed) and refuses to start on unsafe values, naming each. A deployment may waive a check only by name.</dd>
-      <dt>See it in</dt><dd><code>production_problems</code> in <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/app/config.py#L366-L405">config.py</a>, with a unit test per refusal (Chapter 1).</dd>
+      <dt>See it in</dt><dd><code>production_problems</code> in <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/app/config.py#L372-L411">config.py</a>, with a unit test per refusal (Chapter 1).</dd>
     </dl>
   </aside>
 
@@ -2797,7 +2798,7 @@ export async function* parseSSE(body: ReadableStream&lt;Uint8Array&gt;): AsyncGe
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/web/nginx/default.conf#L85-L96">apps/web/nginx/default.conf</a><span class="lines">and</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/tools/edge/Caddyfile#L36-L47">tools/edge/Caddyfile</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/web/nginx/default.conf#L78-L89">apps/web/nginx/default.conf</a><span class="lines">and</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/tools/edge/Caddyfile#L36-L47">tools/edge/Caddyfile</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The settings that make streaming and rolling deploys work through both proxies, each with its reason in a comment.</p>
@@ -2809,7 +2810,7 @@ export async function* parseSSE(body: ReadableStream&lt;Uint8Array&gt;): AsyncGe
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="apps/web/nginx/default.conf" data-lines="85-96"><code class="language-nginx"># Streaming (SSE): every event must reach the browser the moment the
+          <pre class="code" data-repo="triage-assistant" data-path="apps/web/nginx/default.conf" data-lines="78-89"><code class="language-nginx"># Streaming (SSE): every event must reach the browser the moment the
 # api writes it. Buffering is on by default in nginx and would deliver
 # the whole answer at once.
 location = /api/chat/stream {
@@ -2846,10 +2847,10 @@ handle {
 
   <figure class="fig wide" id="fig-11-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 250" role="img" aria-label="A client sends X-Forwarded-For 6.6.6.6 to try to look like someone else. The edge overwrites the header with the address it actually saw. nginx accepts the header only from private ranges and takes the real client from it, then overwrites it again for the api. The api sees exactly one address, the real client, and rate-limits by it. If a proxy appended instead of overwriting, the forged address would survive.">
+    <svg viewBox="0 0 820 250" role="img" aria-label="A client sends X-Forwarded-For 6.6.6.6 to try to look like someone else. The edge overwrites the header with the address it actually saw. nginx accepts the header only from the proxies in front and takes the real client from it, then overwrites it again for the api. The api sees exactly one address, the real client, and rate-limits by it. If a proxy appended instead of overwriting, the forged address would survive.">
       <rect class="n-warn" x="16" y="40" width="170" height="74" rx="5"/><text class="tb" x="28" y="62">Client</text><text class="ts" x="28" y="82">sends a forged header:</text><text class="tm" x="28" y="100">XFF: 6.6.6.6</text>
       <rect class="n-acc" x="226" y="40" width="170" height="74" rx="5"/><text class="tb" x="238" y="62">Edge</text><text class="ts" x="238" y="82">overwrites it with the</text><text class="ts" x="238" y="98">address it actually saw</text>
-      <rect class="n" x="436" y="40" width="170" height="74" rx="5"/><text class="tb" x="448" y="62">nginx</text><text class="ts" x="448" y="82">trusts XFF only from</text><text class="ts" x="448" y="98">private ranges</text>
+      <rect class="n" x="436" y="40" width="170" height="74" rx="5"/><text class="tb" x="448" y="62">nginx</text><text class="ts" x="448" y="82">trusts XFF only from</text><text class="ts" x="448" y="98">the proxies in front</text>
       <rect class="n-good" x="646" y="40" width="158" height="74" rx="5"/><text class="tb" x="658" y="62">api</text><text class="ts" x="658" y="82">one address: the</text><text class="ts" x="658" y="98">real client</text>
       <line class="e" x1="187" y1="77" x2="224" y2="77" marker-end="url(#a)"/>
       <line class="e" x1="397" y1="77" x2="434" y2="77" marker-end="url(#a)"/>
@@ -2890,48 +2891,60 @@ handle {
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/web/nginx/default.conf#L20-L49">apps/web/nginx/default.conf</a><span class="lines">resolving, real IPs, keep-alive</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/web/nginx/default.conf#L20-L36">apps/web/nginx/default.conf</a><span class="lines">and what it includes, written at start-up by</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/web/nginx/entrypoint/25-runtime-conf.sh#L13-L35">25-runtime-conf.sh</a></header>
     <div class="repo-body">
       <div class="repo-text">
-        <p>Three more defaults changed for a containerized, streaming service.</p>
+        <p>Three things depend on where the container runs, so a short script writes them when it starts, and the config includes them.</p>
         <ul class="notice">
-          <li>Docker's embedded DNS server, re-queried every 10 seconds: a recreated api container with a new address is found without restarting nginx, and nginx starts even before the api exists.</li>
-          <li>The real client address is taken from the forwarded header only when the connection comes from a private range. That is safe only while every proxy in front overwrites the header, as the edge does. Behind a load balancer that appends, or with nginx reachable from a private network, a client with a private address is itself trusted and can choose its own address. The strict rule is to trust only the addresses of the proxies in front.</li>
-          <li>The upstream's idle keep-alive is shorter than gunicorn's, so the proxy always closes first. Facing the proxies in front, nginx's own is longer than theirs (140 s), for the same reason.</li>
+          <li>The resolver comes from the container's <code>/etc/resolv.conf</code>: Docker's embedded DNS in Compose, the cluster's DNS on Kubernetes. It is re-queried every 10 seconds, so a recreated api container with a new address is found without restarting nginx, and nginx starts even before the api exists.</li>
+          <li>The real client address is taken from the forwarded header only when the connection comes from a trusted proxy: <code>REAL_IP_FROM</code>, or by default the container's own network, where the edge runs. It once trusted every private range. Behind a load balancer that appends to the header, a client with a private address was then itself trusted, and could choose its own address.</li>
+          <li>The api's address is a setting too. On Kubernetes it must be the service's full name, because nginx's resolver ignores search domains. The upstream's idle keep-alive is shorter than gunicorn's, so the proxy always closes first.</li>
         </ul>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="apps/web/nginx/default.conf" data-lines="20-49"><code class="language-nginx"># Docker's embedded DNS. `resolve` makes nginx re-resolve `api` at runtime,
-# so a recreated api container (new IP) is picked up without an nginx
-# restart, and nginx starts even if api does not exist yet.
-resolver 127.0.0.11 valid=10s ipv6=off;
+          <pre class="code" data-repo="triage-assistant" data-path="apps/web/nginx/default.conf" data-lines="20-36"><code class="language-nginx"># Written at start-up by /docker-entrypoint.d/25-runtime-conf.sh, from where
+# the container runs: the resolver (from /etc/resolv.conf: `resolve` below
+# re-resolves the api at runtime, so a recreated api container is picked up
+# without an nginx restart, and nginx starts even if the api does not exist
+# yet), the trusted proxies (REAL_IP_FROM, else this container's networks)
+# and the api_backend upstream (API_UPSTREAM, else api:8010).
+include /tmp/nginx/resolver.conf;
+include /tmp/nginx/upstream.conf;
 
 # Behind the TLS edge or a cloud load balancer, the connection comes from
 # the proxy: take the client's address from the X-Forwarded-For it sets, or
-# every user shares one address - and one rate limit. Trusted only from
-# private ranges (the Docker network, a VPC); the edge overwrites whatever
-# X-Forwarded-For a client sends, so it cannot be forged through it.
-set_real_ip_from 10.0.0.0/8;
-set_real_ip_from 172.16.0.0/12;
-set_real_ip_from 192.168.0.0/16;
+# every user shares one address - and one rate limit. Believed only from the
+# trusted proxies; the edge overwrites whatever X-Forwarded-For a client
+# sends, so it cannot be forged through it.
+include /tmp/nginx/real-ip.conf;
 real_ip_header X-Forwarded-For;
-real_ip_recursive on;
+real_ip_recursive on;</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/web/nginx/entrypoint/25-runtime-conf.sh" data-lines="13-35"><code class="language-bash">set -eu
+out=/tmp/nginx
+mkdir -p "$out"
 
-# The scheme the client used: https when the edge terminated TLS.
-map $http_x_forwarded_proto $client_scheme {
-    default $http_x_forwarded_proto;
-    ""      $scheme;
-}
+ns=$(awk '$1 == "nameserver" { printf "%s ", ($2 ~ ":" ? "[" $2 "]" : $2) }' /etc/resolv.conf)
+echo "resolver ${ns:-127.0.0.11} valid=10s ipv6=off;" &gt; "$out/resolver.conf"
 
+trusted=${REAL_IP_FROM:-$(ip -o -f inet route show scope link | awk '{ print $1 }')}
+: &gt; "$out/real-ip.conf"
+for cidr in $trusted; do
+  echo "set_real_ip_from $cidr;" &gt;&gt; "$out/real-ip.conf"
+done
+
+cat &gt; "$out/upstream.conf" &lt;&lt;CONF
 upstream api_backend {
     zone api_backend 64k;
-    server api:8010 resolve;
+    server ${API_UPSTREAM:-api:8010} resolve;
     keepalive 16;
-    # Below gunicorn's keepalive (75s): the side that closes idle
-    # connections first must be the proxy, never the backend.
+    # Below gunicorn's keepalive: the side that closes idle connections
+    # first must be the proxy, never the backend.
     keepalive_timeout 60s;
-}</code></pre>
+}
+CONF</code></pre>
         </div>
       </div>
     </div>
@@ -2949,7 +2962,7 @@ upstream api_backend {
 
   <aside class="say">
     <span class="label">How to say it</span>
-    <p>"TLS terminates at the edge, nginx serves files and routes /api with buffering off for streams. The client IP is overwritten at the edge and trusted only from private ranges inside."</p>
+    <p>"TLS terminates at the edge, nginx serves files and routes /api with buffering off for streams. The client IP is overwritten at the edge and trusted inside only from the proxies in front."</p>
     <p>"Timeouts nest: the proxy closes idle connections before the app does, and heartbeats beat every idle timeout in the path."</p>
   </aside>
 
@@ -3815,7 +3828,7 @@ def route_template(scope: Scope) -&gt; str:
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/compose.yaml#L269-L286">compose.yaml</a><span class="lines">the pooler, made to fail fast</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/compose.yaml#L270-L287">compose.yaml</a><span class="lines">the pooler, made to fail fast</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>PgBouncer's defaults suit batch jobs. Each setting here records its default and the drill that showed why it had to change.</p>
@@ -3827,7 +3840,7 @@ def route_template(scope: Scope) -&gt; str:
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="compose.yaml" data-lines="269-286"><code class="language-yaml">      # Fail fast when Postgres is down or frozen (make drills d="db-stop
+          <pre class="code" data-repo="triage-assistant" data-path="compose.yaml" data-lines="270-287"><code class="language-yaml">      # Fail fast when Postgres is down or frozen (make drills d="db-stop
       # db-hang"). PgBouncer defaults in brackets.
       # A client waits this long for a server connection, then gets an error [120s].
       QUERY_WAIT_TIMEOUT: 5
@@ -3903,6 +3916,7 @@ def route_template(scope: Scope) -&gt; str:
   </figure>
 
   <p>Two findings shape deployment. A single container replaced by "stop, then start" refuses new requests for as long as the longest in-flight answer takes to drain, plus boot time; a rolling deploy starts the new instance beside the old one and drains the old one only once the new one is ready (Handbook 3, Chapter 13). And memory limits on a host with swap were soft: the api put 48 MiB in swap and kept serving without a single error, until every limited service set its swap limit equal to its memory limit, which made an out-of-memory kill loud and alerting.</p>
+  <p>One failure appeared once and would not come back. During a full drill run the api's pool stayed at 40 of 40 connections while the database was healthy, and every request got a 503 until the api was restarted. Repeating the faults that were active changed nothing; the variable nobody had changed was the api's address. When a container rejoins a network, Docker usually gives it another address, and every pooled connection stays bound to the old one. Data sent on such a connection is never acknowledged, the kernel retransmits for about 15 minutes, and the pool's health check, which has no timeout of its own, hangs at each one. The fix is a socket option, <code>TCP_USER_TIMEOUT</code>, which drops a connection whose data goes unacknowledged for 10 seconds; it never fires for a slow or frozen database, whose kernel still acknowledges. A new drill fills the pool and brings the api back on another address: ready again in 50 seconds, instead of never (ADR-0027 in the repository).</p>
 
   <aside class="say">
     <span class="label">How to say it</span>
@@ -3917,6 +3931,7 @@ def route_template(scope: Scope) -&gt; str:
       <tbody>
         <tr><td data-label="Symptom">Pool connections stay in use after the database recovers</td><td data-label="Cause">A client-side cancel whose cleanup waits for a dead server</td><td data-label="Fix">Cap time on the server; drill a freeze under load and check the pools.</td></tr>
         <tr><td data-label="Symptom">Requests hang for two minutes when the database is down</td><td data-label="Cause">The pooler's queue timeout, designed for batch work</td><td data-label="Fix">Seconds, with a clear 503.</td></tr>
+        <tr><td data-label="Symptom">The pool stays full after a network fault, with the database healthy</td><td data-label="Cause">Pooled connections are bound to an address the container lost; nothing acknowledges them, and the kernel retransmits for minutes</td><td data-label="Fix">Drop unacknowledged connections (<code>TCP_USER_TIMEOUT</code>); drill a fault that changes the address.</td></tr>
         <tr><td data-label="Symptom">A database blip restarts every replica</td><td data-label="Cause">The liveness check tests the database</td><td data-label="Fix">Liveness checks nothing external.</td></tr>
         <tr><td data-label="Symptom">A cache outage takes the whole site down</td><td data-label="Cause">Readiness fails on a soft dependency</td><td data-label="Fix">Report it as degraded; keep answering 200.</td></tr>
         <tr><td data-label="Symptom">The drill says a dependency failure was harmless</td><td data-label="Cause">The fault was never injected</td><td data-label="Fix">Verify each injection; report a failed one as such.</td></tr>
@@ -4997,6 +5012,7 @@ production because each question costs money (ADR-0023). Its
 <tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/migrations/versions/20260923_ce83ff21ab01_row_level_security_on_alerts.py"><code>apps/api/migrations/versions/20260923_ce83ff21ab01_row_level_security_on_alerts.py</code></a></td><td data-label="Chapters"><a href="#ch7">7</a></td></tr>
 <tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/tests/integration/test_access.py"><code>apps/api/tests/integration/test_access.py</code></a></td><td data-label="Chapters"><a href="#ch13">13</a></td></tr>
 <tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/web/nginx/default.conf"><code>apps/web/nginx/default.conf</code></a></td><td data-label="Chapters"><a href="#ch11">11</a></td></tr>
+<tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/web/nginx/entrypoint/25-runtime-conf.sh"><code>apps/web/nginx/entrypoint/25-runtime-conf.sh</code></a></td><td data-label="Chapters"><a href="#ch11">11</a></td></tr>
 <tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/web/src/lib/sse.ts"><code>apps/web/src/lib/sse.ts</code></a></td><td data-label="Chapters"><a href="#ch10">10</a></td></tr>
 <tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/docs/code-map.md"><code>docs/code-map.md</code></a></td><td data-label="Chapters"><a href="#ch1">1</a></td></tr>
 <tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/docs/runbooks/alerts.md"><code>docs/runbooks/alerts.md</code></a></td><td data-label="Chapters"><a href="#ch17">17</a></td></tr>
@@ -5067,6 +5083,7 @@ production because each question costs money (ADR-0023). Its
 <tr><td data-label="Symptom">Parallel queries fail in a container</td><td data-label="Fix">Raise <code>shm_size</code>.</td><td data-label="Chapter"><a href="#ch6">6 · Postgres: schema changes and indexes</a></td></tr>
 <tr><td data-label="Symptom">The pooler looks healthy but every query fails</td><td data-label="Fix">Configure SCRAM; make the readiness check run a real query.</td><td data-label="Chapter"><a href="#ch7">7 · Connections, pooling and row-level security</a></td></tr>
 <tr><td data-label="Symptom">One user's tenant setting appears in another user's request</td><td data-label="Fix">Transaction-local <code>set_config(..., true)</code>, with a test.</td><td data-label="Chapter"><a href="#ch7">7 · Connections, pooling and row-level security</a></td></tr>
+<tr><td data-label="Symptom">After a network fault, every request waits for a pooled connection</td><td data-label="Fix">A TCP user timeout on database connections, so dead ones fail and are replaced (Chapter 15).</td><td data-label="Chapter"><a href="#ch7">7 · Connections, pooling and row-level security</a></td></tr>
 <tr><td data-label="Symptom">Per-session timeouts silently do nothing</td><td data-label="Fix">Set timeouts on the database role.</td><td data-label="Chapter"><a href="#ch7">7 · Connections, pooling and row-level security</a></td></tr>
 <tr><td data-label="Symptom">Latency stays high after a burst is over</td><td data-label="Fix">A fixed-size pool with no overflow.</td><td data-label="Chapter"><a href="#ch7">7 · Connections, pooling and row-level security</a></td></tr>
 <tr><td data-label="Symptom">A pool-usage gauge said 2 while 10 requests were stuck</td><td data-label="Fix">Sample the pool's own accounting.</td><td data-label="Chapter"><a href="#ch7">7 · Connections, pooling and row-level security</a></td></tr>
@@ -5143,6 +5160,7 @@ production because each question costs money (ADR-0023). Its
 <tr><td data-label="Symptom">A breakpoint left in code freezes a worker in production</td><td data-label="Fix">Disable breakpoints in the production image.</td><td data-label="Chapter"><a href="#ch14">14 · Observability and debugging</a></td></tr>
 <tr><td data-label="Symptom">Pool connections stay in use after the database recovers</td><td data-label="Fix">Cap time on the server; drill a freeze under load and check the pools.</td><td data-label="Chapter"><a href="#ch15">15 · Reliability: timeouts, failures and drills</a></td></tr>
 <tr><td data-label="Symptom">Requests hang for two minutes when the database is down</td><td data-label="Fix">Seconds, with a clear 503.</td><td data-label="Chapter"><a href="#ch15">15 · Reliability: timeouts, failures and drills</a></td></tr>
+<tr><td data-label="Symptom">The pool stays full after a network fault, with the database healthy</td><td data-label="Fix">Drop unacknowledged connections (<code>TCP_USER_TIMEOUT</code>); drill a fault that changes the address.</td><td data-label="Chapter"><a href="#ch15">15 · Reliability: timeouts, failures and drills</a></td></tr>
 <tr><td data-label="Symptom">A database blip restarts every replica</td><td data-label="Fix">Liveness checks nothing external.</td><td data-label="Chapter"><a href="#ch15">15 · Reliability: timeouts, failures and drills</a></td></tr>
 <tr><td data-label="Symptom">A cache outage takes the whole site down</td><td data-label="Fix">Report it as degraded; keep answering 200.</td><td data-label="Chapter"><a href="#ch15">15 · Reliability: timeouts, failures and drills</a></td></tr>
 <tr><td data-label="Symptom">The drill says a dependency failure was harmless</td><td data-label="Fix">Verify each injection; report a failed one as such.</td><td data-label="Chapter"><a href="#ch15">15 · Reliability: timeouts, failures and drills</a></td></tr>
@@ -5181,7 +5199,7 @@ production because each question costs money (ADR-0023). Its
 
 <footer class="series-foot">
   <p>Engineering Handbooks · Handbook 2 of 3 · Modern Software Engineering · Edition 1</p>
-  <p>Reference implementation: <a href="https://github.com/Parzon/triage-assistant">triage-assistant</a> at <code>handbook-1 (3fc2c43)</code>.</p>
+  <p>Reference implementation: <a href="https://github.com/Parzon/triage-assistant">triage-assistant</a> at <code>handbook-1 (5b4f80d)</code>.</p>
 </footer>
 </main>
 </div>

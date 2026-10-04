@@ -73,7 +73,7 @@
 
       <rect class="n" x="419" y="210" width="385" height="176" rx="6"/>
       <text class="tl" x="433" y="232">KNOWLEDGE: WHY IS IT LIKE THIS?</text>
-      <text class="tm" x="433" y="258">docs/adr/</text><text class="ts" x="530" y="258">26 decision records</text>
+      <text class="tm" x="433" y="258">docs/adr/</text><text class="ts" x="530" y="258">28 decision records</text>
       <text class="tm" x="433" y="282">docs/prd/, docs/rfc/</text><text class="ts" x="600" y="282">what and why; how</text>
       <text class="tm" x="433" y="306">docs/runbooks/</text><text class="ts" x="560" y="306">procedures under pressure</text>
       <text class="tm" x="433" y="330">docs/handbook/</text><text class="ts" x="560" y="330">how it works here</text>
@@ -294,7 +294,7 @@ fi</code></pre>
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/config.py#L366-L393">apps/api/app/config.py</a><span class="lines">what production refuses</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/config.py#L372-L399">apps/api/app/config.py</a><span class="lines">what production refuses</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The production checks are a function that returns every problem by name, each with a message that says what is wrong and how to fix it. Startup fails if any is present, unless a deployment waives a check by name, explicitly.</p>
@@ -306,7 +306,7 @@ fi</code></pre>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/config.py" data-lines="366-393"><code class="language-python">def production_problems(settings: Settings) -&gt; dict[str, str]:
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/config.py" data-lines="372-399"><code class="language-python">def production_problems(settings: Settings) -&gt; dict[str, str]:
     """The production checks these settings fail: name -&gt; what is wrong."""
     problems: dict[str, str] = {}
     public = _host(settings.public_url)

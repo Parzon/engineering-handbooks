@@ -79,7 +79,7 @@
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/compose.yaml#L269-L286">compose.yaml</a><span class="lines">the pooler, made to fail fast</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/compose.yaml#L270-L287">compose.yaml</a><span class="lines">the pooler, made to fail fast</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>PgBouncer's defaults suit batch jobs. Each setting here records its default and the drill that showed why it had to change.</p>
@@ -91,7 +91,7 @@
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="compose.yaml" data-lines="269-286"><code class="language-yaml">      # Fail fast when Postgres is down or frozen (make drills d="db-stop
+          <pre class="code" data-repo="triage-assistant" data-path="compose.yaml" data-lines="270-287"><code class="language-yaml">      # Fail fast when Postgres is down or frozen (make drills d="db-stop
       # db-hang"). PgBouncer defaults in brackets.
       # A client waits this long for a server connection, then gets an error [120s].
       QUERY_WAIT_TIMEOUT: 5
@@ -167,6 +167,7 @@
   </figure>
 
   <p>Two findings shape deployment. A single container replaced by "stop, then start" refuses new requests for as long as the longest in-flight answer takes to drain, plus boot time; a rolling deploy starts the new instance beside the old one and drains the old one only once the new one is ready (Handbook 3, Chapter 13). And memory limits on a host with swap were soft: the api put 48 MiB in swap and kept serving without a single error, until every limited service set its swap limit equal to its memory limit, which made an out-of-memory kill loud and alerting.</p>
+  <p>One failure appeared once and would not come back. During a full drill run the api's pool stayed at 40 of 40 connections while the database was healthy, and every request got a 503 until the api was restarted. Repeating the faults that were active changed nothing; the variable nobody had changed was the api's address. When a container rejoins a network, Docker usually gives it another address, and every pooled connection stays bound to the old one. Data sent on such a connection is never acknowledged, the kernel retransmits for about 15 minutes, and the pool's health check, which has no timeout of its own, hangs at each one. The fix is a socket option, <code>TCP_USER_TIMEOUT</code>, which drops a connection whose data goes unacknowledged for 10 seconds; it never fires for a slow or frozen database, whose kernel still acknowledges. A new drill fills the pool and brings the api back on another address: ready again in 50 seconds, instead of never (ADR-0027 in the repository).</p>
 
   <aside class="say">
     <span class="label">How to say it</span>
@@ -181,6 +182,7 @@
       <tbody>
         <tr><td data-label="Symptom">Pool connections stay in use after the database recovers</td><td data-label="Cause">A client-side cancel whose cleanup waits for a dead server</td><td data-label="Fix">Cap time on the server; drill a freeze under load and check the pools.</td></tr>
         <tr><td data-label="Symptom">Requests hang for two minutes when the database is down</td><td data-label="Cause">The pooler's queue timeout, designed for batch work</td><td data-label="Fix">Seconds, with a clear 503.</td></tr>
+        <tr><td data-label="Symptom">The pool stays full after a network fault, with the database healthy</td><td data-label="Cause">Pooled connections are bound to an address the container lost; nothing acknowledges them, and the kernel retransmits for minutes</td><td data-label="Fix">Drop unacknowledged connections (<code>TCP_USER_TIMEOUT</code>); drill a fault that changes the address.</td></tr>
         <tr><td data-label="Symptom">A database blip restarts every replica</td><td data-label="Cause">The liveness check tests the database</td><td data-label="Fix">Liveness checks nothing external.</td></tr>
         <tr><td data-label="Symptom">A cache outage takes the whole site down</td><td data-label="Cause">Readiness fails on a soft dependency</td><td data-label="Fix">Report it as degraded; keep answering 200.</td></tr>
         <tr><td data-label="Symptom">The drill says a dependency failure was harmless</td><td data-label="Cause">The fault was never injected</td><td data-label="Fix">Verify each injection; report a failed one as such.</td></tr>

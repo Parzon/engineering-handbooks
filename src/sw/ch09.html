@@ -103,7 +103,7 @@ SQL</code></pre>
     <dl>
       <dt>Problem</dt><dd>Safe production settings lived in a checklist, and a checklist is skipped under pressure.</dd>
       <dt>Decision</dt><dd>Production mode changes some defaults on purpose (API docs off, a tenth of traces kept, the chat's rate limiter failing closed) and refuses to start on unsafe values, naming each. A deployment may waive a check only by name.</dd>
-      <dt>See it in</dt><dd><code>production_problems</code> in <a href="{{TA}}/apps/api/app/config.py#L366-L405">config.py</a>, with a unit test per refusal (Chapter 1).</dd>
+      <dt>See it in</dt><dd><code>production_problems</code> in <a href="{{TA}}/apps/api/app/config.py#L372-L411">config.py</a>, with a unit test per refusal (Chapter 1).</dd>
     </dl>
   </aside>
 

@@ -80,9 +80,9 @@ g.ts text { font-size: 11.5px; }
       <text class="ts" x="515" y="138">e.g. no new base yet</text>
 
       <rect class="n-soft" x="200" y="214" width="150" height="70" rx="6"/>
-      <text class="tb" x="275" y="238" text-anchor="middle">Not reported</text>
-      <text class="ts" x="275" y="256" text-anchor="middle">hidden, with no record;</text>
-      <text class="ts" x="275" y="272" text-anchor="middle">review them separately</text>
+      <text class="tb" x="275" y="238" text-anchor="middle">Reported, not blocking</text>
+      <text class="ts" x="275" y="256" text-anchor="middle">listed by the weekly</text>
+      <text class="ts" x="275" y="272" text-anchor="middle">report-only scan</text>
       <line class="e" x1="275" y1="179" x2="275" y2="212" marker-end="url(#a)"/>
       <text class="ts" x="284" y="200">no</text>
       <line class="e" x1="601" y1="199" x2="638" y2="199" marker-end="url(#a)"/>

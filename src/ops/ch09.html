@@ -228,7 +228,7 @@ api.add_container_dependencies(
   <p>The rule on ECS: point the load balancer at a shallow check; rely on the init containers for readiness at start (migrations succeed only if the database answers); and detect outages with an alarm on 5xx responses. The api reconnected four seconds after the database returned, with no restart.</p>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L466-L529">infra/aws/service.py</a><span class="lines">the service's deployment settings and the api's health check</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L468-L531">infra/aws/service.py</a><span class="lines">the service's deployment settings and the api's health check</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The service definition and the api target group's health check, each with its reasoning beside it.</p>
@@ -241,7 +241,7 @@ api.add_container_dependencies(
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="466-486"><code class="language-python">return ecs.FargateService(
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="468-488"><code class="language-python">return ecs.FargateService(
     self,
     f"{name.title()}Service",
     service_name=name,
@@ -264,7 +264,7 @@ api.add_container_dependencies(
     # IAM to the on-call role, with session logging.</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="514-529"><code class="language-python"># Liveness, not readiness. ECS replaces any task its load balancer calls unhealthy,
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="516-531"><code class="language-python"># Liveness, not readiness. ECS replaces any task its load balancer calls unhealthy,
 # so a deep check (/ready: the database) turns a database outage into task churn:
 # measured, every api task marked unhealthy and replacements stuck in dbinit. Kubernetes
 # separates the two (readinessProbe /ready, livenessProbe /health); ECS has no
@@ -322,7 +322,7 @@ deregistration_delay=Duration.seconds(130),</code></pre>
   <p>ECS Exec opens a shell in a running container through Systems Manager, with no SSH and no open port. It is how an operator runs a one-off command on the service, such as the runbooks' "turn the assistant off" or "end this user's sessions". The shell gets the container's environment, not the environment of the process the start script launched. The api's start script builds <code>DATABASE_URL</code> from the separate secrets ECS injects, so in an exec shell the command-line tool found no database URL, and the runbooks had no path on AWS until the operator script built it the same way.</p>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/ops.sh#L47-L56">infra/aws/ops.sh</a><span class="lines">the operator's command line, in a task</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/ops.sh#L50-L59">infra/aws/ops.sh</a><span class="lines">the operator's command line, in a task</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p><code>./ops.sh cli assistant --off --reason "..."</code> runs the same command as <code>make assistant</code> on a compose host, in one of the api's running tasks.</p>
@@ -334,7 +334,7 @@ deregistration_delay=Duration.seconds(130),</code></pre>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/ops.sh" data-lines="47-56"><code class="language-bash">cli)
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/ops.sh" data-lines="50-59"><code class="language-bash">cli)
   shift; (($#)) || { echo "usage: ops.sh cli &lt;command&gt; [args], e.g. cli assistant --off --reason '...'" &gt;&amp;2; exit 2; }
   task=$(aws ecs list-tasks --cluster triage --service-name api --desired-status RUNNING --query 'taskArns[0]' --output text)
   [[ $task == arn:* ]] || { echo "no running api task" &gt;&amp;2; exit 1; }

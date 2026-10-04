@@ -65,7 +65,7 @@
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/web/nginx/default.conf#L85-L96">apps/web/nginx/default.conf</a><span class="lines">and</span><a href="{{TA}}/tools/edge/Caddyfile#L36-L47">tools/edge/Caddyfile</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/web/nginx/default.conf#L78-L89">apps/web/nginx/default.conf</a><span class="lines">and</span><a href="{{TA}}/tools/edge/Caddyfile#L36-L47">tools/edge/Caddyfile</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The settings that make streaming and rolling deploys work through both proxies, each with its reason in a comment.</p>
@@ -77,7 +77,7 @@
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="apps/web/nginx/default.conf" data-lines="85-96"><code class="language-nginx"># Streaming (SSE): every event must reach the browser the moment the
+          <pre class="code" data-repo="triage-assistant" data-path="apps/web/nginx/default.conf" data-lines="78-89"><code class="language-nginx"># Streaming (SSE): every event must reach the browser the moment the
 # api writes it. Buffering is on by default in nginx and would deliver
 # the whole answer at once.
 location = /api/chat/stream {
@@ -114,10 +114,10 @@ handle {
 
   <figure class="fig wide" id="fig-11-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 250" role="img" aria-label="A client sends X-Forwarded-For 6.6.6.6 to try to look like someone else. The edge overwrites the header with the address it actually saw. nginx accepts the header only from private ranges and takes the real client from it, then overwrites it again for the api. The api sees exactly one address, the real client, and rate-limits by it. If a proxy appended instead of overwriting, the forged address would survive.">
+    <svg viewBox="0 0 820 250" role="img" aria-label="A client sends X-Forwarded-For 6.6.6.6 to try to look like someone else. The edge overwrites the header with the address it actually saw. nginx accepts the header only from the proxies in front and takes the real client from it, then overwrites it again for the api. The api sees exactly one address, the real client, and rate-limits by it. If a proxy appended instead of overwriting, the forged address would survive.">
       <rect class="n-warn" x="16" y="40" width="170" height="74" rx="5"/><text class="tb" x="28" y="62">Client</text><text class="ts" x="28" y="82">sends a forged header:</text><text class="tm" x="28" y="100">XFF: 6.6.6.6</text>
       <rect class="n-acc" x="226" y="40" width="170" height="74" rx="5"/><text class="tb" x="238" y="62">Edge</text><text class="ts" x="238" y="82">overwrites it with the</text><text class="ts" x="238" y="98">address it actually saw</text>
-      <rect class="n" x="436" y="40" width="170" height="74" rx="5"/><text class="tb" x="448" y="62">nginx</text><text class="ts" x="448" y="82">trusts XFF only from</text><text class="ts" x="448" y="98">private ranges</text>
+      <rect class="n" x="436" y="40" width="170" height="74" rx="5"/><text class="tb" x="448" y="62">nginx</text><text class="ts" x="448" y="82">trusts XFF only from</text><text class="ts" x="448" y="98">the proxies in front</text>
       <rect class="n-good" x="646" y="40" width="158" height="74" rx="5"/><text class="tb" x="658" y="62">api</text><text class="ts" x="658" y="82">one address: the</text><text class="ts" x="658" y="98">real client</text>
       <line class="e" x1="187" y1="77" x2="224" y2="77" marker-end="url(#a)"/>
       <line class="e" x1="397" y1="77" x2="434" y2="77" marker-end="url(#a)"/>
@@ -158,48 +158,60 @@ handle {
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/web/nginx/default.conf#L20-L49">apps/web/nginx/default.conf</a><span class="lines">resolving, real IPs, keep-alive</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/web/nginx/default.conf#L20-L36">apps/web/nginx/default.conf</a><span class="lines">and what it includes, written at start-up by</span><a href="{{TA}}/apps/web/nginx/entrypoint/25-runtime-conf.sh#L13-L35">25-runtime-conf.sh</a></header>
     <div class="repo-body">
       <div class="repo-text">
-        <p>Three more defaults changed for a containerized, streaming service.</p>
+        <p>Three things depend on where the container runs, so a short script writes them when it starts, and the config includes them.</p>
         <ul class="notice">
-          <li>Docker's embedded DNS server, re-queried every 10 seconds: a recreated api container with a new address is found without restarting nginx, and nginx starts even before the api exists.</li>
-          <li>The real client address is taken from the forwarded header only when the connection comes from a private range. That is safe only while every proxy in front overwrites the header, as the edge does. Behind a load balancer that appends, or with nginx reachable from a private network, a client with a private address is itself trusted and can choose its own address. The strict rule is to trust only the addresses of the proxies in front.</li>
-          <li>The upstream's idle keep-alive is shorter than gunicorn's, so the proxy always closes first. Facing the proxies in front, nginx's own is longer than theirs (140 s), for the same reason.</li>
+          <li>The resolver comes from the container's <code>/etc/resolv.conf</code>: Docker's embedded DNS in Compose, the cluster's DNS on Kubernetes. It is re-queried every 10 seconds, so a recreated api container with a new address is found without restarting nginx, and nginx starts even before the api exists.</li>
+          <li>The real client address is taken from the forwarded header only when the connection comes from a trusted proxy: <code>REAL_IP_FROM</code>, or by default the container's own network, where the edge runs. It once trusted every private range. Behind a load balancer that appends to the header, a client with a private address was then itself trusted, and could choose its own address.</li>
+          <li>The api's address is a setting too. On Kubernetes it must be the service's full name, because nginx's resolver ignores search domains. The upstream's idle keep-alive is shorter than gunicorn's, so the proxy always closes first.</li>
         </ul>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="apps/web/nginx/default.conf" data-lines="20-49"><code class="language-nginx"># Docker's embedded DNS. `resolve` makes nginx re-resolve `api` at runtime,
-# so a recreated api container (new IP) is picked up without an nginx
-# restart, and nginx starts even if api does not exist yet.
-resolver 127.0.0.11 valid=10s ipv6=off;
+          <pre class="code" data-repo="triage-assistant" data-path="apps/web/nginx/default.conf" data-lines="20-36"><code class="language-nginx"># Written at start-up by /docker-entrypoint.d/25-runtime-conf.sh, from where
+# the container runs: the resolver (from /etc/resolv.conf: `resolve` below
+# re-resolves the api at runtime, so a recreated api container is picked up
+# without an nginx restart, and nginx starts even if the api does not exist
+# yet), the trusted proxies (REAL_IP_FROM, else this container's networks)
+# and the api_backend upstream (API_UPSTREAM, else api:8010).
+include /tmp/nginx/resolver.conf;
+include /tmp/nginx/upstream.conf;
 
 # Behind the TLS edge or a cloud load balancer, the connection comes from
 # the proxy: take the client's address from the X-Forwarded-For it sets, or
-# every user shares one address - and one rate limit. Trusted only from
-# private ranges (the Docker network, a VPC); the edge overwrites whatever
-# X-Forwarded-For a client sends, so it cannot be forged through it.
-set_real_ip_from 10.0.0.0/8;
-set_real_ip_from 172.16.0.0/12;
-set_real_ip_from 192.168.0.0/16;
+# every user shares one address - and one rate limit. Believed only from the
+# trusted proxies; the edge overwrites whatever X-Forwarded-For a client
+# sends, so it cannot be forged through it.
+include /tmp/nginx/real-ip.conf;
 real_ip_header X-Forwarded-For;
-real_ip_recursive on;
+real_ip_recursive on;</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="apps/web/nginx/entrypoint/25-runtime-conf.sh" data-lines="13-35"><code class="language-bash">set -eu
+out=/tmp/nginx
+mkdir -p "$out"
 
-# The scheme the client used: https when the edge terminated TLS.
-map $http_x_forwarded_proto $client_scheme {
-    default $http_x_forwarded_proto;
-    ""      $scheme;
-}
+ns=$(awk '$1 == "nameserver" { printf "%s ", ($2 ~ ":" ? "[" $2 "]" : $2) }' /etc/resolv.conf)
+echo "resolver ${ns:-127.0.0.11} valid=10s ipv6=off;" &gt; "$out/resolver.conf"
 
+trusted=${REAL_IP_FROM:-$(ip -o -f inet route show scope link | awk '{ print $1 }')}
+: &gt; "$out/real-ip.conf"
+for cidr in $trusted; do
+  echo "set_real_ip_from $cidr;" &gt;&gt; "$out/real-ip.conf"
+done
+
+cat &gt; "$out/upstream.conf" &lt;&lt;CONF
 upstream api_backend {
     zone api_backend 64k;
-    server api:8010 resolve;
+    server ${API_UPSTREAM:-api:8010} resolve;
     keepalive 16;
-    # Below gunicorn's keepalive (75s): the side that closes idle
-    # connections first must be the proxy, never the backend.
+    # Below gunicorn's keepalive: the side that closes idle connections
+    # first must be the proxy, never the backend.
     keepalive_timeout 60s;
-}</code></pre>
+}
+CONF</code></pre>
         </div>
       </div>
     </div>
@@ -217,7 +229,7 @@ upstream api_backend {
 
   <aside class="say">
     <span class="label">How to say it</span>
-    <p>"TLS terminates at the edge, nginx serves files and routes /api with buffering off for streams. The client IP is overwritten at the edge and trusted only from private ranges inside."</p>
+    <p>"TLS terminates at the edge, nginx serves files and routes /api with buffering off for streams. The client IP is overwritten at the edge and trusted inside only from the proxies in front."</p>
     <p>"Timeouts nest: the proxy closes idle connections before the app does, and heartbeats beat every idle timeout in the path."</p>
   </aside>
 

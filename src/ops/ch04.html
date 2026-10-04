@@ -13,7 +13,7 @@
       <li>Pin by content, not by name: lockfiles with hashes, base images by digest, CI actions by commit SHA. Names can be moved; content hashes cannot.</li>
       <li>Updates arrive as pull requests from a bot and pass the same checks as any change.</li>
       <li>Scan for known vulnerabilities and leaked secrets on every pull request, again at release, and weekly.</li>
-      <li>Block what has a fix. When the fix cannot be taken yet, accept the risk explicitly, with an expiry that forces the question again. Findings with no fix at all are hidden, so review them separately.</li>
+      <li>Block what has a fix. When the fix cannot be taken yet, accept the risk explicitly, with an expiry that forces the question again. Findings with no fix at all cannot block anything, so list them in a report-only scan and review them.</li>
     </ul>
   </div>
 
@@ -146,9 +146,9 @@ FROM python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa
       <text class="ts" x="515" y="138">e.g. no new base yet</text>
 
       <rect class="n-soft" x="200" y="214" width="150" height="70" rx="6"/>
-      <text class="tb" x="275" y="238" text-anchor="middle">Not reported</text>
-      <text class="ts" x="275" y="256" text-anchor="middle">hidden, with no record;</text>
-      <text class="ts" x="275" y="272" text-anchor="middle">review them separately</text>
+      <text class="tb" x="275" y="238" text-anchor="middle">Reported, not blocking</text>
+      <text class="ts" x="275" y="256" text-anchor="middle">listed by the weekly</text>
+      <text class="ts" x="275" y="272" text-anchor="middle">report-only scan</text>
       <line class="e" x1="275" y1="179" x2="275" y2="212" marker-end="url(#a)"/>
       <text class="ts" x="284" y="200">no</text>
       <line class="e" x1="601" y1="199" x2="638" y2="199" marker-end="url(#a)"/>
@@ -160,7 +160,7 @@ FROM python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa
       <text class="ts" x="16" y="264">reported, never failed</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 4.2</span>The policy for a vulnerability. Blocking only on findings that can be fixed keeps the check meaningful: a check that is red for reasons nobody can act on teaches people to ignore red. The price is the bottom branch: the scan runs with <code>--ignore-unfixed</code>, so a finding with no fix anywhere is never shown, and nobody records or revisits it unless the team looks for it.</figcaption>
+    <figcaption><span class="fig-n">Figure 4.2</span>The policy for a vulnerability. Blocking only on findings that can be fixed keeps the check meaningful: a check that is red for reasons nobody can act on teaches people to ignore red. The blocking scan runs with <code>--ignore-unfixed</code>, so a finding with no fix anywhere never shows there; the weekly run adds a report-only scan without that flag, which lists them (44 in the api image when it was added), so they are seen and revisited.</figcaption>
   </figure>
 
   <p>The note at the bottom left of the figure is a lesson learned. The weekly scan of the third-party images the stack merely runs, such as Keycloak, Grafana and pgvector, first found 336 findings in 12 of 14 images, nearly all waiting on releases from those projects. A job that fails every Monday for things the team cannot change is an email nobody reads, so that scan now reports instead of failing, and is read when those images are upgraded. The service's own images still fail on any fixable finding.</p>
@@ -252,7 +252,7 @@ reason. Run by `make scan` and `make scan-compose`.
     </li>
     <li>
       <p>Why does the policy block only findings that have a fixed version?</p>
-      <details class="ans"><summary>Answer</summary><p>A finding with no fix leaves nothing to do but wait. Blocking on it keeps the check permanently red, and people learn to ignore it. With <code>--ignore-unfixed</code> the scan does not even report them, so nothing records them either; a periodic report-only scan without that flag keeps them in sight. The accepted-risks file, with a reason and an expiry that forces a fresh decision, is for the other case: a fix exists upstream but cannot be taken yet.</p></details>
+      <details class="ans"><summary>Answer</summary><p>A finding with no fix leaves nothing to do but wait. Blocking on it keeps the check permanently red, and people learn to ignore it. With <code>--ignore-unfixed</code> the blocking scan does not even report them, so the reference service's weekly run adds a report-only scan without that flag, which keeps them in sight. The accepted-risks file, with a reason and an expiry that forces a fresh decision, is for the other case: a fix exists upstream but cannot be taken yet.</p></details>
     </li>
     <li>
       <p>Why scan again at release and weekly if every pull request is scanned?</p>

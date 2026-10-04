@@ -116,7 +116,7 @@
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/db.py#L75-L105">apps/api/app/db.py</a><span class="lines">and the policies in</span><a href="{{TA}}/apps/api/migrations/versions/20260923_ce83ff21ab01_row_level_security_on_alerts.py#L37-L67">migrations/…_row_level_security_on_alerts.py</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/db.py#L105-L135">apps/api/app/db.py</a><span class="lines">and the policies in</span><a href="{{TA}}/apps/api/migrations/versions/20260923_ce83ff21ab01_row_level_security_on_alerts.py#L37-L67">migrations/…_row_level_security_on_alerts.py</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The database session tells Postgres who is asking at the start of every transaction, and the migration defines one policy per command.</p>
@@ -129,7 +129,7 @@
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/db.py" data-lines="88-105"><code class="language-python">def _set_config(values: dict[str, str]) -&gt; Select[Any]:
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/db.py" data-lines="118-135"><code class="language-python">def _set_config(values: dict[str, str]) -&gt; Select[Any]:
     return select(*(func.set_config(k, v, True) for k, v in values.items()))
 
 
@@ -209,6 +209,7 @@ def upgrade() -&gt; None:
       <tbody>
         <tr><td data-label="Symptom">The pooler looks healthy but every query fails</td><td data-label="Cause">It authenticated with md5 while Postgres requires SCRAM; <code>pg_isready</code> does not authenticate</td><td data-label="Fix">Configure SCRAM; make the readiness check run a real query.</td></tr>
         <tr><td data-label="Symptom">One user's tenant setting appears in another user's request</td><td data-label="Cause">A session-level <code>SET</code> through transaction pooling</td><td data-label="Fix">Transaction-local <code>set_config(..., true)</code>, with a test.</td></tr>
+        <tr><td data-label="Symptom">After a network fault, every request waits for a pooled connection</td><td data-label="Cause">The container came back on another address; its pooled connections hang, holding their slots</td><td data-label="Fix">A TCP user timeout on database connections, so dead ones fail and are replaced (Chapter 15).</td></tr>
         <tr><td data-label="Symptom">Per-session timeouts silently do nothing</td><td data-label="Cause">Transaction pooling discards session settings</td><td data-label="Fix">Set timeouts on the database role.</td></tr>
         <tr><td data-label="Symptom">Latency stays high after a burst is over</td><td data-label="Cause">Overflow connections discarded and recreated: a metastable loop</td><td data-label="Fix">A fixed-size pool with no overflow.</td></tr>
         <tr><td data-label="Symptom">A pool-usage gauge said 2 while 10 requests were stuck</td><td data-label="Cause">It counted checkout events, which fire only after the connection's pre-ping succeeds</td><td data-label="Fix">Sample the pool's own accounting.</td></tr>

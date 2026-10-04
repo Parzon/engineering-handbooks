@@ -153,26 +153,26 @@
   <h3 id="ch6-proper">The VM done properly</h3>
   <p>The reference build ran the same stack on an EC2 virtual machine defined in CDK. What makes it acceptable to a platform team, compared with a hand-built server:</p>
   <ul>
-    <li><strong>No SSH key and no port 22.</strong> Operators use Session Manager and Run Command, which the instance's role allows. CloudTrail records who opened a session or sent a command; what was typed is kept only with session logging, which this stack does not turn on.</li>
+    <li><strong>No SSH key and no port 22.</strong> Operators use Session Manager and Run Command, which the instance's role allows. CloudTrail records who opened a session or sent a command; the stack's session logging keeps what was typed, and the Run Command output, in a log group.</li>
     <li><strong>No registry password.</strong> A credential helper gets ECR credentials from the instance's role.</li>
     <li><strong>Built from code.</strong> cloud-init installs Docker, creates the deploy user, clones the repository for its compose files and scripts, and generates the <code>.env</code> with random passwords at first boot. Because cloud-init runs only once, a changed recipe replaces the VM rather than editing it.</li>
     <li><strong>Small surface.</strong> The metadata service accepts only its token-based version (IMDSv2), the disk is encrypted, and the security group admits HTTP and nothing else.</li>
   </ul>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/vm.py#L79-L91">infra/aws/vm.py</a><span class="lines">the VM's role and its single open port</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/vm.py#L82-L136">infra/aws/vm.py</a><span class="lines">the VM's role, what operators do, and its single open port</span></header>
     <div class="repo-body">
       <div class="repo-text">
-        <p>The VM's identity and its network surface, in fifteen lines of CDK.</p>
+        <p>The VM's identity, its operations log and its network surface, in CDK.</p>
         <ul class="notice">
-          <li>The role trusts only the EC2 service, and carries one managed policy: the one Session Manager needs.</li>
-          <li>It may pull from the three image repositories, nothing more.</li>
+          <li>The role trusts only the EC2 service, and carries one managed policy: the one Session Manager needs. It may pull from the three image repositories, nothing more.</li>
+          <li>What operators do is kept, not only that they connected: Session Manager's preferences, a document the stack owns, stream every session's input and output to the log group, and the operator script sends Run Command output there too. The role may write to that group and no other.</li>
           <li>The security group's description says it plainly: HTTP in, no SSH.</li>
         </ul>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="79-91"><code class="language-python">role = iam.Role(
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="82-91"><code class="language-python">role = iam.Role(
     self,
     "Role",
     assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"),
@@ -181,9 +181,22 @@
     ],
 )
 for repo in repos.values():
-    repo.grant_pull(role)
-
-sg = ec2.SecurityGroup(self, "Sg", vpc=vpc, description="HTTP in; no SSH")
+    repo.grant_pull(role)</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="93-102"><code class="language-python"># What operators do on the host, not only that they connected. Session Manager reads
+# its preferences from one document per account and region, SSM-SessionManagerRunShell:
+# this stack creates it (it must not exist already) and deletes it with the stack.
+operations = logs.LogGroup(
+    self,
+    "Operations",
+    log_group_name="/triage/vm-operations",
+    retention=logs.RetentionDays.ONE_MONTH,  # production: what audits require
+    removal_policy=RemovalPolicy.DESTROY,  # production: RETAIN
+)</code></pre>
+        </div>
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="135-136"><code class="language-python">sg = ec2.SecurityGroup(self, "Sg", vpc=vpc, description="HTTP in; no SSH")
 sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80), "the app")</code></pre>
         </div>
       </div>

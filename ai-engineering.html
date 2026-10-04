@@ -49,7 +49,7 @@
   <div class="series-list">
     <div class="here"><span class="n">1 · AI Engineering &amp; Architecture</span><span>The new layer: models, retrieval, agents, evaluation, safety.</span></div><a href="software-engineering.html"><span class="n">2 · Modern Software Engineering</span><span>Your skills, brought up to date: the service and its repository.</span></a><a href="cloud-delivery.html"><span class="n">3 · Cloud Delivery &amp; DevOps</span><span>From a laptop to production: pipelines, identity, the cloud.</span></a>
   </div>
-  <p class="edition">Edition 1 · Reference implementation: <code>triage-assistant</code> at <code>handbook-1 (3fc2c43)</code></p>
+  <p class="edition">Edition 1 · Reference implementation: <code>triage-assistant</code> at <code>handbook-1 (5b4f80d)</code></p>
 </header>
 
 <section class="front" id="how-to-read">
@@ -423,7 +423,7 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/app/config.py#L142-L149">apps/api/app/config.py</a><span class="lines">an output limit sized for hidden reasoning</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/app/config.py#L148-L155">apps/api/app/config.py</a><span class="lines">an output limit sized for hidden reasoning</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>Two settings for reasoning models, with the measurement behind each default in the comment.</p>
@@ -435,7 +435,7 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/config.py" data-lines="142-149"><code class="language-python">    # For reasoning models (OpenAI's o-series and gpt-5, gpt-oss) the limit
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/app/config.py" data-lines="148-155"><code class="language-python">    # For reasoning models (OpenAI's o-series and gpt-5, gpt-oss) the limit
     # includes their hidden thinking: measured with gpt-oss:20b at the default
     # effort, 3 of 5 answers spent all 800 tokens thinking and said nothing.
     llm_max_output_tokens: int = Field(800, ge=1)
@@ -4499,7 +4499,7 @@ What this makes easier, what it makes harder, what it costs.
 
 <footer class="series-foot">
   <p>Engineering Handbooks · Handbook 1 of 3 · AI Engineering &amp; Architecture · Edition 1</p>
-  <p>Reference implementation: <a href="https://github.com/Parzon/triage-assistant">triage-assistant</a> at <code>handbook-1 (3fc2c43)</code>.</p>
+  <p>Reference implementation: <a href="https://github.com/Parzon/triage-assistant">triage-assistant</a> at <code>handbook-1 (5b4f80d)</code>.</p>
 </footer>
 </main>
 </div>

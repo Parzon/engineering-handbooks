@@ -21,7 +21,7 @@ with answers.
 
 Code excerpts are checked line by line against triage-assistant at the tag
 [`handbook-1`](https://github.com/Parzon/triage-assistant/tree/handbook-1)
-(commit `175579a`), and every code link points to that tag, so line numbers
+(commit `0b81c10`), and every code link points to that tag, so line numbers
 match what you see on GitHub.
 
 ## What is in this repository

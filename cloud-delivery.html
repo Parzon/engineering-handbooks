@@ -28,7 +28,7 @@
   <ol>
     <li><a href="#how-to-read">How to read this handbook</a></li>
     <li><a href="#contents">Contents</a></li>
-    <li class="toc-part"><span class="label">Part I · What changed</span><ol><li><a href="#ch1">1 · From laptop to production</a></li><li class="toc-sub"><a href="#ch1-path">The path a change takes</a></li><li class="toc-sub"><a href="#ch1-proven">What the reference build proved</a></li><li class="toc-sub"><a href="#ch1-promote">One artifact</a></li><li class="toc-sub"><a href="#ch1-envs">The environments</a></li><li class="toc-sub"><a href="#ch1-sizes">The same service at three sizes</a></li><li class="toc-sub"><a href="#ch1-traps">Traps</a></li><li class="toc-sub"><a href="#ch1-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part II · Source and build</span><ol><li><a href="#ch2">2 · Git and the pull request</a></li><li class="toc-sub"><a href="#ch2-model">The model</a></li><li class="toc-sub"><a href="#ch2-places">Three places a file lives</a></li><li class="toc-sub"><a href="#ch2-integrate">Merge</a></li><li class="toc-sub"><a href="#ch2-trunk">Trunk-based development</a></li><li class="toc-sub"><a href="#ch2-pr">The pull request as a gate</a></li><li class="toc-sub"><a href="#ch2-traps">Traps</a></li><li class="toc-sub"><a href="#ch2-questions">Questions</a></li><li><a href="#ch3">3 · CI/CD and artifacts</a></li><li class="toc-sub"><a href="#ch3-ci">Continuous integration</a></li><li class="toc-sub"><a href="#ch3-cd">Continuous delivery</a></li><li class="toc-sub"><a href="#ch3-artifacts">Tags</a></li><li class="toc-sub"><a href="#ch3-traps">Traps</a></li><li class="toc-sub"><a href="#ch3-questions">Questions</a></li><li><a href="#ch4">4 · The software supply chain</a></li><li class="toc-sub"><a href="#ch4-layers">What you ship but did not write</a></li><li class="toc-sub"><a href="#ch4-pins">Pinning</a></li><li class="toc-sub"><a href="#ch4-scan">Scanning</a></li><li class="toc-sub"><a href="#ch4-traps">Traps</a></li><li class="toc-sub"><a href="#ch4-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part III · Identity</span><ol><li><a href="#ch5">5 · Identity without keys</a></li><li class="toc-sub"><a href="#ch5-routes">Three callers</a></li><li class="toc-sub"><a href="#ch5-people">People</a></li><li class="toc-sub"><a href="#ch5-oidc">Pipelines</a></li><li class="toc-sub"><a href="#ch5-roles">One role per job</a></li><li class="toc-sub"><a href="#ch5-workloads">Workloads</a></li><li class="toc-sub"><a href="#ch5-case">A case from the reference build</a></li><li class="toc-sub"><a href="#ch5-defaults">Defaults</a></li><li class="toc-sub"><a href="#ch5-traps">Traps</a></li><li class="toc-sub"><a href="#ch5-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part IV · Getting code onto servers</span><ol><li><a href="#ch6">6 · The deployment ladder, and one VM done properly</a></li><li class="toc-sub"><a href="#ch6-ladder">The ladder</a></li><li class="toc-sub"><a href="#ch6-vm">One VM</a></li><li class="toc-sub"><a href="#ch6-proper">The VM done properly</a></li><li class="toc-sub"><a href="#ch6-agents">Agents on hosts</a></li><li class="toc-sub"><a href="#ch6-move">When to climb the next rung</a></li><li class="toc-sub"><a href="#ch6-traps">Traps</a></li><li class="toc-sub"><a href="#ch6-questions">Questions</a></li><li><a href="#ch7">7 · Infrastructure as code</a></li><li class="toc-sub"><a href="#ch7-how">How the tools work</a></li><li class="toc-sub"><a href="#ch7-stacks">The reference infrastructure</a></li><li class="toc-sub"><a href="#ch7-drift">Drift</a></li><li class="toc-sub"><a href="#ch7-boot">The last mile</a></li><li class="toc-sub"><a href="#ch7-traps">Traps</a></li><li class="toc-sub"><a href="#ch7-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part V · Running on AWS</span><ol><li><a href="#ch8">8 · Networking on AWS</a></li><li class="toc-sub"><a href="#ch8-router">A home router</a></li><li class="toc-sub"><a href="#ch8-parts">The parts</a></li><li class="toc-sub"><a href="#ch8-reference">The reference network</a></li><li class="toc-sub"><a href="#ch8-cidr">Address ranges in CIDR notation</a></li><li class="toc-sub"><a href="#ch8-production">Toward a production network</a></li><li class="toc-sub"><a href="#ch8-traps">Traps</a></li><li class="toc-sub"><a href="#ch8-questions">Questions</a></li><li><a href="#ch9">9 · Containers on ECS Fargate</a></li><li class="toc-sub"><a href="#ch9-pieces">The pieces</a></li><li class="toc-sub"><a href="#ch9-rehearse">Rehearse the task locally first</a></li><li class="toc-sub"><a href="#ch9-start">How a task starts</a></li><li class="toc-sub"><a href="#ch9-deploy">A release on ECS</a></li><li class="toc-sub"><a href="#ch9-health">One health signal</a></li><li class="toc-sub"><a href="#ch9-scale">Scaling out</a></li><li class="toc-sub"><a href="#ch9-traps">Traps</a></li><li class="toc-sub"><a href="#ch9-questions">Questions</a></li><li><a href="#ch10">10 · Kubernetes and EKS</a></li><li class="toc-sub"><a href="#ch10-model">The model</a></li><li class="toc-sub"><a href="#ch10-probes">Two probes</a></li><li class="toc-sub"><a href="#ch10-map">ECS and Kubernetes</a></li><li class="toc-sub"><a href="#ch10-why">Why orchestrators exist at all</a></li><li class="toc-sub"><a href="#ch10-traps">Traps</a></li><li class="toc-sub"><a href="#ch10-questions">Questions</a></li><li><a href="#ch11">11 · The same ideas on Azure and Google Cloud</a></li><li class="toc-sub"><a href="#ch11-map">The map</a></li><li class="toc-sub"><a href="#ch11-diff">Three differences worth knowing</a></li><li class="toc-sub"><a href="#ch11-terraform">Terraform across clouds</a></li><li class="toc-sub"><a href="#ch11-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VI · The reference build</span><ol><li><a href="#ch12">12 · The reference build, end to end</a></li><li class="toc-sub"><a href="#ch12-stages">The stages</a></li><li class="toc-sub"><a href="#ch12-change">One change</a></li><li class="toc-sub"><a href="#ch12-code">The infrastructure code</a></li><li class="toc-sub"><a href="#ch12-images">Images</a></li><li class="toc-sub"><a href="#ch12-firstdeploy">The first ECS deploy</a></li><li class="toc-sub"><a href="#ch12-false">An outage that never happened</a></li><li class="toc-sub"><a href="#ch12-loop">The whole loop</a></li><li class="toc-sub"><a href="#ch12-outages">Outage drills</a></li><li class="toc-sub"><a href="#ch12-obs">What the on-call looks at</a></li><li class="toc-sub"><a href="#ch12-review">A review against its own rules</a></li><li class="toc-sub"><a href="#ch12-traps">Traps</a></li><li class="toc-sub"><a href="#ch12-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VII · Operating it</span><ol><li><a href="#ch13">13 · Environments, releases and rollback</a></li><li class="toc-sub"><a href="#ch13-strategies">Four ways to move traffic</a></li><li class="toc-sub"><a href="#ch13-schema">Rollbacks roll back code</a></li><li class="toc-sub"><a href="#ch13-undo">One rollback per kind of change</a></li><li class="toc-sub"><a href="#ch13-handover">Handing a service to an…</a></li><li class="toc-sub"><a href="#ch13-road">The road to real users</a></li><li class="toc-sub"><a href="#ch13-traps">Traps</a></li><li class="toc-sub"><a href="#ch13-questions">Questions</a></li><li><a href="#ch14">14 · Cost, teardown and lessons learned</a></li><li class="toc-sub"><a href="#ch14-cost">What it cost</a></li><li class="toc-sub"><a href="#ch14-teardown">Teardown</a></li><li class="toc-sub"><a href="#ch14-lessons">Lessons from a real build</a></li><li class="toc-sub"><a href="#ch14-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Appendices</span><ol><li><a href="#app-a">A · Glossary</a></li><li><a href="#app-b">B · Decision index</a></li><li><a href="#app-c">C · Repository index</a></li><li><a href="#app-d">D · Trap index</a></li></ol></li>
+    <li class="toc-part"><span class="label">Part I · What changed</span><ol><li><a href="#ch1">1 · From laptop to production</a></li><li class="toc-sub"><a href="#ch1-path">The path a change takes</a></li><li class="toc-sub"><a href="#ch1-proven">What the reference build proved</a></li><li class="toc-sub"><a href="#ch1-promote">One artifact</a></li><li class="toc-sub"><a href="#ch1-envs">The environments</a></li><li class="toc-sub"><a href="#ch1-sizes">The same service at three sizes</a></li><li class="toc-sub"><a href="#ch1-traps">Traps</a></li><li class="toc-sub"><a href="#ch1-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part II · Source and build</span><ol><li><a href="#ch2">2 · Git and the pull request</a></li><li class="toc-sub"><a href="#ch2-model">The model</a></li><li class="toc-sub"><a href="#ch2-places">Three places a file lives</a></li><li class="toc-sub"><a href="#ch2-integrate">Merge</a></li><li class="toc-sub"><a href="#ch2-trunk">Trunk-based development</a></li><li class="toc-sub"><a href="#ch2-pr">The pull request as a gate</a></li><li class="toc-sub"><a href="#ch2-traps">Traps</a></li><li class="toc-sub"><a href="#ch2-questions">Questions</a></li><li><a href="#ch3">3 · CI/CD and artifacts</a></li><li class="toc-sub"><a href="#ch3-ci">Continuous integration</a></li><li class="toc-sub"><a href="#ch3-cd">Continuous delivery</a></li><li class="toc-sub"><a href="#ch3-artifacts">Tags</a></li><li class="toc-sub"><a href="#ch3-traps">Traps</a></li><li class="toc-sub"><a href="#ch3-questions">Questions</a></li><li><a href="#ch4">4 · The software supply chain</a></li><li class="toc-sub"><a href="#ch4-layers">What you ship but did not write</a></li><li class="toc-sub"><a href="#ch4-pins">Pinning</a></li><li class="toc-sub"><a href="#ch4-scan">Scanning</a></li><li class="toc-sub"><a href="#ch4-traps">Traps</a></li><li class="toc-sub"><a href="#ch4-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part III · Identity</span><ol><li><a href="#ch5">5 · Identity without keys</a></li><li class="toc-sub"><a href="#ch5-routes">Three callers</a></li><li class="toc-sub"><a href="#ch5-people">People</a></li><li class="toc-sub"><a href="#ch5-oidc">Pipelines</a></li><li class="toc-sub"><a href="#ch5-roles">One role per job</a></li><li class="toc-sub"><a href="#ch5-workloads">Workloads</a></li><li class="toc-sub"><a href="#ch5-case">A case from the reference build</a></li><li class="toc-sub"><a href="#ch5-defaults">Defaults</a></li><li class="toc-sub"><a href="#ch5-traps">Traps</a></li><li class="toc-sub"><a href="#ch5-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part IV · Getting code onto servers</span><ol><li><a href="#ch6">6 · The deployment ladder, and one VM done properly</a></li><li class="toc-sub"><a href="#ch6-ladder">The ladder</a></li><li class="toc-sub"><a href="#ch6-vm">One VM</a></li><li class="toc-sub"><a href="#ch6-proper">The VM done properly</a></li><li class="toc-sub"><a href="#ch6-agents">Agents on hosts</a></li><li class="toc-sub"><a href="#ch6-move">When to climb the next rung</a></li><li class="toc-sub"><a href="#ch6-traps">Traps</a></li><li class="toc-sub"><a href="#ch6-questions">Questions</a></li><li><a href="#ch7">7 · Infrastructure as code</a></li><li class="toc-sub"><a href="#ch7-how">How the tools work</a></li><li class="toc-sub"><a href="#ch7-stacks">The reference infrastructure</a></li><li class="toc-sub"><a href="#ch7-drift">Drift</a></li><li class="toc-sub"><a href="#ch7-boot">The last mile</a></li><li class="toc-sub"><a href="#ch7-traps">Traps</a></li><li class="toc-sub"><a href="#ch7-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part V · Running on AWS</span><ol><li><a href="#ch8">8 · Networking on AWS</a></li><li class="toc-sub"><a href="#ch8-router">A home router</a></li><li class="toc-sub"><a href="#ch8-parts">The parts</a></li><li class="toc-sub"><a href="#ch8-reference">The reference network</a></li><li class="toc-sub"><a href="#ch8-cidr">Address ranges in CIDR notation</a></li><li class="toc-sub"><a href="#ch8-production">Toward a production network</a></li><li class="toc-sub"><a href="#ch8-traps">Traps</a></li><li class="toc-sub"><a href="#ch8-questions">Questions</a></li><li><a href="#ch9">9 · Containers on ECS Fargate</a></li><li class="toc-sub"><a href="#ch9-pieces">The pieces</a></li><li class="toc-sub"><a href="#ch9-rehearse">Rehearse the task locally first</a></li><li class="toc-sub"><a href="#ch9-start">How a task starts</a></li><li class="toc-sub"><a href="#ch9-deploy">A release on ECS</a></li><li class="toc-sub"><a href="#ch9-health">One health signal</a></li><li class="toc-sub"><a href="#ch9-scale">Scaling out</a></li><li class="toc-sub"><a href="#ch9-exec">Running a command in a task</a></li><li class="toc-sub"><a href="#ch9-traps">Traps</a></li><li class="toc-sub"><a href="#ch9-questions">Questions</a></li><li><a href="#ch10">10 · Kubernetes and EKS</a></li><li class="toc-sub"><a href="#ch10-model">The model</a></li><li class="toc-sub"><a href="#ch10-probes">Two probes</a></li><li class="toc-sub"><a href="#ch10-map">ECS and Kubernetes</a></li><li class="toc-sub"><a href="#ch10-why">Why orchestrators exist at all</a></li><li class="toc-sub"><a href="#ch10-traps">Traps</a></li><li class="toc-sub"><a href="#ch10-questions">Questions</a></li><li><a href="#ch11">11 · The same ideas on Azure and Google Cloud</a></li><li class="toc-sub"><a href="#ch11-map">The map</a></li><li class="toc-sub"><a href="#ch11-diff">Three differences worth knowing</a></li><li class="toc-sub"><a href="#ch11-terraform">Terraform across clouds</a></li><li class="toc-sub"><a href="#ch11-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VI · The reference build</span><ol><li><a href="#ch12">12 · The reference build, end to end</a></li><li class="toc-sub"><a href="#ch12-stages">The stages</a></li><li class="toc-sub"><a href="#ch12-change">One change</a></li><li class="toc-sub"><a href="#ch12-code">The infrastructure code</a></li><li class="toc-sub"><a href="#ch12-images">Images</a></li><li class="toc-sub"><a href="#ch12-firstdeploy">The first ECS deploy</a></li><li class="toc-sub"><a href="#ch12-false">An outage that never happened</a></li><li class="toc-sub"><a href="#ch12-loop">The whole loop</a></li><li class="toc-sub"><a href="#ch12-outages">Outage drills</a></li><li class="toc-sub"><a href="#ch12-obs">What the on-call looks at</a></li><li class="toc-sub"><a href="#ch12-review">A review against its own rules</a></li><li class="toc-sub"><a href="#ch12-traps">Traps</a></li><li class="toc-sub"><a href="#ch12-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VII · Operating it</span><ol><li><a href="#ch13">13 · Environments, releases and rollback</a></li><li class="toc-sub"><a href="#ch13-strategies">Four ways to move traffic</a></li><li class="toc-sub"><a href="#ch13-schema">Rollbacks roll back code</a></li><li class="toc-sub"><a href="#ch13-undo">One rollback per kind of change</a></li><li class="toc-sub"><a href="#ch13-handover">Handing a service to an…</a></li><li class="toc-sub"><a href="#ch13-road">The road to real users</a></li><li class="toc-sub"><a href="#ch13-traps">Traps</a></li><li class="toc-sub"><a href="#ch13-questions">Questions</a></li><li><a href="#ch14">14 · Cost, teardown and lessons learned</a></li><li class="toc-sub"><a href="#ch14-cost">What it cost</a></li><li class="toc-sub"><a href="#ch14-teardown">Teardown</a></li><li class="toc-sub"><a href="#ch14-lessons">Lessons from a real build</a></li><li class="toc-sub"><a href="#ch14-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Appendices</span><ol><li><a href="#app-a">A · Glossary</a></li><li><a href="#app-b">B · Decision index</a></li><li><a href="#app-c">C · Repository index</a></li><li><a href="#app-d">D · Trap index</a></li></ol></li>
   </ol>
 </nav>
 
@@ -49,7 +49,7 @@
   <div class="series-list">
     <a href="ai-engineering.html"><span class="n">1 · AI Engineering &amp; Architecture</span><span>The new layer: models, retrieval, agents, evaluation, safety.</span></a><a href="software-engineering.html"><span class="n">2 · Modern Software Engineering</span><span>Your skills, brought up to date: the service and its repository.</span></a><div class="here"><span class="n">3 · Cloud Delivery &amp; DevOps</span><span>From a laptop to production: pipelines, identity, the cloud.</span></div>
   </div>
-  <p class="edition">Edition 1 · Reference implementation: <code>triage-assistant</code> at <code>handbook-1 (175579a)</code></p>
+  <p class="edition">Edition 1 · Reference implementation: <code>triage-assistant</code> at <code>handbook-1 (0b81c10)</code></p>
 </header>
 
 <section class="front" id="how-to-read">
@@ -1504,7 +1504,7 @@ reason. Run by `make scan` and `make scan-compose`.
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/cicd.py#L14-L49">infra/aws/cicd.py</a><span class="lines">the OIDC provider and the image-push role</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/cicd.py#L14-L52">infra/aws/cicd.py</a><span class="lines">the OIDC provider and the image-push role</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>This CDK stack (Python that becomes CloudFormation) creates the account's one OIDC provider for GitHub and the role the release workflow uses to copy images into Amazon ECR.</p>
@@ -1512,6 +1512,7 @@ reason. Run by `make scan` and `make scan-compose`.
           <li><code>SUB_PREFIX</code> is the subject read from the repository's own OIDC setting, not typed from an example. The comment says how to read it.</li>
           <li>The audience must be exactly <code>sts.amazonaws.com</code>.</li>
           <li>The subject must be a version tag of this repository. A pull request, a branch push or a fork produces a different subject and gets nothing.</li>
+          <li>A version tag is only as trustworthy as the right to create one. A tag runs the release workflow of the commit it points at, so a tag on another branch could drop the workflow's "tag is on main" check. A tag ruleset lets only admins create, move or delete <code>v*</code> tags, and the comment says that this trust depends on it.</li>
           <li>Sessions last at most one hour.</li>
           <li>Push and pull are granted on the three image repositories only. <code>ecr:GetAuthorizationToken</code> cannot be scoped to a repository, so it is the one permission on <code>*</code>, and the code says why.</li>
         </ul>
@@ -1527,7 +1528,7 @@ SUB_PREFIX = "repo:Parzon@124113141/triage-assistant@1381921470"
 ISSUER = "token.actions.githubusercontent.com"</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/cicd.py" data-lines="26-49"><code class="language-python"># AWS trusts GitHub's signed tokens (one provider per account).
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/cicd.py" data-lines="26-52"><code class="language-python"># AWS trusts GitHub's signed tokens (one provider per account).
 provider = iam.OpenIdConnectProvider(
     self, "GitHub", url=f"https://{ISSUER}", client_ids=["sts.amazonaws.com"]
 )
@@ -1540,7 +1541,10 @@ role = iam.Role(
         provider.open_id_connect_provider_arn,
         conditions={
             "StringEquals": {f"{ISSUER}:aud": "sts.amazonaws.com"},
-            # Only a release tag of this repo: not a PR, not a branch, not a fork.
+            # Only a release tag of this repo: not a PR, not a branch, not a fork. A tag
+            # pushed on any branch runs that branch's release.yml, which could drop its
+            # "tag is on main" check: the repository's tag ruleset, which lets only admins
+            # create v* tags, is what makes this a release (using-this-template.md).
             "StringLike": {f"{ISSUER}:sub": f"{SUB_PREFIX}:ref:refs/tags/v*"},
         },
     ),
@@ -1607,7 +1611,7 @@ role.add_to_policy(
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/deploy.yml#L31-L77">.github/workflows/deploy.yml</a><span class="lines">and the deploy role in</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/cicd.py#L52-L75">infra/aws/cicd.py</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/deploy.yml#L31-L77">.github/workflows/deploy.yml</a><span class="lines">and the deploy role in</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/cicd.py#L55-L78">infra/aws/cicd.py</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The deploy job names the environment and asks for a token. Then one action exchanges the token for credentials. The role ARN is a repository secret. It grants nothing on its own, but it names the AWS account, and GitHub masks only secrets in public logs: a variable is printed with every step's inputs. A job's <code>if</code> cannot read secrets, so a first job reads it and answers yes or no. While it is unset, nothing deploys, so a copy of the template works without an AWS account.</p>
@@ -1656,7 +1660,7 @@ role.add_to_policy(
     mask-aws-account-id: true</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/cicd.py" data-lines="52-75"><code class="language-python">deploy = iam.Role(
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/cicd.py" data-lines="55-78"><code class="language-python">deploy = iam.Role(
     self,
     "Deploy",
     role_name="triage-gha-deploy",
@@ -1749,7 +1753,7 @@ deploy.add_to_policy(
   <p>Application secrets that are not AWS credentials, such as a database password or a model provider's API key, follow the same principle. They are generated by Secrets Manager, read by ECS when the task starts, and handed to the container as environment variables. They never appear in the image, the task definition, the CloudFormation template or the repository.</p>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L85-L104">infra/aws/service.py</a><span class="lines">and</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/vm.py#L1-L10">infra/aws/vm.py</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L87-L106">infra/aws/service.py</a><span class="lines">and</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/vm.py#L1-L10">infra/aws/vm.py</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>Two helpers in the ECS stack: one asks Secrets Manager to generate a secret, the other tells ECS to inject a field of it into a container at start. The VM stack's docstring lists what makes a single VM acceptable to a platform team.</p>
@@ -1762,7 +1766,7 @@ deploy.add_to_policy(
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="85-104"><code class="language-python">def generated_secret(scope: Construct, cid: str, username: str | None = None) -&gt; sm.Secret:
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="87-106"><code class="language-python">def generated_secret(scope: Construct, cid: str, username: str | None = None) -&gt; sm.Secret:
     # No punctuation: the api builds a URL from these, and @ : / % would need encoding.
     return sm.Secret(
         scope,
@@ -1891,6 +1895,7 @@ Compared with a hand-built VM:
         <tr><td data-label="Symptom">The job fails with <code>Not authorized to perform sts:AssumeRoleWithWebIdentity</code>, and the policy looks right</td><td data-label="Cause">The subject in the policy is not the one the token carries. The error never says which condition failed.</td><td data-label="Fix">Read the real subject from the repository's OIDC setting, or print the token's claims in a test job, and match on that.</td></tr>
         <tr><td data-label="Symptom">No token is issued at all</td><td data-label="Cause">The job lacks <code>permissions: id-token: write</code></td><td data-label="Fix">Grant it on the job that needs it, not the whole workflow.</td></tr>
         <tr><td data-label="Symptom">A deploy job that worked on tags is refused after you add an environment</td><td data-label="Cause">A job that names an environment gets <code>…:environment:NAME</code> as its subject, not its ref</td><td data-label="Fix">Trust the environment in the deploy role. It is the better gate anyway.</td></tr>
+        <tr><td data-label="Symptom">Anyone who can push can publish images to the cloud registry</td><td data-label="Cause">The role trusts every <code>v*</code> tag, and a tag runs the workflow of the commit it points at, checks removed included</td><td data-label="Fix">A tag ruleset: only admins create, move or delete release tags.</td></tr>
         <tr><td data-label="Symptom">A deliberate break of the policy fails, so the policy seems proven</td><td data-label="Cause">The policy may never have matched</td><td data-label="Fix">Run the passing case first, then the failing one.</td></tr>
         <tr><td data-label="Symptom">You cannot scope the registry login permission to one repository</td><td data-label="Cause"><code>ecr:GetAuthorizationToken</code> is account-wide by design</td><td data-label="Fix">Grant it on <code>*</code>, scope push and pull to the repositories, and say why in a comment.</td></tr>
         <tr><td data-label="Symptom">The CDK deploy role can do anything in the account</td><td data-label="Cause">The bootstrap's CloudFormation execution policy is AdministratorAccess by default</td><td data-label="Fix">Narrow the execution policy before production use.</td></tr>
@@ -2305,7 +2310,7 @@ sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80), "the app")</code></pr
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/app.py#L10-L19">infra/aws/app.py</a><span class="lines">and a dependency fixed in</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L171-L175">service.py</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/app.py#L10-L19">infra/aws/app.py</a><span class="lines">and a dependency fixed in</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L173-L177">service.py</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The CDK entry point wires the five stacks together by passing Python objects. CDK turns each object passed between stacks into a CloudFormation export and import.</p>
@@ -2329,7 +2334,7 @@ AppStack(
 app.synth()</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="171-175"><code class="language-python"># Delete the database before its master secret. The template refers to the secret only
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="173-177"><code class="language-python"># Delete the database before its master secret. The template refers to the secret only
 # inside a {{resolve:secretsmanager:...}} reference, and CloudFormation deleted both at
 # once: the DB's delete handler then could not resolve the secret -&gt; DELETE_FAILED
 # (recovery: delete-stack --retain-resources for what is already gone).
@@ -2844,7 +2849,7 @@ class NetworkStack(Stack):
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L401-L415">infra/aws/service.py</a><span class="lines">the api's start conditions</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L412-L426">infra/aws/service.py</a><span class="lines">the api's start conditions</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The fix, with the measurement that justified it in the comment. Each dependency names a condition: the init containers must exit with <code>SUCCESS</code>, the sidecar must be <code>HEALTHY</code>.</p>
@@ -2856,7 +2861,7 @@ class NetworkStack(Stack):
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="401-415"><code class="language-python"># Every init container is a direct dependency of the essential api: when one fails, the
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="412-426"><code class="language-python"># Every init container is a direct dependency of the essential api: when one fails, the
 # api gives up and ECS stops the task. Through a chain (api -&gt; migrate -&gt; dbinit) a dbinit
 # that fails fast leaves migrate "stopped" without running, and the task PENDING forever
 # (measured with one-off tasks: the chain stuck &gt;4 min; direct: stopped in 1.5 min).
@@ -2925,7 +2930,7 @@ api.add_container_dependencies(
   <p>The rule on ECS: point the load balancer at a shallow check; rely on the init containers for readiness at start (migrations succeed only if the database answers); and detect outages with an alarm on 5xx responses. The api reconnected four seconds after the database returned, with no restart.</p>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L455-L517">infra/aws/service.py</a><span class="lines">the service's deployment settings and the api's health check</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L466-L528">infra/aws/service.py</a><span class="lines">the service's deployment settings and the api's health check</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The service definition and the api target group's health check, each with its reasoning beside it.</p>
@@ -2938,7 +2943,7 @@ api.add_container_dependencies(
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="455-475"><code class="language-python">return ecs.FargateService(
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="466-486"><code class="language-python">return ecs.FargateService(
     self,
     f"{name.title()}Service",
     service_name=name,
@@ -2961,7 +2966,7 @@ api.add_container_dependencies(
     # IAM to the on-call role, with session logging.</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="503-517"><code class="language-python"># Liveness, not readiness. ECS replaces any task its load balancer calls unhealthy,
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="514-528"><code class="language-python"># Liveness, not readiness. ECS replaces any task its load balancer calls unhealthy,
 # so a deep check (/ready: the database) turns a database outage into task churn:
 # measured, every api task marked unhealthy and replacements stuck in dbinit. Kubernetes
 # separates the two (readinessProbe /ready, livenessProbe /health); ECS has one signal.
@@ -3014,11 +3019,43 @@ deregistration_delay=Duration.seconds(130),</code></pre>
     <p>"ECS has one health signal, so the load balancer checks a shallow endpoint; readiness at start comes from the init containers, and outages show up in the 5xx alarm."</p>
   </aside>
 
+  <h3 id="ch9-exec">Running a command in a task</h3>
+  <p>ECS Exec opens a shell in a running container through Systems Manager, with no SSH and no open port. It is how an operator runs a one-off command on the service, such as the runbooks' "turn the assistant off" or "end this user's sessions". The shell gets the container's environment, not the environment of the process the start script launched. The api's start script builds <code>DATABASE_URL</code> from the separate secrets ECS injects, so in an exec shell the command-line tool found no database URL, and the runbooks had no path on AWS until the operator script built it the same way.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/ops.sh#L47-L56">infra/aws/ops.sh</a><span class="lines">the operator's command line, in a task</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p><code>./ops.sh cli assistant --off --reason "..."</code> runs the same command as <code>make assistant</code> on a compose host, in one of the api's running tasks.</p>
+        <ul class="notice">
+          <li>It picks a running api task and opens ECS Exec in its api container.</li>
+          <li>It builds <code>DATABASE_URL</code> from the injected parts, exactly as <code>container/api.sh</code> does.</li>
+          <li>The arguments travel base64-encoded and NUL-separated, so a reason with spaces or quotes arrives as typed, with no quoting rules to get wrong.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/ops.sh" data-lines="47-56"><code class="language-bash">cli)
+  shift; (($#)) || { echo "usage: ops.sh cli &lt;command&gt; [args], e.g. cli assistant --off --reason '...'" &gt;&amp;2; exit 2; }
+  task=$(aws ecs list-tasks --cluster triage --service-name api --desired-status RUNNING --query 'taskArns[0]' --output text)
+  [[ $task == arn:* ]] || { echo "no running api task" &gt;&amp;2; exit 1; }
+  # container/api.sh composes DATABASE_URL before it starts gunicorn, so a shell opened with ECS
+  # Exec has the parts but not the URL: compose it the same way. The arguments travel base64,
+  # NUL-separated, so spaces and quotes in them (a reason) arrive as typed.
+  args=$(printf '%s\0' "$@" | base64 -w0)
+  aws ecs execute-command --cluster triage --task "$task" --container api --interactive --command \
+    "sh -c 'export DATABASE_URL=postgresql://\${DB_USER}:\${DB_PASSWORD}@\${DB_HOST}:\${DB_PORT}/\${DB_NAME}; echo $args | base64 -d | xargs -0 python -m app.cli'" ;;</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <h3 id="ch9-traps">Traps</h3>
   <div class="table-wrap">
     <table class="grid traps stack">
       <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
       <tbody>
+        <tr><td data-label="Symptom">A command run through ECS Exec cannot find a setting the service uses</td><td data-label="Cause">The start script built it for the process it started; the exec shell gets only the container's environment</td><td data-label="Fix">Build it the same way in the operator's command.</td></tr>
         <tr><td data-label="Symptom">A database outage makes ECS replace healthy api tasks</td><td data-label="Cause">The load balancer checks a deep readiness endpoint, and ECS treats it as liveness</td><td data-label="Fix">Check a shallow endpoint; detect outages with a 5xx alarm.</td></tr>
         <tr><td data-label="Symptom">A task sits in PENDING for many minutes, billed</td><td data-label="Cause">Init containers in a chain: one failed fast, the next never ran, the essential container waits</td><td data-label="Fix">Make the essential container depend directly on every init container, each with a start timeout.</td></tr>
         <tr><td data-label="Symptom">Rate limits are higher than configured after scaling out</td><td data-label="Cause">Each task counts in its own sidecar store</td><td data-label="Fix">A shared store for anything that must be counted once.</td></tr>
@@ -3422,7 +3459,7 @@ async def ready(request: Request) -&gt; JSONResponse:
       <li>Most failures were configuration, and several were invisible until something was measured.</li>
       <li>A client-side probe reported an outage that never happened: judge availability from server-side metrics.</li>
       <li>The finished loop: one version tag, and the release is live on ECS 8 minutes 37 seconds later, with no failed requests.</li>
-      <li>A last stage held the code to its own written rules and found eight gaps on the path to AWS; each was fixed and shown before and after.</li>
+      <li>A last stage held the code to its own written rules and found eight gaps on the path to AWS; each was fixed and shown before and after. Testing the running system end to end then found four more.</li>
       <li>The whole reference deployment, VM and ECS stacks included, cost about sixty cents of cloud time, because everything billed by the hour was torn down after each session.</li>
     </ul>
   </div>
@@ -3459,8 +3496,8 @@ async def ready(request: Request) -&gt; JSONResponse:
         <tr><td data-label="Step">4 · Pull request</td><td data-label="What happens">The template asks for <code>Closes #N</code>, what changed and why, how it was verified, and a checklist. The code owners file requests the owner's review.</td><td data-label="Held by"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/pull_request_template.md">pull_request_template.md</a>, <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/CODEOWNERS">CODEOWNERS</a></td></tr>
         <tr><td data-label="Step">5 · CI</td><td data-label="What happens">Six jobs: lint, the api tests on a real stack, the production image, the security scans, the web build and the browser tests. Five start at once; the image waits for lint. All six are required, on a branch up to date with main. About three minutes.</td><td data-label="Held by"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/ci.yml">ci.yml</a>; branch protection on main</td></tr>
         <tr><td data-label="Step">6 · Merge</td><td data-label="What happens">One approval from a code owner, then a squash merge: one commit per change on a linear main. <code>Closes #N</code> closes the issue. GitHub never lets authors approve their own pull requests, so a solo owner merges with the administrator bypass, deliberately (Chapter 2).</td><td data-label="Held by">branch protection; the repository allows squash merges only</td></tr>
-        <tr><td data-label="Step">7 · Tag</td><td data-label="What happens"><code>git tag -a vX.Y.Z</code> on main, then push the tag. Only that pattern starts a release; any other tag starts nothing.</td><td data-label="Held by">the release workflow's trigger</td></tr>
-        <tr><td data-label="Step">8 · Release</td><td data-label="What happens">Checks that the tag is on main, scans again, builds each image natively for two processor types, publishes them to GitHub's registry, smoke-tests what it published, copies it to ECR through OIDC, and writes the release notes. About four minutes.</td><td data-label="Held by"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/release.yml">release.yml</a></td></tr>
+        <tr><td data-label="Step">7 · Tag</td><td data-label="What happens"><code>git tag -a vX.Y.Z</code> on main, then push the tag. Only that pattern starts a release; any other tag starts nothing. Only admins may create one, because a tag runs the workflow of the commit it points at.</td><td data-label="Held by">the release workflow's trigger; a tag ruleset</td></tr>
+        <tr><td data-label="Step">8 · Release</td><td data-label="What happens">Checks that the tag is on main, scans again, builds each image natively for two processor types, publishes them to GitHub's registry, smoke-tests what it published, copies it to ECR through OIDC, and writes the release notes: the merged pull requests, after upgrade notes that list the settings added or removed since the last release. About four minutes.</td><td data-label="Held by"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/release.yml">release.yml</a></td></tr>
         <tr><td data-label="Step">9 · Deploy</td><td data-label="What happens">Starts when the release succeeds, waits for the reviewer the <code>aws-demo</code> environment requires, assumes the deploy role through OIDC, and runs <code>cdk deploy</code> with the new version: a rolling update with the circuit breaker armed, then a smoke test through the load balancer. About nine and a half minutes when the deploy created the stack from nothing; about four for an update.</td><td data-label="Held by"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/deploy.yml">deploy.yml</a>, <a href="https://github.com/Parzon/triage-assistant/tree/handbook-1/infra/aws">infra/aws</a></td></tr>
         <tr><td data-label="Step">10 · Rollback</td><td data-label="What happens">The same deploy, started by hand with the previous version. The infrastructure stays; the image changes.</td><td data-label="Held by">the deploy workflow's manual trigger</td></tr>
       </tbody>
@@ -3539,7 +3576,7 @@ async def ready(request: Request) -&gt; JSONResponse:
       <text class="ts" x="620" y="308">destroyed after it</text>
       <rect class="n-soft" x="620" y="322" width="190" height="54" rx="4"/>
       <text class="ts" x="630" y="343">container/*.sh: task start-up</text>
-      <text class="ts" x="630" y="363">ops.sh: deploy, logs, leftovers</text>
+      <text class="ts" x="630" y="363">ops.sh: deploy, cli, logs, leftovers</text>
     </svg>
     </div>
     <figcaption><span class="fig-n">Figure 12.2</span>The deployment as code. Both workflows reach AWS with GitHub's OIDC tokens, as roles the identity stack holds: the release copies images into the registry, and the deploy updates the application stack alone. The VM and the application stack use the registry's images and the network, and the identity stack limits the ECR role to the registry's repositories.</figcaption>
@@ -3596,7 +3633,7 @@ Valkey: one ElastiCache node shared by every api task (rate limits must be count
   </section>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L117-L170">infra/aws/service.py</a><span class="lines">who may talk to whom, and the database</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L119-L172">infra/aws/service.py</a><span class="lines">who may talk to whom, and the database</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The application stack starts with its boundaries. Each security group admits traffic from another group, never from an address range, so the rules follow the services wherever their tasks land.</p>
@@ -3608,7 +3645,7 @@ Valkey: one ElastiCache node shared by every api task (rate limits must be count
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="117-139"><code class="language-python"># --- Who may talk to whom: security groups reference each other, not IP ranges ---------
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="119-141"><code class="language-python"># --- Who may talk to whom: security groups reference each other, not IP ranges ---------
 alb_sg = ec2.SecurityGroup(self, "AlbSg", vpc=vpc, description="internet to ALB port 80")
 alb_sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80), "HTTP")
 api_sg = ec2.SecurityGroup(self, "ApiSg", vpc=vpc, description="ALB to api tasks port 8010")
@@ -3633,7 +3670,7 @@ cache_sg = ec2.SecurityGroup(
 cache_sg.add_ingress_rule(api_sg, ec2.Port.tcp(6379), "from api tasks only")</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="147-170"><code class="language-python"># --- Database: managed Postgres in subnets with no internet route ---------------------
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="149-172"><code class="language-python"># --- Database: managed Postgres in subnets with no internet route ---------------------
 db = rds.DatabaseInstance(
     self,
     "Db",
@@ -3663,7 +3700,7 @@ db = rds.DatabaseInstance(
   </section>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L348-L366">infra/aws/service.py</a><span class="lines">the api container's settings, and its start script,</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/container/api.sh">container/api.sh</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L359-L377">infra/aws/service.py</a><span class="lines">the api container's settings, and its start script,</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/container/api.sh">container/api.sh</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The api container's environment is where the load balancer and the application meet. Five of these values changed when a review held the code to its own rules (below).</p>
@@ -3677,7 +3714,7 @@ db = rds.DatabaseInstance(
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="348-366"><code class="language-python">environment={
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="359-377"><code class="language-python">environment={
     **db_env,
     "APP_ENV": "prod",
     "APP_VERSION": tag,
@@ -3747,7 +3784,7 @@ exec gunicorn app.asgi:app -c gunicorn.conf.py</code></pre>
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L519-L549">infra/aws/service.py</a><span class="lines">routing at the load balancer</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L530-L560">infra/aws/service.py</a><span class="lines">routing at the load balancer</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>Two listener rules and a default carry the routing the edge does in compose, checked in priority order.</p>
@@ -3760,7 +3797,7 @@ exec gunicorn app.asgi:app -c gunicorn.conf.py</code></pre>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="519-549"><code class="language-python">elbv2.ApplicationListenerRule(
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="530-560"><code class="language-python">elbv2.ApplicationListenerRule(
     self,
     "Internal",
     listener=listener,
@@ -3797,7 +3834,7 @@ api_rule.node.default_child.add_property_override(
   </section>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L551-L584">infra/aws/service.py</a><span class="lines">scaling and alarms</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L562-L595">infra/aws/service.py</a><span class="lines">scaling and alarms</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The service grows with its load and reports when it is unwell.</p>
@@ -3809,7 +3846,7 @@ api_rule.node.default_child.add_property_override(
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="551-584"><code class="language-python"># --- autoscaling: more api tasks while each serves over 1,000 requests a minute --------
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="562-595"><code class="language-python"># --- autoscaling: more api tasks while each serves over 1,000 requests a minute --------
 # Bounded by the database: 4 tasks x 1 worker x DB_POOL_SIZE 10 = 40 connections, inside
 # a db.t4g.micro's ~80. Scale-in waits longer than scale-out, so it does not flap.
 scaling = api_svc.auto_scale_task_count(min_capacity=2, max_capacity=4)
@@ -4015,6 +4052,21 @@ cw.Alarm(
   </div>
   <p>None of these failed a test or raised an alarm. Each was a rule written down, in a comment or a chapter, that the code did not keep. A team can run the same review: read the comments and documents as claims, and test them like code.</p>
 
+  <h4>A second pass: the running system</h4>
+  <p>Reading finds what the code says; running it finds what it does. The release was then tested end to end, locally and on a fresh stack: sign-in under attack (a replayed callback, a forged state, another provider, a cross-site sign-out, a reused cookie), team isolation, the rate limit with forged addresses, the load balancer's path rules against encoded and dotted paths, and every failure drill. All of that held. Four things did not:</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Area</th><th>What was wrong</th><th>Fixed by</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Area">Operator commands on ECS</td><td data-label="What was wrong">The runbooks' commands (turn the assistant off, end a user's sessions) failed on ECS. The start script builds the database URL for the server it starts, so a shell opened with ECS Exec had the parts but not the URL.</td><td data-label="Fixed by"><code>ops.sh cli</code> runs them in a running task and builds the URL the same way (Chapter 9).</td></tr>
+        <tr><td data-label="Area">Release tags</td><td data-label="What was wrong">Unprotected. A tag on any branch runs that branch's release workflow, and the cloud registry's role trusts every <code>v*</code> tag.</td><td data-label="Fixed by">A tag ruleset: only admins create, move or delete release tags (Chapter 5).</td></tr>
+        <tr><td data-label="Area">Upgrades</td><td data-label="What was wrong">An upgrade stopped at start-up. An earlier release had added production checks that an older host's settings failed, and the release notes listed only pull request titles.</td><td data-label="Fixed by">Release notes open with the settings added or removed since the last release (Chapter 13).</td></tr>
+        <tr><td data-label="Area">Deploy output</td><td data-label="What was wrong">Every deploy printed a warning that was false, which teaches people to skip warnings.</td><td data-label="Fixed by">Acknowledged in the code, with the reason.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Two anomalies appeared once each, while faults overlapped, and never again in repeated runs. They are recorded as an open issue with what to capture next time, not "fixed" by a guess.</p>
+
   <aside class="say">
     <span class="label">How to say it</span>
     <p>"Every change takes one path, from issue to production, and every gate on it is code or a setting nobody can skip. We proved each property with traffic flowing: zero failed requests across deploys, an automatic rollback of a bad release, a lost task and a database outage absorbed. And every way this demo differs from production is marked in the code."</p>
@@ -4039,7 +4091,7 @@ cw.Alarm(
   <ol class="qs">
     <li>
       <p>Trace a bug fix from issue to production. Which file or setting holds each gate?</p>
-      <details class="ans"><summary>Answer</summary><p>The issue form; <code>CONTRIBUTING.md</code> for the branch and commit names; the pre-push hook for lint, types and unit tests; the pull request template and the code owners file; <code>ci.yml</code>, with branch protection requiring all six jobs on an up-to-date branch; the squash-only merge setting; the tag pattern that starts <code>release.yml</code>; <code>release.yml</code> for scanning, building, smoke-testing and copying to ECR; <code>deploy.yml</code>, gated by the <code>aws-demo</code> environment's reviewer, for <code>cdk deploy</code> and the smoke test. A rollback is <code>deploy.yml</code> run by hand with the previous version.</p></details>
+      <details class="ans"><summary>Answer</summary><p>The issue form; <code>CONTRIBUTING.md</code> for the branch and commit names; the pre-push hook for lint, types and unit tests; the pull request template and the code owners file; <code>ci.yml</code>, with branch protection requiring all six jobs on an up-to-date branch; the squash-only merge setting; the tag pattern that starts <code>release.yml</code>, and the ruleset that lets only admins create such a tag; <code>release.yml</code> for scanning, building, smoke-testing and copying to ECR; <code>deploy.yml</code>, gated by the <code>aws-demo</code> environment's reviewer, for <code>cdk deploy</code> and the smoke test. A rollback is <code>deploy.yml</code> run by hand with the previous version.</p></details>
     </li>
     <li>
       <p>On ECS, why does the load balancer route <code>/api</code> rather than nginx?</p>
@@ -4237,7 +4289,7 @@ exec alembic upgrade head</code></pre>
       </tbody>
     </table>
   </div>
-  <p>Two more rules keep rollbacks honest. Releases are never skipped when one contracts what another expanded: the reference service's row-level-security release hides every row from a release two versions older, which never says who is asking, so a host must pass through the release in between. And a breaking API change is announced in the release notes, never discovered by a client.</p>
+  <p>Two more rules keep rollbacks honest. Releases are never skipped when one contracts what another expanded: the reference service's row-level-security release hides every row from a release two versions older, which never says who is asking, so a host must pass through the release in between. And a breaking API change is announced in the release notes, never discovered by a client. The same holds for settings. One release added production checks that stopped an older host's api until its settings changed, and its notes, a list of pull request titles, did not say so. The reference release notes now open with the settings added to or removed from <code>.env.example</code> since the previous release.</p>
 
   <h3 id="ch13-handover">Handing a service to an infrastructure team</h3>
   <p>A service that can be released safely also has to be operable by someone else. These are the questions an infrastructure team asks, with the reference service's answers. Every answer points to something already in the repository.</p>
@@ -4394,7 +4446,7 @@ exec alembic upgrade head</code></pre>
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/ops.sh#L52-L60">infra/aws/ops.sh</a><span class="lines">the leftovers check</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/ops.sh#L63-L71">infra/aws/ops.sh</a><span class="lines">the leftovers check</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>A small operator script holds the commands people need under time pressure. Its <code>leftovers</code> command lists everything that could still be billing after a teardown, one resource type per line, so an empty list means an empty bill.</p>
@@ -4405,7 +4457,7 @@ exec alembic upgrade head</code></pre>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/ops.sh" data-lines="52-60"><code class="language-bash">leftovers)
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/ops.sh" data-lines="63-71"><code class="language-bash">leftovers)
   echo "EC2:";  aws ec2 describe-instances --filters Name=instance-state-name,Values=pending,running,stopping,stopped --query 'Reservations[].Instances[].[InstanceId,InstanceType,State.Name]' --output text
   echo "RDS:";  aws rds describe-db-instances --query 'DBInstances[].[DBInstanceIdentifier,DBInstanceStatus]' --output text
   echo "ECS:";  aws ecs list-clusters --query clusterArns --output text
@@ -4595,7 +4647,7 @@ exec alembic upgrade head</code></pre>
 <tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/container/api.sh"><code>infra/aws/container/api.sh</code></a></td><td data-label="Chapters"><a href="#ch12">12</a></td></tr>
 <tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/container/migrate.sh"><code>infra/aws/container/migrate.sh</code></a></td><td data-label="Chapters"><a href="#ch13">13</a></td></tr>
 <tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/network.py"><code>infra/aws/network.py</code></a></td><td data-label="Chapters"><a href="#ch8">8</a></td></tr>
-<tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/ops.sh"><code>infra/aws/ops.sh</code></a></td><td data-label="Chapters"><a href="#ch14">14</a></td></tr>
+<tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/ops.sh"><code>infra/aws/ops.sh</code></a></td><td data-label="Chapters"><a href="#ch9">9</a>, <a href="#ch14">14</a></td></tr>
 <tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/registry.py"><code>infra/aws/registry.py</code></a></td><td data-label="Chapters"><a href="#ch12">12</a></td></tr>
 <tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py"><code>infra/aws/service.py</code></a></td><td data-label="Chapters"><a href="#ch5">5</a>, <a href="#ch7">7</a>, <a href="#ch9">9</a>, <a href="#ch12">12</a></td></tr>
 <tr><td data-label="File"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/vm.py"><code>infra/aws/vm.py</code></a></td><td data-label="Chapters"><a href="#ch5">5</a>, <a href="#ch6">6</a></td></tr>
@@ -4643,6 +4695,7 @@ exec alembic upgrade head</code></pre>
 <tr><td data-label="Symptom">The job fails with <code>Not authorized to perform sts:AssumeRoleWithWebIdentity</code>, and the policy looks right</td><td data-label="Fix">Read the real subject from the repository's OIDC setting, or print the token's claims in a test job, and match on that.</td><td data-label="Chapter"><a href="#ch5">5 · Identity without keys</a></td></tr>
 <tr><td data-label="Symptom">No token is issued at all</td><td data-label="Fix">Grant it on the job that needs it, not the whole workflow.</td><td data-label="Chapter"><a href="#ch5">5 · Identity without keys</a></td></tr>
 <tr><td data-label="Symptom">A deploy job that worked on tags is refused after you add an environment</td><td data-label="Fix">Trust the environment in the deploy role. It is the better gate anyway.</td><td data-label="Chapter"><a href="#ch5">5 · Identity without keys</a></td></tr>
+<tr><td data-label="Symptom">Anyone who can push can publish images to the cloud registry</td><td data-label="Fix">A tag ruleset: only admins create, move or delete release tags.</td><td data-label="Chapter"><a href="#ch5">5 · Identity without keys</a></td></tr>
 <tr><td data-label="Symptom">A deliberate break of the policy fails, so the policy seems proven</td><td data-label="Fix">Run the passing case first, then the failing one.</td><td data-label="Chapter"><a href="#ch5">5 · Identity without keys</a></td></tr>
 <tr><td data-label="Symptom">You cannot scope the registry login permission to one repository</td><td data-label="Fix">Grant it on <code>*</code>, scope push and pull to the repositories, and say why in a comment.</td><td data-label="Chapter"><a href="#ch5">5 · Identity without keys</a></td></tr>
 <tr><td data-label="Symptom">The CDK deploy role can do anything in the account</td><td data-label="Fix">Narrow the execution policy before production use.</td><td data-label="Chapter"><a href="#ch5">5 · Identity without keys</a></td></tr>
@@ -4669,6 +4722,7 @@ exec alembic upgrade head</code></pre>
 <tr><td data-label="Symptom">Every model call fails after a network hardening change</td><td data-label="Fix">Allow the provider's hostname explicitly; configure the corporate proxy where there is one.</td><td data-label="Chapter"><a href="#ch8">8 · Networking on AWS</a></td></tr>
 <tr><td data-label="Symptom">Public IP addresses appear on the bill</td><td data-label="Fix">Private subnets in production; count public addresses in a cheap design.</td><td data-label="Chapter"><a href="#ch8">8 · Networking on AWS</a></td></tr>
 <tr><td data-label="Symptom">The site breaks when the load balancer's IP changes</td><td data-label="Fix">Use an alias record that points at the load balancer's name.</td><td data-label="Chapter"><a href="#ch8">8 · Networking on AWS</a></td></tr>
+<tr><td data-label="Symptom">A command run through ECS Exec cannot find a setting the service uses</td><td data-label="Fix">Build it the same way in the operator's command.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
 <tr><td data-label="Symptom">A database outage makes ECS replace healthy api tasks</td><td data-label="Fix">Check a shallow endpoint; detect outages with a 5xx alarm.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
 <tr><td data-label="Symptom">A task sits in PENDING for many minutes, billed</td><td data-label="Fix">Make the essential container depend directly on every init container, each with a start timeout.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
 <tr><td data-label="Symptom">Rate limits are higher than configured after scaling out</td><td data-label="Fix">A shared store for anything that must be counted once.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
@@ -4705,7 +4759,7 @@ exec alembic upgrade head</code></pre>
 
 <footer class="series-foot">
   <p>Engineering Handbooks · Handbook 3 of 3 · Cloud Delivery &amp; DevOps · Edition 1</p>
-  <p>Reference implementation: <a href="https://github.com/Parzon/triage-assistant">triage-assistant</a> at <code>handbook-1 (175579a)</code>.</p>
+  <p>Reference implementation: <a href="https://github.com/Parzon/triage-assistant">triage-assistant</a> at <code>handbook-1 (0b81c10)</code>.</p>
 </footer>
 </main>
 </div>

@@ -15,7 +15,7 @@
       <li>Most failures were configuration, and several were invisible until something was measured.</li>
       <li>A client-side probe reported an outage that never happened: judge availability from server-side metrics.</li>
       <li>The finished loop: one version tag, and the release is live on ECS 8 minutes 37 seconds later, with no failed requests.</li>
-      <li>A last stage held the code to its own written rules and found eight gaps on the path to AWS; each was fixed and shown before and after.</li>
+      <li>A last stage held the code to its own written rules and found eight gaps on the path to AWS; each was fixed and shown before and after. Testing the running system end to end then found four more.</li>
       <li>The whole reference deployment, VM and ECS stacks included, cost about sixty cents of cloud time, because everything billed by the hour was torn down after each session.</li>
     </ul>
   </div>
@@ -52,8 +52,8 @@
         <tr><td data-label="Step">4 · Pull request</td><td data-label="What happens">The template asks for <code>Closes #N</code>, what changed and why, how it was verified, and a checklist. The code owners file requests the owner's review.</td><td data-label="Held by"><a href="{{TA}}/.github/pull_request_template.md">pull_request_template.md</a>, <a href="{{TA}}/.github/CODEOWNERS">CODEOWNERS</a></td></tr>
         <tr><td data-label="Step">5 · CI</td><td data-label="What happens">Six jobs: lint, the api tests on a real stack, the production image, the security scans, the web build and the browser tests. Five start at once; the image waits for lint. All six are required, on a branch up to date with main. About three minutes.</td><td data-label="Held by"><a href="{{TA}}/.github/workflows/ci.yml">ci.yml</a>; branch protection on main</td></tr>
         <tr><td data-label="Step">6 · Merge</td><td data-label="What happens">One approval from a code owner, then a squash merge: one commit per change on a linear main. <code>Closes #N</code> closes the issue. GitHub never lets authors approve their own pull requests, so a solo owner merges with the administrator bypass, deliberately (Chapter 2).</td><td data-label="Held by">branch protection; the repository allows squash merges only</td></tr>
-        <tr><td data-label="Step">7 · Tag</td><td data-label="What happens"><code>git tag -a vX.Y.Z</code> on main, then push the tag. Only that pattern starts a release; any other tag starts nothing.</td><td data-label="Held by">the release workflow's trigger</td></tr>
-        <tr><td data-label="Step">8 · Release</td><td data-label="What happens">Checks that the tag is on main, scans again, builds each image natively for two processor types, publishes them to GitHub's registry, smoke-tests what it published, copies it to ECR through OIDC, and writes the release notes. About four minutes.</td><td data-label="Held by"><a href="{{TA}}/.github/workflows/release.yml">release.yml</a></td></tr>
+        <tr><td data-label="Step">7 · Tag</td><td data-label="What happens"><code>git tag -a vX.Y.Z</code> on main, then push the tag. Only that pattern starts a release; any other tag starts nothing. Only admins may create one, because a tag runs the workflow of the commit it points at.</td><td data-label="Held by">the release workflow's trigger; a tag ruleset</td></tr>
+        <tr><td data-label="Step">8 · Release</td><td data-label="What happens">Checks that the tag is on main, scans again, builds each image natively for two processor types, publishes them to GitHub's registry, smoke-tests what it published, copies it to ECR through OIDC, and writes the release notes: the merged pull requests, after upgrade notes that list the settings added or removed since the last release. About four minutes.</td><td data-label="Held by"><a href="{{TA}}/.github/workflows/release.yml">release.yml</a></td></tr>
         <tr><td data-label="Step">9 · Deploy</td><td data-label="What happens">Starts when the release succeeds, waits for the reviewer the <code>aws-demo</code> environment requires, assumes the deploy role through OIDC, and runs <code>cdk deploy</code> with the new version: a rolling update with the circuit breaker armed, then a smoke test through the load balancer. About nine and a half minutes when the deploy created the stack from nothing; about four for an update.</td><td data-label="Held by"><a href="{{TA}}/.github/workflows/deploy.yml">deploy.yml</a>, <a href="{{TATREE}}/infra/aws">infra/aws</a></td></tr>
         <tr><td data-label="Step">10 · Rollback</td><td data-label="What happens">The same deploy, started by hand with the previous version. The infrastructure stays; the image changes.</td><td data-label="Held by">the deploy workflow's manual trigger</td></tr>
       </tbody>
@@ -132,7 +132,7 @@
       <text class="ts" x="620" y="308">destroyed after it</text>
       <rect class="n-soft" x="620" y="322" width="190" height="54" rx="4"/>
       <text class="ts" x="630" y="343">container/*.sh: task start-up</text>
-      <text class="ts" x="630" y="363">ops.sh: deploy, logs, leftovers</text>
+      <text class="ts" x="630" y="363">ops.sh: deploy, cli, logs, leftovers</text>
     </svg>
     </div>
     <figcaption><span class="fig-n">Figure 12.2</span>The deployment as code. Both workflows reach AWS with GitHub's OIDC tokens, as roles the identity stack holds: the release copies images into the registry, and the deploy updates the application stack alone. The VM and the application stack use the registry's images and the network, and the identity stack limits the ECR role to the registry's repositories.</figcaption>
@@ -189,7 +189,7 @@ Valkey: one ElastiCache node shared by every api task (rate limits must be count
   </section>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L117-L170">infra/aws/service.py</a><span class="lines">who may talk to whom, and the database</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L119-L172">infra/aws/service.py</a><span class="lines">who may talk to whom, and the database</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The application stack starts with its boundaries. Each security group admits traffic from another group, never from an address range, so the rules follow the services wherever their tasks land.</p>
@@ -201,7 +201,7 @@ Valkey: one ElastiCache node shared by every api task (rate limits must be count
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="117-139"><code class="language-python"># --- Who may talk to whom: security groups reference each other, not IP ranges ---------
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="119-141"><code class="language-python"># --- Who may talk to whom: security groups reference each other, not IP ranges ---------
 alb_sg = ec2.SecurityGroup(self, "AlbSg", vpc=vpc, description="internet to ALB port 80")
 alb_sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80), "HTTP")
 api_sg = ec2.SecurityGroup(self, "ApiSg", vpc=vpc, description="ALB to api tasks port 8010")
@@ -226,7 +226,7 @@ cache_sg = ec2.SecurityGroup(
 cache_sg.add_ingress_rule(api_sg, ec2.Port.tcp(6379), "from api tasks only")</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="147-170"><code class="language-python"># --- Database: managed Postgres in subnets with no internet route ---------------------
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="149-172"><code class="language-python"># --- Database: managed Postgres in subnets with no internet route ---------------------
 db = rds.DatabaseInstance(
     self,
     "Db",
@@ -256,7 +256,7 @@ db = rds.DatabaseInstance(
   </section>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L348-L366">infra/aws/service.py</a><span class="lines">the api container's settings, and its start script,</span><a href="{{TA}}/infra/aws/container/api.sh">container/api.sh</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L359-L377">infra/aws/service.py</a><span class="lines">the api container's settings, and its start script,</span><a href="{{TA}}/infra/aws/container/api.sh">container/api.sh</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The api container's environment is where the load balancer and the application meet. Five of these values changed when a review held the code to its own rules (below).</p>
@@ -270,7 +270,7 @@ db = rds.DatabaseInstance(
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="348-366"><code class="language-python">environment={
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="359-377"><code class="language-python">environment={
     **db_env,
     "APP_ENV": "prod",
     "APP_VERSION": tag,
@@ -340,7 +340,7 @@ exec gunicorn app.asgi:app -c gunicorn.conf.py</code></pre>
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L519-L549">infra/aws/service.py</a><span class="lines">routing at the load balancer</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L530-L560">infra/aws/service.py</a><span class="lines">routing at the load balancer</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>Two listener rules and a default carry the routing the edge does in compose, checked in priority order.</p>
@@ -353,7 +353,7 @@ exec gunicorn app.asgi:app -c gunicorn.conf.py</code></pre>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="519-549"><code class="language-python">elbv2.ApplicationListenerRule(
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="530-560"><code class="language-python">elbv2.ApplicationListenerRule(
     self,
     "Internal",
     listener=listener,
@@ -390,7 +390,7 @@ api_rule.node.default_child.add_property_override(
   </section>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L551-L584">infra/aws/service.py</a><span class="lines">scaling and alarms</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L562-L595">infra/aws/service.py</a><span class="lines">scaling and alarms</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The service grows with its load and reports when it is unwell.</p>
@@ -402,7 +402,7 @@ api_rule.node.default_child.add_property_override(
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="551-584"><code class="language-python"># --- autoscaling: more api tasks while each serves over 1,000 requests a minute --------
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="562-595"><code class="language-python"># --- autoscaling: more api tasks while each serves over 1,000 requests a minute --------
 # Bounded by the database: 4 tasks x 1 worker x DB_POOL_SIZE 10 = 40 connections, inside
 # a db.t4g.micro's ~80. Scale-in waits longer than scale-out, so it does not flap.
 scaling = api_svc.auto_scale_task_count(min_capacity=2, max_capacity=4)
@@ -608,6 +608,21 @@ cw.Alarm(
   </div>
   <p>None of these failed a test or raised an alarm. Each was a rule written down, in a comment or a chapter, that the code did not keep. A team can run the same review: read the comments and documents as claims, and test them like code.</p>
 
+  <h4>A second pass: the running system</h4>
+  <p>Reading finds what the code says; running it finds what it does. The release was then tested end to end, locally and on a fresh stack: sign-in under attack (a replayed callback, a forged state, another provider, a cross-site sign-out, a reused cookie), team isolation, the rate limit with forged addresses, the load balancer's path rules against encoded and dotted paths, and every failure drill. All of that held. Four things did not:</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Area</th><th>What was wrong</th><th>Fixed by</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Area">Operator commands on ECS</td><td data-label="What was wrong">The runbooks' commands (turn the assistant off, end a user's sessions) failed on ECS. The start script builds the database URL for the server it starts, so a shell opened with ECS Exec had the parts but not the URL.</td><td data-label="Fixed by"><code>ops.sh cli</code> runs them in a running task and builds the URL the same way (Chapter 9).</td></tr>
+        <tr><td data-label="Area">Release tags</td><td data-label="What was wrong">Unprotected. A tag on any branch runs that branch's release workflow, and the cloud registry's role trusts every <code>v*</code> tag.</td><td data-label="Fixed by">A tag ruleset: only admins create, move or delete release tags (Chapter 5).</td></tr>
+        <tr><td data-label="Area">Upgrades</td><td data-label="What was wrong">An upgrade stopped at start-up. An earlier release had added production checks that an older host's settings failed, and the release notes listed only pull request titles.</td><td data-label="Fixed by">Release notes open with the settings added or removed since the last release (Chapter 13).</td></tr>
+        <tr><td data-label="Area">Deploy output</td><td data-label="What was wrong">Every deploy printed a warning that was false, which teaches people to skip warnings.</td><td data-label="Fixed by">Acknowledged in the code, with the reason.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Two anomalies appeared once each, while faults overlapped, and never again in repeated runs. They are recorded as an open issue with what to capture next time, not "fixed" by a guess.</p>
+
   <aside class="say">
     <span class="label">How to say it</span>
     <p>"Every change takes one path, from issue to production, and every gate on it is code or a setting nobody can skip. We proved each property with traffic flowing: zero failed requests across deploys, an automatic rollback of a bad release, a lost task and a database outage absorbed. And every way this demo differs from production is marked in the code."</p>
@@ -632,7 +647,7 @@ cw.Alarm(
   <ol class="qs">
     <li>
       <p>Trace a bug fix from issue to production. Which file or setting holds each gate?</p>
-      <details class="ans"><summary>Answer</summary><p>The issue form; <code>CONTRIBUTING.md</code> for the branch and commit names; the pre-push hook for lint, types and unit tests; the pull request template and the code owners file; <code>ci.yml</code>, with branch protection requiring all six jobs on an up-to-date branch; the squash-only merge setting; the tag pattern that starts <code>release.yml</code>; <code>release.yml</code> for scanning, building, smoke-testing and copying to ECR; <code>deploy.yml</code>, gated by the <code>aws-demo</code> environment's reviewer, for <code>cdk deploy</code> and the smoke test. A rollback is <code>deploy.yml</code> run by hand with the previous version.</p></details>
+      <details class="ans"><summary>Answer</summary><p>The issue form; <code>CONTRIBUTING.md</code> for the branch and commit names; the pre-push hook for lint, types and unit tests; the pull request template and the code owners file; <code>ci.yml</code>, with branch protection requiring all six jobs on an up-to-date branch; the squash-only merge setting; the tag pattern that starts <code>release.yml</code>, and the ruleset that lets only admins create such a tag; <code>release.yml</code> for scanning, building, smoke-testing and copying to ECR; <code>deploy.yml</code>, gated by the <code>aws-demo</code> environment's reviewer, for <code>cdk deploy</code> and the smoke test. A rollback is <code>deploy.yml</code> run by hand with the previous version.</p></details>
     </li>
     <li>
       <p>On ECS, why does the load balancer route <code>/api</code> rather than nginx?</p>

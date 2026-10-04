@@ -102,7 +102,7 @@
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/app.py#L10-L19">infra/aws/app.py</a><span class="lines">and a dependency fixed in</span><a href="{{TA}}/infra/aws/service.py#L171-L175">service.py</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/app.py#L10-L19">infra/aws/app.py</a><span class="lines">and a dependency fixed in</span><a href="{{TA}}/infra/aws/service.py#L173-L177">service.py</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The CDK entry point wires the five stacks together by passing Python objects. CDK turns each object passed between stacks into a CloudFormation export and import.</p>
@@ -126,7 +126,7 @@ AppStack(
 app.synth()</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="171-175"><code class="language-python"># Delete the database before its master secret. The template refers to the secret only
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="173-177"><code class="language-python"># Delete the database before its master secret. The template refers to the secret only
 # inside a {{resolve:secretsmanager:...}} reference, and CloudFormation deleted both at
 # once: the DB's delete handler then could not resolve the secret -&gt; DELETE_FAILED
 # (recovery: delete-stack --retain-resources for what is already gone).

@@ -220,7 +220,7 @@
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/cicd.py#L14-L49">infra/aws/cicd.py</a><span class="lines">the OIDC provider and the image-push role</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/cicd.py#L14-L52">infra/aws/cicd.py</a><span class="lines">the OIDC provider and the image-push role</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>This CDK stack (Python that becomes CloudFormation) creates the account's one OIDC provider for GitHub and the role the release workflow uses to copy images into Amazon ECR.</p>
@@ -228,6 +228,7 @@
           <li><code>SUB_PREFIX</code> is the subject read from the repository's own OIDC setting, not typed from an example. The comment says how to read it.</li>
           <li>The audience must be exactly <code>sts.amazonaws.com</code>.</li>
           <li>The subject must be a version tag of this repository. A pull request, a branch push or a fork produces a different subject and gets nothing.</li>
+          <li>A version tag is only as trustworthy as the right to create one. A tag runs the release workflow of the commit it points at, so a tag on another branch could drop the workflow's "tag is on main" check. A tag ruleset lets only admins create, move or delete <code>v*</code> tags, and the comment says that this trust depends on it.</li>
           <li>Sessions last at most one hour.</li>
           <li>Push and pull are granted on the three image repositories only. <code>ecr:GetAuthorizationToken</code> cannot be scoped to a repository, so it is the one permission on <code>*</code>, and the code says why.</li>
         </ul>
@@ -243,7 +244,7 @@ SUB_PREFIX = "repo:Parzon@124113141/triage-assistant@1381921470"
 ISSUER = "token.actions.githubusercontent.com"</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/cicd.py" data-lines="26-49"><code class="language-python"># AWS trusts GitHub's signed tokens (one provider per account).
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/cicd.py" data-lines="26-52"><code class="language-python"># AWS trusts GitHub's signed tokens (one provider per account).
 provider = iam.OpenIdConnectProvider(
     self, "GitHub", url=f"https://{ISSUER}", client_ids=["sts.amazonaws.com"]
 )
@@ -256,7 +257,10 @@ role = iam.Role(
         provider.open_id_connect_provider_arn,
         conditions={
             "StringEquals": {f"{ISSUER}:aud": "sts.amazonaws.com"},
-            # Only a release tag of this repo: not a PR, not a branch, not a fork.
+            # Only a release tag of this repo: not a PR, not a branch, not a fork. A tag
+            # pushed on any branch runs that branch's release.yml, which could drop its
+            # "tag is on main" check: the repository's tag ruleset, which lets only admins
+            # create v* tags, is what makes this a release (using-this-template.md).
             "StringLike": {f"{ISSUER}:sub": f"{SUB_PREFIX}:ref:refs/tags/v*"},
         },
     ),
@@ -323,7 +327,7 @@ role.add_to_policy(
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/.github/workflows/deploy.yml#L31-L77">.github/workflows/deploy.yml</a><span class="lines">and the deploy role in</span><a href="{{TA}}/infra/aws/cicd.py#L52-L75">infra/aws/cicd.py</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/.github/workflows/deploy.yml#L31-L77">.github/workflows/deploy.yml</a><span class="lines">and the deploy role in</span><a href="{{TA}}/infra/aws/cicd.py#L55-L78">infra/aws/cicd.py</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The deploy job names the environment and asks for a token. Then one action exchanges the token for credentials. The role ARN is a repository secret. It grants nothing on its own, but it names the AWS account, and GitHub masks only secrets in public logs: a variable is printed with every step's inputs. A job's <code>if</code> cannot read secrets, so a first job reads it and answers yes or no. While it is unset, nothing deploys, so a copy of the template works without an AWS account.</p>
@@ -372,7 +376,7 @@ role.add_to_policy(
     mask-aws-account-id: true</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/cicd.py" data-lines="52-75"><code class="language-python">deploy = iam.Role(
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/cicd.py" data-lines="55-78"><code class="language-python">deploy = iam.Role(
     self,
     "Deploy",
     role_name="triage-gha-deploy",
@@ -465,7 +469,7 @@ deploy.add_to_policy(
   <p>Application secrets that are not AWS credentials, such as a database password or a model provider's API key, follow the same principle. They are generated by Secrets Manager, read by ECS when the task starts, and handed to the container as environment variables. They never appear in the image, the task definition, the CloudFormation template or the repository.</p>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L85-L104">infra/aws/service.py</a><span class="lines">and</span><a href="{{TA}}/infra/aws/vm.py#L1-L10">infra/aws/vm.py</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L87-L106">infra/aws/service.py</a><span class="lines">and</span><a href="{{TA}}/infra/aws/vm.py#L1-L10">infra/aws/vm.py</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>Two helpers in the ECS stack: one asks Secrets Manager to generate a secret, the other tells ECS to inject a field of it into a container at start. The VM stack's docstring lists what makes a single VM acceptable to a platform team.</p>
@@ -478,7 +482,7 @@ deploy.add_to_policy(
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="85-104"><code class="language-python">def generated_secret(scope: Construct, cid: str, username: str | None = None) -&gt; sm.Secret:
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="87-106"><code class="language-python">def generated_secret(scope: Construct, cid: str, username: str | None = None) -&gt; sm.Secret:
     # No punctuation: the api builds a URL from these, and @ : / % would need encoding.
     return sm.Secret(
         scope,
@@ -607,6 +611,7 @@ Compared with a hand-built VM:
         <tr><td data-label="Symptom">The job fails with <code>Not authorized to perform sts:AssumeRoleWithWebIdentity</code>, and the policy looks right</td><td data-label="Cause">The subject in the policy is not the one the token carries. The error never says which condition failed.</td><td data-label="Fix">Read the real subject from the repository's OIDC setting, or print the token's claims in a test job, and match on that.</td></tr>
         <tr><td data-label="Symptom">No token is issued at all</td><td data-label="Cause">The job lacks <code>permissions: id-token: write</code></td><td data-label="Fix">Grant it on the job that needs it, not the whole workflow.</td></tr>
         <tr><td data-label="Symptom">A deploy job that worked on tags is refused after you add an environment</td><td data-label="Cause">A job that names an environment gets <code>…:environment:NAME</code> as its subject, not its ref</td><td data-label="Fix">Trust the environment in the deploy role. It is the better gate anyway.</td></tr>
+        <tr><td data-label="Symptom">Anyone who can push can publish images to the cloud registry</td><td data-label="Cause">The role trusts every <code>v*</code> tag, and a tag runs the workflow of the commit it points at, checks removed included</td><td data-label="Fix">A tag ruleset: only admins create, move or delete release tags.</td></tr>
         <tr><td data-label="Symptom">A deliberate break of the policy fails, so the policy seems proven</td><td data-label="Cause">The policy may never have matched</td><td data-label="Fix">Run the passing case first, then the failing one.</td></tr>
         <tr><td data-label="Symptom">You cannot scope the registry login permission to one repository</td><td data-label="Cause"><code>ecr:GetAuthorizationToken</code> is account-wide by design</td><td data-label="Fix">Grant it on <code>*</code>, scope push and pull to the repositories, and say why in a comment.</td></tr>
         <tr><td data-label="Symptom">The CDK deploy role can do anything in the account</td><td data-label="Cause">The bootstrap's CloudFormation execution policy is AdministratorAccess by default</td><td data-label="Fix">Narrow the execution policy before production use.</td></tr>

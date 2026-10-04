@@ -147,7 +147,7 @@
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L401-L415">infra/aws/service.py</a><span class="lines">the api's start conditions</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L412-L426">infra/aws/service.py</a><span class="lines">the api's start conditions</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The fix, with the measurement that justified it in the comment. Each dependency names a condition: the init containers must exit with <code>SUCCESS</code>, the sidecar must be <code>HEALTHY</code>.</p>
@@ -159,7 +159,7 @@
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="401-415"><code class="language-python"># Every init container is a direct dependency of the essential api: when one fails, the
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="412-426"><code class="language-python"># Every init container is a direct dependency of the essential api: when one fails, the
 # api gives up and ECS stops the task. Through a chain (api -&gt; migrate -&gt; dbinit) a dbinit
 # that fails fast leaves migrate "stopped" without running, and the task PENDING forever
 # (measured with one-off tasks: the chain stuck &gt;4 min; direct: stopped in 1.5 min).
@@ -228,7 +228,7 @@ api.add_container_dependencies(
   <p>The rule on ECS: point the load balancer at a shallow check; rely on the init containers for readiness at start (migrations succeed only if the database answers); and detect outages with an alarm on 5xx responses. The api reconnected four seconds after the database returned, with no restart.</p>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L455-L517">infra/aws/service.py</a><span class="lines">the service's deployment settings and the api's health check</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L466-L528">infra/aws/service.py</a><span class="lines">the service's deployment settings and the api's health check</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The service definition and the api target group's health check, each with its reasoning beside it.</p>
@@ -241,7 +241,7 @@ api.add_container_dependencies(
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="455-475"><code class="language-python">return ecs.FargateService(
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="466-486"><code class="language-python">return ecs.FargateService(
     self,
     f"{name.title()}Service",
     service_name=name,
@@ -264,7 +264,7 @@ api.add_container_dependencies(
     # IAM to the on-call role, with session logging.</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="503-517"><code class="language-python"># Liveness, not readiness. ECS replaces any task its load balancer calls unhealthy,
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="514-528"><code class="language-python"># Liveness, not readiness. ECS replaces any task its load balancer calls unhealthy,
 # so a deep check (/ready: the database) turns a database outage into task churn:
 # measured, every api task marked unhealthy and replacements stuck in dbinit. Kubernetes
 # separates the two (readinessProbe /ready, livenessProbe /health); ECS has one signal.
@@ -317,11 +317,43 @@ deregistration_delay=Duration.seconds(130),</code></pre>
     <p>"ECS has one health signal, so the load balancer checks a shallow endpoint; readiness at start comes from the init containers, and outages show up in the 5xx alarm."</p>
   </aside>
 
+  <h3 id="ch9-exec">Running a command in a task</h3>
+  <p>ECS Exec opens a shell in a running container through Systems Manager, with no SSH and no open port. It is how an operator runs a one-off command on the service, such as the runbooks' "turn the assistant off" or "end this user's sessions". The shell gets the container's environment, not the environment of the process the start script launched. The api's start script builds <code>DATABASE_URL</code> from the separate secrets ECS injects, so in an exec shell the command-line tool found no database URL, and the runbooks had no path on AWS until the operator script built it the same way.</p>
+
+  <section class="repo">
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/ops.sh#L47-L56">infra/aws/ops.sh</a><span class="lines">the operator's command line, in a task</span></header>
+    <div class="repo-body">
+      <div class="repo-text">
+        <p><code>./ops.sh cli assistant --off --reason "..."</code> runs the same command as <code>make assistant</code> on a compose host, in one of the api's running tasks.</p>
+        <ul class="notice">
+          <li>It picks a running api task and opens ECS Exec in its api container.</li>
+          <li>It builds <code>DATABASE_URL</code> from the injected parts, exactly as <code>container/api.sh</code> does.</li>
+          <li>The arguments travel base64-encoded and NUL-separated, so a reason with spaces or quotes arrives as typed, with no quoting rules to get wrong.</li>
+        </ul>
+      </div>
+      <div class="repo-codes">
+        <div class="repo-code">
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/ops.sh" data-lines="47-56"><code class="language-bash">cli)
+  shift; (($#)) || { echo "usage: ops.sh cli &lt;command&gt; [args], e.g. cli assistant --off --reason '...'" &gt;&amp;2; exit 2; }
+  task=$(aws ecs list-tasks --cluster triage --service-name api --desired-status RUNNING --query 'taskArns[0]' --output text)
+  [[ $task == arn:* ]] || { echo "no running api task" &gt;&amp;2; exit 1; }
+  # container/api.sh composes DATABASE_URL before it starts gunicorn, so a shell opened with ECS
+  # Exec has the parts but not the URL: compose it the same way. The arguments travel base64,
+  # NUL-separated, so spaces and quotes in them (a reason) arrive as typed.
+  args=$(printf '%s\0' "$@" | base64 -w0)
+  aws ecs execute-command --cluster triage --task "$task" --container api --interactive --command \
+    "sh -c 'export DATABASE_URL=postgresql://\${DB_USER}:\${DB_PASSWORD}@\${DB_HOST}:\${DB_PORT}/\${DB_NAME}; echo $args | base64 -d | xargs -0 python -m app.cli'" ;;</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <h3 id="ch9-traps">Traps</h3>
   <div class="table-wrap">
     <table class="grid traps stack">
       <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
       <tbody>
+        <tr><td data-label="Symptom">A command run through ECS Exec cannot find a setting the service uses</td><td data-label="Cause">The start script built it for the process it started; the exec shell gets only the container's environment</td><td data-label="Fix">Build it the same way in the operator's command.</td></tr>
         <tr><td data-label="Symptom">A database outage makes ECS replace healthy api tasks</td><td data-label="Cause">The load balancer checks a deep readiness endpoint, and ECS treats it as liveness</td><td data-label="Fix">Check a shallow endpoint; detect outages with a 5xx alarm.</td></tr>
         <tr><td data-label="Symptom">A task sits in PENDING for many minutes, billed</td><td data-label="Cause">Init containers in a chain: one failed fast, the next never ran, the essential container waits</td><td data-label="Fix">Make the essential container depend directly on every init container, each with a start timeout.</td></tr>
         <tr><td data-label="Symptom">Rate limits are higher than configured after scaling out</td><td data-label="Cause">Each task counts in its own sidecar store</td><td data-label="Fix">A shared store for anything that must be counted once.</td></tr>

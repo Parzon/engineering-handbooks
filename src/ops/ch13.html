@@ -170,7 +170,7 @@ exec alembic upgrade head</code></pre>
       </tbody>
     </table>
   </div>
-  <p>Two more rules keep rollbacks honest. Releases are never skipped when one contracts what another expanded: the reference service's row-level-security release hides every row from a release two versions older, which never says who is asking, so a host must pass through the release in between. And a breaking API change is announced in the release notes, never discovered by a client.</p>
+  <p>Two more rules keep rollbacks honest. Releases are never skipped when one contracts what another expanded: the reference service's row-level-security release hides every row from a release two versions older, which never says who is asking, so a host must pass through the release in between. And a breaking API change is announced in the release notes, never discovered by a client. The same holds for settings. One release added production checks that stopped an older host's api until its settings changed, and its notes, a list of pull request titles, did not say so. The reference release notes now open with the settings added to or removed from <code>.env.example</code> since the previous release.</p>
 
   <h3 id="ch13-handover">Handing a service to an infrastructure team</h3>
   <p>A service that can be released safely also has to be operable by someone else. These are the questions an infrastructure team asks, with the reference service's answers. Every answer points to something already in the repository.</p>

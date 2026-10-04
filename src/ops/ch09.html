@@ -12,7 +12,7 @@
       <li>A <strong>task definition</strong> is a versioned description of containers: image, CPU and memory, environment, secrets, logs, health check. A <strong>service</strong> keeps N copies running.</li>
       <li>A release registers a new task definition revision and updates the service: new tasks start beside the old ones, and the old ones stop once the new are healthy.</li>
       <li>The deployment circuit breaker rolls a release back by itself when its tasks keep failing to start.</li>
-      <li>ECS has <strong>one</strong> health signal, the load balancer's check, and acts on it like a liveness check. Point it at a shallow endpoint.</li>
+      <li>ECS has <strong>no readiness-only</strong> health signal: the container's own check and the load balancer's check both end in a replaced task. Point both at a shallow endpoint.</li>
       <li>Anything that must be counted once across copies, such as rate limits or sessions, needs a shared store. A sidecar in each task counts on its own.</li>
     </ul>
   </div>
@@ -212,8 +212,8 @@ api.add_container_dependencies(
 
   <p>Measured on the reference service, with a probe sending requests twice a second: a forward deploy took 3 minutes 17 seconds with 352 requests and none failed, and the deliberate bad release was rolled back in under 8 minutes while the old tasks kept serving. ECS Exec gives a shell into a running task, without SSH, for the rare case that needs one.</p>
 
-  <h3 id="ch9-health">One health signal</h3>
-  <p>The reference api follows the Kubernetes convention of two health endpoints. <code>/health</code> answers "is the process alive?" and checks nothing external. <code>/ready</code> answers "should traffic come here?" and requires the database. On Kubernetes they feed two separate probes. <strong>ECS has one signal</strong>, the load balancer's target health check, and it replaces any task that check calls unhealthy. So a deep check behaves like a liveness check, and a database outage turns into task churn. A drill showed exactly that:</p>
+  <h3 id="ch9-health">No readiness-only signal</h3>
+  <p>The reference api follows the Kubernetes convention of two health endpoints. <code>/health</code> answers "is the process alive?" and checks nothing external. <code>/ready</code> answers "should traffic come here?" and requires the database. On Kubernetes they feed two separate probes, and only the liveness probe restarts anything. <strong>ECS has no readiness-only signal.</strong> It acts on two checks, and both end in a replaced task: the container health check in the task definition (the reference api's calls <code>/health</code>), and the load balancer's target health check. So a deep check behaves like a liveness check wherever it sits, and a database outage turns into task churn. A drill on the load balancer's check showed exactly that:</p>
   <div class="table-wrap">
     <table class="grid stack">
       <thead><tr><th>Database stopped for 7 minutes</th><th>Load balancer checks <code>/ready</code> (deep)</th><th>Load balancer checks <code>/health</code> (shallow)</th></tr></thead>
@@ -228,14 +228,14 @@ api.add_container_dependencies(
   <p>The rule on ECS: point the load balancer at a shallow check; rely on the init containers for readiness at start (migrations succeed only if the database answers); and detect outages with an alarm on 5xx responses. The api reconnected four seconds after the database returned, with no restart.</p>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L466-L528">infra/aws/service.py</a><span class="lines">the service's deployment settings and the api's health check</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L466-L529">infra/aws/service.py</a><span class="lines">the service's deployment settings and the api's health check</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The service definition and the api target group's health check, each with its reasoning beside it.</p>
         <ul class="notice">
           <li><code>min_healthy_percent=100</code> and <code>max_healthy_percent=150</code>: start one new task before stopping an old one, one at a time.</li>
           <li>The circuit breaker is enabled with rollback.</li>
-          <li>The health check path is <code>/health</code>, and the comment explains why <code>/ready</code> would turn an outage into churn.</li>
+          <li>The health check path is <code>/health</code>, and the comment explains why <code>/ready</code> would turn an outage into churn. ECS has no readiness-only signal: the api's container health check, in the task definition, also calls <code>/health</code>, and ECS replaces the task when either one fails.</li>
           <li>The deregistration delay covers the longest answer. ECS takes a task out of the load balancer before it sends SIGTERM, and the balancer drops whatever is still in flight when the delay ends: at 30 seconds, long answers were cut during deploys.</li>
         </ul>
       </div>
@@ -264,10 +264,11 @@ api.add_container_dependencies(
     # IAM to the on-call role, with session logging.</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="514-528"><code class="language-python"># Liveness, not readiness. ECS replaces any task its load balancer calls unhealthy,
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="514-529"><code class="language-python"># Liveness, not readiness. ECS replaces any task its load balancer calls unhealthy,
 # so a deep check (/ready: the database) turns a database outage into task churn:
 # measured, every api task marked unhealthy and replacements stuck in dbinit. Kubernetes
-# separates the two (readinessProbe /ready, livenessProbe /health); ECS has one signal.
+# separates the two (readinessProbe /ready, livenessProbe /health); ECS has no
+# readiness-only signal: this check and the container health check both replace tasks.
 # Readiness at start is covered by the init containers: migrate succeeds only if the
 # database answers. A database outage still shows: /api/ready 503 and the 5xx alarm.
 health_check=elbv2.HealthCheck(
@@ -314,7 +315,7 @@ deregistration_delay=Duration.seconds(130),</code></pre>
   <aside class="say">
     <span class="label">How to say it</span>
     <p>"The api runs as an ECS service on Fargate: two tasks across two zones, autoscaling to four, rolling deploys with the circuit breaker on, so a release that can't start rolls itself back."</p>
-    <p>"ECS has one health signal, so the load balancer checks a shallow endpoint; readiness at start comes from the init containers, and outages show up in the 5xx alarm."</p>
+    <p>"ECS has no readiness-only signal: both its health checks replace tasks, so both check a shallow endpoint; readiness at start comes from the init containers, and outages show up in the 5xx alarm."</p>
   </aside>
 
   <h3 id="ch9-exec">Running a command in a task</h3>
@@ -357,9 +358,9 @@ deregistration_delay=Duration.seconds(130),</code></pre>
         <tr><td data-label="Symptom">A database outage makes ECS replace healthy api tasks</td><td data-label="Cause">The load balancer checks a deep readiness endpoint, and ECS treats it as liveness</td><td data-label="Fix">Check a shallow endpoint; detect outages with a 5xx alarm.</td></tr>
         <tr><td data-label="Symptom">A task sits in PENDING for many minutes, billed</td><td data-label="Cause">Init containers in a chain: one failed fast, the next never ran, the essential container waits</td><td data-label="Fix">Make the essential container depend directly on every init container, each with a start timeout.</td></tr>
         <tr><td data-label="Symptom">Rate limits are higher than configured after scaling out</td><td data-label="Cause">Each task counts in its own sidecar store</td><td data-label="Fix">A shared store for anything that must be counted once.</td></tr>
-        <tr><td data-label="Symptom">Two new tasks run migrations at the same moment</td><td data-label="Cause">Every task migrates in an init container, and the deploy starts several at once</td><td data-label="Fix">Start one new task at a time, or run migrations as a one-off task before the deploy.</td></tr>
-        <tr><td data-label="Symptom">The web container's proxy returns 502 for every api call on Fargate</td><td data-label="Cause">It resolves the api through Docker's internal DNS, which Fargate does not have</td><td data-label="Fix">Route <code>/api</code> at the load balancer, or use Service Connect for names.</td></tr>
-        <tr><td data-label="Symptom">Streams are cut during a deploy</td><td data-label="Cause">The container's stop timeout is shorter than the longest answer</td><td data-label="Fix">Raise the stop timeout (Fargate allows up to two minutes) and let the server drain.</td></tr>
+        <tr><td data-label="Symptom">Two new tasks run migrations at the same moment</td><td data-label="Cause">Every task migrates in an init container, and the deploy starts several at once</td><td data-label="Fix">Make each run take a lock (a Postgres session advisory lock) so concurrent runs take turns, or run migrations as a one-off task before the deploy. Starting one new task at a time is not enough: the first deploy and a scale-out still start several.</td></tr>
+        <tr><td data-label="Symptom">The web container's proxy returns 502 for every api call on Fargate</td><td data-label="Cause">It resolves the api through Docker's internal DNS, which Fargate does not have</td><td data-label="Fix">Route <code>/api</code> at the load balancer. Service Connect alone does not help this nginx: it publishes names in <code>/etc/hosts</code>, which nginx's runtime resolver never reads.</td></tr>
+        <tr><td data-label="Symptom">Streams are cut during a deploy</td><td data-label="Cause">The target group's deregistration delay (300 seconds by default; 30 here) is shorter than the longest answer: ECS sends SIGTERM only after it ends, and the load balancer drops what is still in flight</td><td data-label="Fix">Set the deregistration delay above the longest answer, then the stop timeout (Fargate allows up to two minutes) above the server's graceful drain.</td></tr>
         <tr><td data-label="Symptom">A short spike overwhelms the service before autoscaling reacts</td><td data-label="Cause">Scaling takes several minutes from load to capacity</td><td data-label="Fix">Size the minimum task count for spikes; scale on a leading metric.</td></tr>
         <tr><td data-label="Symptom">An outage is reported that the load balancer never saw</td><td data-label="Cause">The client's own network (DNS timeouts, lost packets) failed, not the service</td><td data-label="Fix">Judge outages from server-side metrics, and run synthetic checks from inside the cloud.</td></tr>
       </tbody>
@@ -374,7 +375,7 @@ deregistration_delay=Duration.seconds(130),</code></pre>
     </li>
     <li>
       <p>Why should the load balancer's health check on ECS be shallow?</p>
-      <details class="ans"><summary>Answer</summary><p>ECS replaces any task the load balancer calls unhealthy. If the check depends on the database, a database outage makes every task "unhealthy", and ECS churns tasks that cannot help. A shallow check keeps the tasks; the outage is detected by the 5xx alarm instead.</p></details>
+      <details class="ans"><summary>Answer</summary><p>ECS replaces any task the load balancer calls unhealthy. If the check depends on the database, a database outage makes every task "unhealthy", and ECS churns tasks that cannot help. A shallow check keeps the tasks; the outage is detected by the 5xx alarm instead. The same holds for the container health check in the task definition, which also ends in a replaced task.</p></details>
     </li>
     <li>
       <p>What do <code>min_healthy_percent=100</code> and <code>max_healthy_percent=150</code> mean for a service of two tasks?</p>

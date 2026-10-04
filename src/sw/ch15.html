@@ -141,7 +141,7 @@
       <text class="ts" x="434" y="90">fails on hard dependencies: the database</text><text class="ts" x="434" y="114">reports soft ones as degraded, still 200:</text><text class="ts" x="434" y="130">the limiter's store, the identity provider</text><text class="ts" x="434" y="146">otherwise a partial outage becomes total</text><text class="ts tmu" x="434" y="176">orchestrator routing decisions, dashboards</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 15.3</span>Two different questions. ECS has only one signal, the load balancer's health check; pointed at readiness, a database outage marked every api task unhealthy and ECS kept replacing them, so there it points at <code>/health</code> (Handbook 3, Chapter 9).</figcaption>
+    <figcaption><span class="fig-n">Figure 15.3</span>Two different questions. ECS has no readiness-only signal: its container health check and the load balancer's target health both lead to a task's replacement. Pointed at readiness, a database outage marked every api task unhealthy and ECS kept replacing them, so on ECS both point at <code>/health</code> (Handbook 3, Chapter 9).</figcaption>
   </figure>
 
   <h3 id="ch15-drills">Failure drills</h3>
@@ -195,7 +195,7 @@
   <ol class="qs">
     <li>
       <p>When should a rate limiter fail open, and when closed?</p>
-      <details class="ans"><summary>Answer</summary><p>Open when the limit is a courtesy or cost guard and its store is a soft dependency; closed when the limit is itself the security control, or when each request is expensive, as with a paid model call.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Open when the limit is a courtesy on cheap requests and its store is a soft dependency; closed when the limit is itself the security control, or when it guards spend because each request is expensive, as with a paid model call.</p></details>
     </li>
     <li>
       <p>Why is a client-side timeout not enough to protect a pool?</p>

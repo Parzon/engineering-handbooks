@@ -72,7 +72,7 @@
       <text class="ts tmu" x="560" y="60">used by make in development;</text><text class="ts tmu" x="560" y="76">never pushed to a registry</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 12.2</span>Three stages, one Dockerfile. The dev and production images share the exact dependency set, because both come from the same <code>deps</code> stage and lockfile.</figcaption>
+    <figcaption><span class="fig-n">Figure 12.2</span>Three stages, one Dockerfile. Both images start from the same <code>deps</code> stage and lockfile, so their runtime dependencies are identical; the dev image adds the dev group on top, which is why CI also builds and checks the production image.</figcaption>
   </figure>
 
   <section class="repo">
@@ -158,7 +158,7 @@ CMD ["gunicorn", "app.asgi:app", "-c", "gunicorn.conf.py"]</code></pre>
         <tr><td data-label="Concept">Named volume</td><td data-label="Know">Docker-managed storage for data a container owns, such as a database's files. Survives the container being recreated; <code>down</code> keeps it, <code>down -v</code> deletes it.</td></tr>
         <tr><td data-label="Concept">Bind mount</td><td data-label="Know">A host directory mapped in, live both ways: the development pattern for hot reload. It pins the directory, not the path, so a directory recreated by <code>git checkout</code> is no longer the one mounted.</td></tr>
         <tr><td data-label="Concept">Restart policy</td><td data-label="Know">Acts on exit only. <code>unless-stopped</code> restarts after a crash or a daemon restart, not after a manual stop. Docker never restarts a container for being <em>unhealthy</em>; orchestrators do.</td></tr>
-        <tr><td data-label="Concept">Health check</td><td data-label="Know">Drives <code>depends_on: condition: service_healthy</code> and orchestrators' replacement decisions. Its output is in <code>docker inspect</code>, not <code>docker logs</code>.</td></tr>
+        <tr><td data-label="Concept">Health check</td><td data-label="Know">Drives <code>depends_on: condition: service_healthy</code> and Docker's own status. Orchestrators use their own checks: Kubernetes ignores it, and ECS runs only a check written into the task definition, so define it there too. Its output is in <code>docker inspect</code>, not <code>docker logs</code>.</td></tr>
         <tr><td data-label="Concept">Logs</td><td data-label="Know"><code>docker logs</code> holds only the main process's standard output and error, in a file that is unbounded unless rotation is configured.</td></tr>
       </tbody>
     </table>
@@ -167,8 +167,8 @@ CMD ["gunicorn", "app.asgi:app", "-c", "gunicorn.conf.py"]</code></pre>
   <h3 id="ch12-compose">Compose: one base, an overlay per environment</h3>
   <figure class="fig wide" id="fig-12-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 270" role="img" aria-label="compose.yaml is what every environment shares: services, images or build contexts, the environment contract, health checks, dependencies, restart and log rotation; no ports and no mounts. compose.override.yaml is merged automatically into any plain docker compose command: dev targets, source bind mounts, ports on 127.0.0.1. compose.prod.yaml is named explicitly with -f: production targets, image names and tags, only the edge published, read-only filesystems, dropped capabilities, limits. Merge rules: environment merges key by key, the overlay winning; ports lists are concatenated; the !reset tag removes an inherited entry.">
-      <rect class="n-acc" x="300" y="16" width="220" height="104" rx="6"/><text class="tb" x="312" y="40">compose.yaml</text><text class="ts" x="312" y="60">what every environment shares:</text><text class="ts" x="312" y="76">services, env contract, health,</text><text class="ts" x="312" y="92">restart, log rotation</text><text class="ts tr" x="312" y="110">no ports, no mounts</text>
+    <svg viewBox="0 0 820 270" role="img" aria-label="compose.yaml is what every environment shares: services, images or build contexts, the environment contract, health checks, dependencies, restart and log rotation; no ports and no source mounts. compose.override.yaml is merged automatically into any plain docker compose command: dev targets, source bind mounts, ports on 127.0.0.1. compose.prod.yaml is named explicitly with -f: production targets, image names and tags, only the edge published, read-only filesystems, dropped capabilities, limits. Merge rules: environment merges key by key, the overlay winning; ports lists are concatenated; the !reset tag removes an inherited entry.">
+      <rect class="n-acc" x="300" y="16" width="220" height="104" rx="6"/><text class="tb" x="312" y="40">compose.yaml</text><text class="ts" x="312" y="60">what every environment shares:</text><text class="ts" x="312" y="76">services, env contract, health,</text><text class="ts" x="312" y="92">restart, log rotation</text><text class="ts tr" x="312" y="110">no ports, no source mounts</text>
       <rect class="n" x="16" y="150" width="250" height="96" rx="6"/><text class="tb" x="28" y="174">compose.override.yaml</text><text class="ts" x="28" y="194">development, merged automatically</text><text class="ts" x="28" y="210">dev targets, source bind mounts,</text><text class="ts" x="28" y="226">ports on 127.0.0.1</text>
       <rect class="n-good" x="554" y="150" width="250" height="96" rx="6"/><text class="tb" x="566" y="174">compose.prod.yaml</text><text class="ts" x="566" y="194">named explicitly with -f</text><text class="ts" x="566" y="210">release images, edge only published,</text><text class="ts" x="566" y="226">read-only, cap_drop, limits</text>
       <path class="e" d="M300,90 C220,90 141,110 141,148" marker-end="url(#a)"/>
@@ -264,7 +264,7 @@ CMD ["gunicorn", "app.asgi:app", "-c", "gunicorn.conf.py"]</code></pre>
     </li>
     <li>
       <p>Does Docker restart an unhealthy container?</p>
-      <details class="ans"><summary>Answer</summary><p>No. Restart policies act only when the process exits. Health matters to <code>depends_on</code> and to orchestrators, which replace unhealthy tasks or pods.</p></details>
+      <details class="ans"><summary>Answer</summary><p>No. Restart policies act only when the process exits. Health matters to <code>depends_on</code> and to orchestrators, which replace unhealthy tasks or pods, but by their own checks (Kubernetes probes, an ECS task-definition health check); the image's <code>HEALTHCHECK</code> alone does not reach them.</p></details>
     </li>
   </ol>
 </section>

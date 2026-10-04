@@ -34,7 +34,7 @@
 
   <figure class="fig wide" id="fig-6-1">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 250" role="img" aria-label="A chain of migrations, each naming its parent: create alerts, add an external id, index by time, teams and users, row-level security, runbooks. Three databases record different positions: a developer's is at the newest revision, CI's throwaway database starts empty and replays all of them, production is two behind. Upgrading production runs only the two missing migrations, in order.">
+    <svg viewBox="0 0 820 250" role="img" aria-label="The first six of nine migrations in a chain, each naming its parent: create alerts, add an external id, index by time, teams and users, row-level security, runbooks. Three databases record different positions: a developer's is at the newest revision, CI's throwaway database starts empty and replays all of them, production is two behind. Upgrading production runs only the two missing migrations, in order.">
       <rect class="n" x="16" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="26" y="60">39b0de02</text><text class="ts" x="26" y="78">create alerts</text>
       <rect class="n" x="150" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="160" y="60">75397b87</text><text class="ts" x="160" y="78">external id</text>
       <rect class="n" x="284" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="294" y="60">51ef9f54</text><text class="ts" x="294" y="78">index by time</text>
@@ -52,11 +52,11 @@
       <path class="e-acc" d="M141,139 V120 H611 V100" marker-end="url(#a-acc)"/>
       <path class="e-acc" d="M141,139 V120 H745 V100" marker-end="url(#a-acc)"/>
       <text class="ts ta" x="300" y="146">an upgrade runs only the two it is missing, in order</text>
-      <rect class="n-soft" x="290" y="196" width="250" height="40" rx="5"/><text class="ts" x="302" y="221">CI starts empty and replays all six</text>
+      <rect class="n-soft" x="290" y="196" width="250" height="40" rx="5"/><text class="ts" x="302" y="221">CI starts empty and replays them all</text>
       <rect class="n-soft" x="556" y="196" width="248" height="40" rx="5"/><text class="ts" x="568" y="221">"heads" must print exactly one</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 6.1</span>Six real revisions of the reference schema. Random identifiers never collide when two branches each add a migration; if two branches do, the tool reports two "heads", and the team merges them.</figcaption>
+    <figcaption><span class="fig-n">Figure 6.1</span>The first six of the reference schema's nine revisions. Random identifiers never collide when two branches each add a migration; if two branches do, the tool reports two "heads", and the team merges them.</figcaption>
   </figure>
 
   <figure class="fig wide" id="fig-6-2">
@@ -101,9 +101,10 @@
   </figure>
 
   <ul>
-    <li><strong>Add, don't change.</strong> A nullable column, or one with a default, is instant (metadata only). Renames and type changes become expand and contract across releases (Handbook 3, Chapter 13).</li>
+    <li><strong>Add, don't change.</strong> A nullable column, or one with a constant default, is instant (metadata only). A volatile default, such as <code>gen_random_uuid()</code> or <code>clock_timestamp()</code>, rewrites the whole table under an exclusive lock. Renames and type changes become expand and contract across releases (Handbook 3, Chapter 13).</li>
     <li><strong>Build indexes concurrently.</strong> A plain <code>CREATE INDEX</code> blocks writes for the whole build. <code>CONCURRENTLY</code> does not, but cannot run inside a transaction, and if it fails midway it leaves an invalid index to drop before retrying.</li>
     <li><strong>Add foreign keys in two steps.</strong> <code>NOT VALID</code> is instant and applies to new rows; <code>VALIDATE CONSTRAINT</code> in its own transaction then checks existing rows without blocking writes. The reference teams migration used all three patterns on 2 million rows in 1.5 seconds under load, with no failed request.</li>
+    <li><strong>Keep the lock timeout for the whole run.</strong> Alembic wraps a run in one transaction, and an autocommit block commits it. A <code>SET LOCAL</code> ends with that commit: the reference once set its timeout that way, and measured, it read 5 s at the start of a run and 0 inside the first block, after it, and in every later migration, so a run past the teams migration enabled row-level security on <code>alerts</code>, which takes an exclusive lock, with no timeout. It now uses a plain <code>SET</code> on the run's own connection, which lasts for the session: 5 s at every step, <code>CREATE INDEX CONCURRENTLY</code> included (one that gives up leaves an invalid index, to drop before retrying).</li>
     <li><strong>Name every constraint</strong>, or the tool cannot write a downgrade that drops it.</li>
     <li><strong>Migrations run as the schema owner, directly</strong> against Postgres. The application's own role can read and write rows but cannot change the schema.</li>
     <li><strong>One run at a time.</strong> Where every copy of the service migrates as it starts (an init container per task), two can start together, and two runs at once collided: one failed, three times in three. The fix is an advisory lock, and the first two versions failed in instructive ways. A transaction lock is released when a <code>CONCURRENTLY</code> migration commits midway. A blocking session lock makes the waiting run hold a snapshot that <code>CREATE INDEX CONCURRENTLY</code> waits for, and Postgres reports a deadlock. What works is a session lock on a separate connection, polled, so the waiting run holds nothing.</li>
@@ -154,10 +155,10 @@ Zero-downtime shape, the pattern for any index on a table in use:
       <thead><tr><th>Index type</th><th>For</th></tr></thead>
       <tbody>
         <tr><td data-label="Type">B-tree, the default</td><td data-label="For">Equality, ranges and sorting: almost every index</td></tr>
-        <tr><td data-label="Type">Composite <code>(a, b)</code></td><td data-label="For">Column order matters: it serves <code>a</code> and <code>a, b</code>, not <code>b</code> alone</td></tr>
+        <tr><td data-label="Type">Composite <code>(a, b)</code></td><td data-label="For">Column order matters: it serves <code>a</code> and <code>a, b</code> well; for <code>b</code> alone, only through a full index scan or, from Postgres 18, a skip scan when <code>a</code> has few values</td></tr>
         <tr><td data-label="Type">Unique</td><td data-label="For">A B-tree that also forbids duplicates</td></tr>
         <tr><td data-label="Type">Partial</td><td data-label="For">Only rows matching a <code>WHERE</code>: small, such as open alerts only</td></tr>
-        <tr><td data-label="Type">Covering (<code>INCLUDE</code>)</td><td data-label="For">Extra columns stored in the index, so a query never touches the table</td></tr>
+        <tr><td data-label="Type">Covering (<code>INCLUDE</code>)</td><td data-label="For">Extra columns stored in the index, so a query can often skip the table: an index-only scan still visits every table page the visibility map does not mark all-visible</td></tr>
         <tr><td data-label="Type">Expression</td><td data-label="For">A computed value, such as <code>lower(email)</code></td></tr>
         <tr><td data-label="Type">GIN</td><td data-label="For">Many values per row: arrays, JSONB, full-text search</td></tr>
         <tr><td data-label="Type">GiST, SP-GiST</td><td data-label="For">Geometry, ranges and other special types</td></tr>
@@ -235,7 +236,7 @@ Zero-downtime shape, the pattern for any index on a table in use:
       <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
       <tbody>
         <tr><td data-label="Symptom">A renamed column lost its data</td><td data-label="Cause">Autogenerate wrote the rename as a drop plus an add</td><td data-label="Fix">Read every generated migration; write renames explicitly, or as expand and contract.</td></tr>
-        <tr><td data-label="Symptom">A migration logged success but changed nothing</td><td data-label="Cause">A <code>SET</code> before the migration's transaction began opened a transaction that was then rolled back</td><td data-label="Fix">Use <code>SET LOCAL</code> inside the migration's transaction.</td></tr>
+        <tr><td data-label="Symptom">A migration logged success but changed nothing</td><td data-label="Cause">A <code>SET</code> before the migration's transaction began opened a transaction that was then rolled back</td><td data-label="Fix">Run the <code>SET</code> inside the migration's transaction. Make it a session <code>SET</code>, not <code>SET LOCAL</code>, if it must outlast an autocommit block.</td></tr>
         <tr><td data-label="Symptom">Writes stall during a deploy</td><td data-label="Cause">A plain <code>CREATE INDEX</code>, or a validated foreign key added in one step</td><td data-label="Fix">Build indexes concurrently; add foreign keys <code>NOT VALID</code>, then validate.</td></tr>
         <tr><td data-label="Symptom">Every query on a table waits during a migration</td><td data-label="Cause">A schema change queued for a lock, and later queries queued behind it</td><td data-label="Fix">A lock timeout on every migration; retry off-peak.</td></tr>
         <tr><td data-label="Symptom">A query that was fast in testing is slow in production</td><td data-label="Cause">An idle <code>EXPLAIN</code> on small data</td><td data-label="Fix">Measure under realistic load with production-sized data.</td></tr>

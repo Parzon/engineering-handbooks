@@ -87,7 +87,7 @@
         <p>Two small data-engineering decisions in the reference service: a key that records how every vector was made, and the date shown to the model beside every section.</p>
         <ul class="notice">
           <li>The embedding key names the model, the size and a hash of the document prefix; vectors with another key are ignored until a re-embed, because they are not comparable.</li>
-          <li>A prefix change alone moved every vector: measured, the same text with and without the prefix differed by 0.06 in distance.</li>
+          <li>A prefix change alone moves every vector, so old and new vectors cannot be mixed. In the retrieval measurements, dropping embeddinggemma's prompts shrank the gap between relevant sections and unanswerable questions from 0.12 to 0.06 in distance.</li>
           <li>Each section reaches the model with its team and its last update date, so a stale step is visible as stale.</li>
         </ul>
       </div>
@@ -98,8 +98,8 @@
     document prefix. Stored with every vector; vectors with another key are
     not comparable, so retrieval ignores them until they are re-embedded
     (`python -m app.cli reembed`). A prefix change alone moves every vector:
-    measured, embeddinggemma with and without its prompts gave distances
-    0.06 apart on the same text."""
+    measured, dropping embeddinggemma's prompts shrank the gap between
+    relevant and unanswerable distances from 0.12 to 0.06 (rag.md)."""
     prefix = hashlib.sha256(settings.embedding_document_prefix.encode()).hexdigest()[:8]
     return f"{settings.embedding_model}|{settings.embedding_dimensions or 'native'}|{prefix}"</code></pre>
         </div>

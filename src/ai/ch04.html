@@ -68,8 +68,8 @@
   <h3 id="ch4-chunking">Chunking</h3>
   <figure class="fig wide" id="fig-4-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 240" role="img" aria-label="Too small: a step loses its condition; 'Never delete files in the data directory' was cut into '...Never' and 'the data directory by hand'. Too large: one match is diluted, and the prompt pays for the rest. Structure-aware chunking at headings is the default for documentation, with a word cap. Small-to-big: find by small chunk, hand the model its neighbors or the whole document.">
-      <rect class="n-bad" x="16" y="16" width="250" height="110" rx="6"/><text class="tb" x="28" y="40">Too small</text><text class="ts" x="28" y="62">a step loses its condition:</text><text class="tm" x="28" y="84">"...Never" |</text><text class="tm" x="28" y="102">"the data directory</text><text class="tm" x="28" y="118"> by hand."</text>
+    <svg viewBox="0 0 820 240" role="img" aria-label="Too small: a step loses its condition; 'Never delete files inside the data directory by hand' was cut into '...Never delete files inside' and 'the data directory by hand'. Too large: one match is diluted, and the prompt pays for the rest. Structure-aware chunking at headings is the default for documentation, with a word cap. Small-to-big: find by small chunk, hand the model its neighbors or the whole document.">
+      <rect class="n-bad" x="16" y="16" width="250" height="110" rx="6"/><text class="tb" x="28" y="40">Too small</text><text class="ts" x="28" y="62">a step loses its condition:</text><text class="tm" x="28" y="84">"...Never delete files</text><text class="tm" x="28" y="101"> inside" |</text><text class="tm" x="28" y="118">"the data directory by hand."</text>
       <rect class="n-warn" x="285" y="16" width="250" height="110" rx="6"/><text class="tb" x="297" y="40">Too large</text><text class="ts" x="297" y="62">one relevant sentence is</text><text class="ts" x="297" y="78">diluted in a long chunk;</text><text class="ts" x="297" y="94">the prompt pays for the rest</text>
       <rect class="n-good" x="554" y="16" width="250" height="110" rx="6"/><text class="tb" x="566" y="40">At the document's structure</text><text class="ts" x="566" y="62">split at headings, with a cap;</text><text class="ts" x="566" y="78">the default for documentation;</text><text class="ts" x="566" y="94">the reference service: sections</text><text class="ts" x="566" y="110">of a runbook</text>
       <text class="tl" x="16" y="160">OTHER STRATEGIES</text>
@@ -181,18 +181,18 @@ semantic AS (
   <h3 id="ch4-measure">Measuring retrieval</h3>
   <figure class="fig wide" id="fig-4-5">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 250" role="img" aria-label="Measured on 8 runbooks, 31 sections, 19 answerable labeled questions and 3 that nothing answers. Hybrid search with nomic-embed-text: recall at 1 is 0.79, at 3 is 0.95, at 5 is 1.00; MRR 0.87. Keyword search alone: recall at 1 is 0.68, at 5 is 0.95; MRR 0.77. All three embedding models tried found every answer in the first five; differences at rank 1 were two questions of nineteen, noise at this size.">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Measured on 8 runbooks, 31 sections, 19 answerable labeled questions and 3 that nothing answers. Hybrid search with nomic-embed-text: recall at 1 is 0.79, at 3 is 0.95, at 5 is 1.00; MRR 0.87. Keyword search alone: recall at 1 is 0.68, at 5 is 0.95; MRR 0.77. All three embedding models tried found every answer in the first five; differences at rank 1 were two questions of nineteen, noise at this size. Recall at k here is a hit rate: whether a relevant chunk is in the top k.">
       <text class="tl" x="16" y="22">RECALL@K AND MRR, 19 LABELED QUESTIONS</text>
       <line class="rule" x1="150" y1="34" x2="150" y2="176"/><line class="rule dash" x1="550" y1="34" x2="550" y2="176"/><text class="ts tmu" x="550" y="190" text-anchor="middle">1.00</text>
       <text class="ts" x="16" y="54">recall@1</text><rect class="fill-acc" x="150" y="42" width="316" height="14"/><text class="ts" x="474" y="54">0.79 hybrid</text><rect class="n-soft" x="150" y="58" width="272" height="10"/><text class="ts tmu" x="430" y="68">0.68 keyword</text>
       <text class="ts" x="16" y="96">recall@3</text><rect class="fill-acc" x="150" y="84" width="380" height="14"/><text class="ts" x="538" y="96">0.95</text>
       <text class="ts" x="16" y="128">recall@5</text><rect class="fill-acc" x="150" y="116" width="400" height="14"/><text class="ts" x="558" y="128">1.00</text><rect class="n-soft" x="150" y="132" width="380" height="10"/><text class="ts tmu" x="538" y="142">0.95 keyword</text>
       <text class="ts" x="16" y="166">MRR</text><rect class="fill-acc" x="150" y="154" width="348" height="14"/><text class="ts" x="506" y="166">0.87</text><rect class="n-soft" x="150" y="170" width="308" height="10"/><text class="ts tmu" x="466" y="180">0.77</text>
-      <text class="ts" x="16" y="216"><tspan class="tb">recall@k:</tspan> a relevant chunk is in the top k; it bounds the answer. <tspan class="tb">MRR:</tspan> the mean of 1 ÷ rank of the first relevant chunk.</text>
+      <text class="ts" x="16" y="216"><tspan class="tb">recall@k</tspan> here is a hit rate: a relevant chunk is in the top k; it bounds the answer. <tspan class="tb">MRR:</tspan> mean of 1 ÷ rank of the first relevant chunk.</text>
       <text class="ts" x="16" y="236"><tspan class="tb">Read the benchmark's size:</tspan> 19 questions show that each model works; they cannot rank models two questions apart.</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 4.5</span>Retrieval measured on its own, through the service, before any prompt work. Recall on the whole corpus says nothing about recall under a tenant filter: that needs its own benchmark, large enough that a tenant's share is smaller than the candidate list.</figcaption>
+    <figcaption><span class="fig-n">Figure 4.5</span>Retrieval measured on its own, through the service, before any prompt work. The benchmark's recall@k is a hit rate, whether any relevant chunk is in the top k; the standard recall@k is the share of all relevant chunks found there, and the two agree only when a question has one relevant chunk. Recall on the whole corpus says nothing about recall under a tenant filter: that needs its own benchmark, large enough that a tenant's share is smaller than the candidate list.</figcaption>
   </figure>
 
   <h3 id="ch4-context">Context, citations and freshness</h3>
@@ -245,7 +245,7 @@ semantic AS (
     </li>
     <li>
       <p>What do recall@k and MRR measure, and what can a 19-question benchmark not tell you?</p>
-      <details class="ans"><summary>Answer</summary><p>Recall@k: whether a relevant chunk is in the top k. MRR: how high the first relevant chunk ranks on average. A small benchmark shows each model works; it cannot rank models whose difference is a couple of questions.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Recall@k, as the benchmark counts it: whether a relevant chunk is in the top k, a hit rate (the standard definition is the share of all relevant chunks in the top k). MRR: how high the first relevant chunk ranks on average. A small benchmark shows each model works; it cannot rank models whose difference is a couple of questions.</p></details>
     </li>
   </ol>
 </section>

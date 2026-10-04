@@ -63,52 +63,61 @@
       <text class="ts" x="524" y="210">on for one tenant, then more</text>
       <text class="ts" x="424" y="236">catches: a feature that misbehaves in production</text>
       <text class="ts" x="424" y="252">costs: flags to remove later, or they become debt</text>
-      <text class="ts" x="16" y="288">On a platform: weighted target groups (ALB), revisions with traffic splitting (Cloud Run, Container Apps), Argo Rollouts (Kubernetes).</text>
+      <text class="ts" x="16" y="288">On a platform: ECS's built-in canary and blue/green, weighted revisions (Cloud Run, Container Apps), Argo Rollouts (Kubernetes).</text>
     </svg>
     </div>
     <figcaption><span class="fig-n">Figure 13.1</span>Release strategies, and what each protects against. A rolling deploy is safe against crashes because readiness gates it, but it moves all traffic within seconds, so it cannot catch a regression that only shows in the numbers. That is the canary's job.</figcaption>
   </figure>
 
-  <p>The reference service uses rolling deploys everywhere, and for subtle regressions it currently relies on "deploy, watch the dashboard for half an hour, roll back if needed", which works because rollbacks are cheap and cross migrations. The next steps, in order of effort, are a canary on one host (a second api service and a weighted upstream in nginx), then the platform's own traffic splitting with automatic analysis against the service's objectives.</p>
+  <p>The reference service uses rolling deploys everywhere, and for subtle regressions it currently relies on "deploy, watch the dashboard for half an hour, roll back if needed", which works because rollbacks are cheap and cross migrations. The next steps, in order of effort, are a canary on one host (a second api service and a weighted upstream in nginx), then the platform's own traffic splitting (on ECS, its built-in canary strategy) with automatic analysis against the service's objectives.</p>
 
   <h3 id="ch13-schema">Rollbacks roll back code, never the schema</h3>
   <p>During a rolling deploy, the old and new versions run at the same time against the same database. So a schema change cannot break either of them, and it is done in steps that each leave both versions working. This is the <strong>expand and contract</strong> pattern.</p>
 
   <figure class="fig wide" id="fig-13-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 260" role="img" aria-label="Expand and contract across four releases. Release 1 expands: adds a nullable column; old code ignores it. Release 2 writes both old and new; a backfill fills history. Release 3 reads and writes only the new. Release 4 contracts: removes the old column. Rolling back is safe between adjacent releases up to the one before a contract; skipping from release 1 straight to release 4 is not.">
-      <text class="tl" x="16" y="18">FOUR RELEASES, ONE SCHEMA CHANGE</text>
-      <rect class="n-acc" x="16" y="30" width="186" height="96" rx="6"/>
-      <text class="tb" x="30" y="54">1  Expand</text>
-      <text class="ts" x="30" y="74">add the new column,</text>
-      <text class="ts" x="30" y="90">nullable; old code</text>
-      <text class="ts" x="30" y="106">simply ignores it</text>
-      <rect class="n" x="218" y="30" width="186" height="96" rx="6"/>
-      <text class="tb" x="232" y="54">2  Write both</text>
-      <text class="ts" x="232" y="74">code writes old and new;</text>
-      <text class="ts" x="232" y="90">a backfill fills history</text>
-      <text class="ts" x="232" y="106">in batches</text>
-      <rect class="n" x="420" y="30" width="186" height="96" rx="6"/>
-      <text class="tb" x="434" y="54">3  Use only the new</text>
-      <text class="ts" x="434" y="74">code reads and writes</text>
-      <text class="ts" x="434" y="90">only the new column</text>
-      <rect class="n-warn" x="622" y="30" width="182" height="96" rx="6"/>
-      <text class="tb" x="636" y="54">4  Contract</text>
-      <text class="ts" x="636" y="74">remove the old column,</text>
-      <text class="ts" x="636" y="90">in a later release</text>
-      <line class="e" x1="203" y1="78" x2="216" y2="78" marker-end="url(#a)"/>
-      <line class="e" x1="405" y1="78" x2="418" y2="78" marker-end="url(#a)"/>
-      <line class="e" x1="607" y1="78" x2="620" y2="78" marker-end="url(#a)"/>
+    <svg viewBox="0 0 820 272" role="img" aria-label="Expand and contract across five releases. Release 1 expands: adds a nullable column; old code ignores it. Release 2 writes both old and new and still reads the old; a backfill fills history. Release 3 reads the new column and still writes both. Release 4 writes only the new; the old column is no longer used. Release 5 contracts: removes the old column. Each release can be rolled back to the one before it. Skipping from release 1 straight to release 5 is not safe, and from release 4 or 5 only a one-release rollback is: the old column is stale after release 4 and gone after release 5.">
+      <text class="tl" x="16" y="18">FIVE RELEASES, ONE SCHEMA CHANGE</text>
+      <rect class="n-acc" x="16" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="28" y="54">1  Expand</text>
+      <text class="ts" x="28" y="74">add the new column,</text>
+      <text class="ts" x="28" y="90">nullable; old code</text>
+      <text class="ts" x="28" y="106">simply ignores it</text>
+      <rect class="n" x="174" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="186" y="54">2  Write both</text>
+      <text class="ts" x="186" y="74">write old and new,</text>
+      <text class="ts" x="186" y="90">still read the old;</text>
+      <text class="ts" x="186" y="106">backfill the history</text>
+      <rect class="n" x="332" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="344" y="54">3  Read the new</text>
+      <text class="ts" x="344" y="74">read the new column,</text>
+      <text class="ts" x="344" y="90">still write both</text>
+      <rect class="n" x="490" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="502" y="54">4  Write only new</text>
+      <text class="ts" x="502" y="74">the old column is</text>
+      <text class="ts" x="502" y="90">no longer used</text>
+      <rect class="n-warn" x="648" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="660" y="54">5  Contract</text>
+      <text class="ts" x="660" y="74">remove the old column,</text>
+      <text class="ts" x="660" y="90">in a later release</text>
+      <line class="e" x1="163" y1="80" x2="172" y2="80" marker-end="url(#a)"/>
+      <line class="e" x1="321" y1="80" x2="330" y2="80" marker-end="url(#a)"/>
+      <line class="e" x1="479" y1="80" x2="488" y2="80" marker-end="url(#a)"/>
+      <line class="e" x1="637" y1="80" x2="646" y2="80" marker-end="url(#a)"/>
 
-      <path class="e-good" d="M300,140 C300,170 110,170 110,132" marker-end="url(#a-good)"/>
-      <text class="ts tg" x="205" y="150" text-anchor="middle">roll 2 back to 1: safe</text>
-      <path class="e-good" d="M510,140 C510,170 310,170 310,132" marker-end="url(#a-good)"/>
-      <text class="ts tg" x="410" y="150" text-anchor="middle">roll 3 back to 2: safe</text>
-      <path class="e-bad" d="M713,140 C713,222 110,222 110,134" marker-end="url(#a-bad)"/>
-      <text class="ts tr" x="410" y="248" text-anchor="middle">never skip from 1 to 4, or roll 4 back past 3: the old code needs the column that was removed</text>
+      <path class="e-good" d="M239,144 C239,174 97,174 97,136" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="168" y="154" text-anchor="middle">roll 2 back to 1: safe</text>
+      <path class="e-good" d="M397,144 C397,174 255,174 255,136" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="326" y="154" text-anchor="middle">roll 3 back to 2: safe</text>
+      <path class="e-good" d="M555,144 C555,174 413,174 413,136" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="484" y="154" text-anchor="middle">roll 4 back to 3: safe</text>
+      <path class="e-good" d="M713,144 C713,174 571,174 571,136" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="642" y="154" text-anchor="middle">roll 5 back to 4: safe</text>
+      <path class="e-bad" d="M729,144 C729,234 81,234 81,138" marker-end="url(#a-bad)"/>
+      <text class="ts tr" x="410" y="258" text-anchor="middle">never skip from 1 to 5; from 4 or 5, roll back one release only: the old column is stale after 4, gone after 5</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 13.2</span>Expand and contract. Each release can run on the next release's schema, because it will, on the day it is rolled back to. Never rename in place: a rename is an expand, a backfill and a contract.</figcaption>
+    <figcaption><span class="fig-n">Figure 13.2</span>Expand and contract. Each release can run on the next release's schema, because it will, on the day it is rolled back to. Writes to the old column stop only after reads have moved to the new one, so a rollback to the release before never reads a stale column. Never rename in place: a rename is an expand, a backfill and a contract.</figcaption>
   </figure>
 
   <p>The rule produced one of the reference service's decision records, after a rollback failed. The procedure had been "deploy the previous tag", and the previous tag's migration tool had never heard of the revision the newer release applied. The deploy stopped before touching anything, so it failed safely, but rollback was impossible across any migration: exactly when a rollback is most likely needed.</p>
@@ -120,7 +129,7 @@
       <dt>Problem</dt><dd>Rolling a release back to one with fewer migrations failed: the older migration tool could not find the database's current revision.</dd>
       <dt>Decision</dt><dd>A deploy never reverses a migration. When the database is ahead of the image, it skips migrating, says so, and rolls out the older code on the newer schema. Reversing a migration is a separate, deliberate step, decided by a person, run with the newer image.</dd>
       <dt>Rejected</dt><dd>Automatic downgrades: the least-tested code in any project, able to lose data, and run under pressure.</dd>
-      <dt>See it in</dt><dd><a href="{{TA}}/infra/aws/container/migrate.sh">infra/aws/container/migrate.sh</a> on ECS, and <a href="{{TA}}/scripts/deploy.sh#L87-L113">scripts/deploy.sh</a> on a VM.</dd>
+      <dt>See it in</dt><dd><a href="{{TA}}/infra/aws/container/migrate.sh">infra/aws/container/migrate.sh</a> on ECS, and <a href="{{TA}}/scripts/deploy.sh#L88-L114">scripts/deploy.sh</a> on a VM.</dd>
     </dl>
   </aside>
 
@@ -239,7 +248,7 @@ exec alembic upgrade head</code></pre>
     </li>
     <li>
       <p>Why is a column rename done across several releases?</p>
-      <details class="ans"><summary>Answer</summary><p>Because during a rolling deploy the old code still runs against the database. Adding the new column, writing both, backfilling, switching reads, and only later dropping the old column keeps every running version working at every step.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Because during a rolling deploy the old code still runs against the database. Adding the new column, writing both, backfilling, switching reads while still writing both, then stopping writes to the old column, and only later dropping it keeps every running version working, and every rollback to the release before correct, at every step.</p></details>
     </li>
     <li>
       <p>What should a deploy do when the database is ahead of the image it is deploying?</p>

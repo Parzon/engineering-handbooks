@@ -55,7 +55,7 @@ g.ts text { font-size: 11.5px; }
 
       <rect class="n-acc" x="180" y="78" width="210" height="92" rx="6"/>
       <text class="tl" x="196" y="100">INDEX (A DIGEST)</text>
-      <text class="tm" x="196" y="122">sha256:fcbc59d1…</text>
+      <text class="tm" x="196" y="122">sha256:21115358…</text>
       <text class="ts" x="196" y="142">lists one image per</text>
       <text class="ts" x="196" y="158">processor type</text>
 

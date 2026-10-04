@@ -88,7 +88,7 @@
     <figcaption><span class="fig-n">Figure 5.2</span>The event loop's contract: never block it. Async does not bypass Python's global interpreter lock; it is one thread that never wastes time waiting. A blocking call breaks the contract for every request on that worker at once.</figcaption>
   </figure>
 
-  <p>Two consequences show up in production. On a busy loop, every wall-clock timeout fires early, because callbacks run late: the reference service saw its rate limiter failing open and pool timeouts firing at about 46% CPU. So CPU percentage is a poor saturation signal for async Python; <strong>event-loop lag</strong>, how late a timer fires, measures it directly, and the service exports it as a metric. And <strong>cancellation is normal</strong>: a user closing the tab cancels the stream, and <code>finally</code> blocks must close the model connection, which stops the billing.</p>
+  <p>Two consequences show up in production. On a busy loop, wall-clock timeouts expire although the dependency answered in time: the reply waits in the loop's queue while the budget runs out. The reference service saw its rate limiter failing open and pool timeouts firing at about 46% CPU. So CPU percentage is a poor saturation signal for async Python; <strong>event-loop lag</strong>, how late a timer fires, measures it directly, and the service exports it as a metric. And <strong>cancellation is normal</strong>: a user closing the tab cancels the stream, and <code>finally</code> blocks must close the model connection, which stops the billing.</p>
 
   <h3 id="ch5-workers">Workers: processes for CPU</h3>
   <p>One async process already holds thousands of waiting connections, so extra workers are for CPU: roughly one per core. They are processes, not threads, because each process has its own interpreter lock, so N workers really use N cores.</p>
@@ -125,7 +125,7 @@
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/gunicorn.conf.py#L34-L55">apps/api/gunicorn.conf.py</a><span class="lines">worker count, heartbeat, drain, keep-alive</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/gunicorn.conf.py#L36-L57">apps/api/gunicorn.conf.py</a><span class="lines">worker count, heartbeat, drain, keep-alive</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>Four production settings, each with the reason it has the value it has. Every one can be overridden from the environment, so the same image fits a laptop, a VM or a one-process-per-task platform.</p>
@@ -138,7 +138,7 @@
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="apps/api/gunicorn.conf.py" data-lines="34-55"><code class="language-python"># Async workers: one per usable CPU. Each worker's event loop already
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/gunicorn.conf.py" data-lines="36-57"><code class="language-python"># Async workers: one per usable CPU. Each worker's event loop already
 # serves many concurrent connections; the classic "2 x cores + 1" rule is
 # for sync workers that block while waiting on I/O. On ECS/Kubernetes set
 # WEB_CONCURRENCY=1 and scale with replicas instead.
@@ -170,10 +170,10 @@ keepalive = int(os.environ.get("GUNICORN_KEEPALIVE", "75"))</code></pre>
 
   <figure class="fig wide" id="fig-5-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 220" role="img" aria-label="pyproject.toml lists the direct dependencies you chose; uv lock resolves the whole graph into uv.lock with hashes, committed; uv sync --frozen installs exactly the lock into the virtual environment, failing rather than re-resolving; the image is built from that. Below: three tiers of Python dependencies: pure Python runs anywhere; wrappers around C libraries come as wheels per operating system and processor; wrappers that call external programs need the operating system's package manager.">
+    <svg viewBox="0 0 820 220" role="img" aria-label="pyproject.toml lists the direct dependencies you chose; uv lock resolves the whole graph into uv.lock with hashes, committed; uv sync --frozen installs exactly the lock into the virtual environment, never re-resolving and never checking that the lock still matches the manifest; the image is built from that. Below: three tiers of Python dependencies: pure Python runs anywhere; wrappers around C libraries come as wheels per operating system and processor; wrappers that call external programs need the operating system's package manager.">
       <rect class="n" x="16" y="20" width="170" height="64" rx="5"/><text class="tm tb" x="28" y="44">pyproject.toml</text><text class="ts" x="28" y="64">direct dependencies:</text><text class="ts" x="28" y="78">what you chose</text>
       <rect class="n-acc" x="230" y="20" width="170" height="64" rx="5"/><text class="tm tb" x="242" y="44">uv.lock</text><text class="ts" x="242" y="64">the whole graph, with</text><text class="ts" x="242" y="78">hashes; committed</text>
-      <rect class="n" x="444" y="20" width="170" height="64" rx="5"/><text class="tm tb" x="456" y="44">uv sync --frozen</text><text class="ts" x="456" y="64">installs exactly the lock;</text><text class="ts" x="456" y="78">fails rather than resolve</text>
+      <rect class="n" x="444" y="20" width="170" height="64" rx="5"/><text class="tm tb" x="456" y="44">uv sync --frozen</text><text class="ts" x="456" y="64">installs exactly the lock;</text><text class="ts" x="456" y="78">never checks it is current</text>
       <rect class="n-good" x="658" y="20" width="146" height="64" rx="5"/><text class="tb" x="670" y="44">The image</text><text class="ts" x="670" y="64">what was reviewed,</text><text class="ts" x="670" y="78">byte for byte</text>
       <line class="e" x1="187" y1="52" x2="228" y2="52" marker-end="url(#a)"/><text class="ts" x="207" y="44" text-anchor="middle">uv lock</text>
       <line class="e" x1="401" y1="52" x2="442" y2="52" marker-end="url(#a)"/>
@@ -194,7 +194,7 @@ keepalive = int(os.environ.get("GUNICORN_KEEPALIVE", "75"))</code></pre>
       <div class="repo-text">
         <p>The dependency layer of the api image. Only the two manifests are mounted into this step, so it is rebuilt only when dependencies change, not on every code edit.</p>
         <ul class="notice">
-          <li><code>--frozen</code> installs exactly what <code>uv.lock</code> pins and fails rather than resolve anything new.</li>
+          <li><code>--frozen</code> installs exactly what <code>uv.lock</code> pins and never re-resolves. It does not check the lock against <code>pyproject.toml</code>, so a dependency added to the manifest without re-locking is silently missing. <code>uv sync --locked</code> or <code>uv lock --check</code> fails on a stale lock. The reference CI runs <code>--locked</code>, so a stale lock fails the pull request, and the images install the checked lock with <code>--frozen</code>.</li>
           <li><code>--no-dev</code> keeps test and lint tools out of production.</li>
           <li>A cache mount keeps downloaded wheels between builds without baking them into a layer.</li>
         </ul>

@@ -130,7 +130,7 @@
       <tbody>
         <tr><td data-label="Rule">The prompt is code: reviewed, versioned, changed only with eval runs before and after</td><td data-label="Where">Chapters 1 and 7</td></tr>
         <tr><td data-label="Rule">The model sees only what the asker may see</td><td data-label="Where">Chapters 4 and 9</td></tr>
-        <tr><td data-label="Rule">Model output is untrusted: rendered as text, never executed, never fed to a tool without confirmation</td><td data-label="Where">Chapters 6 and 9</td></tr>
+        <tr><td data-label="Rule">Model output is untrusted: rendered as text, never executed; the tool calls it writes are validated like any input, and reach a state-changing tool only after a person confirms</td><td data-label="Where">Chapters 6 and 9</td></tr>
         <tr><td data-label="Rule">Tools read only, as the asker; a tool that changes anything waits for a confirmation step and a least-privilege account</td><td data-label="Where">Chapter 6</td></tr>
         <tr><td data-label="Rule">Quality measured with a calibrated judge; releases gated on safety cases</td><td data-label="Where">Chapter 7</td></tr>
         <tr><td data-label="Rule">Every model call bounded: rate limits, output tokens, stream duration; the cost on a dashboard</td><td data-label="Where">Chapters 3 and 10</td></tr>

@@ -191,14 +191,14 @@ runbook controls its text - with credentials redacted, as in the pipeline.</code
   <h3 id="ch6-mcp">MCP: the Model Context Protocol</h3>
   <figure class="fig wide" id="fig-6-5">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="MCP. A host, the AI application, runs one client per server. Servers offer tools, which the model calls; resources, data the application reads; and prompts, templates the user picks. Clients offer sampling, where the server asks the host's model; elicitation, where the server asks the user; and roots. The wire is JSON-RPC 2.0 with tools/list and tools/call. Transports: stdio, a local subprocess whose standard output belongs to the protocol; and Streamable HTTP, remote, authorized with OAuth 2.1. Two kinds of error: a protocol error such as an unknown tool is a JSON-RPC error; a tool that ran and failed returns a result marked isError, which the model can read and fix.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="MCP. A host, the AI application, runs one client per server. Servers offer tools, which the model calls; resources, data the application reads; and prompts, templates the user picks. Clients offer elicitation, where the server asks the user; sampling and roots, from earlier revisions, are deprecated. Each request is self-contained, with no connect handshake. The wire is JSON-RPC 2.0 with tools/list and tools/call. Transports: stdio, a local subprocess whose standard output belongs to the protocol; and Streamable HTTP, remote, with OAuth 2.1-based authorization when the server requires it. Two kinds of error: a protocol error such as an unknown tool is a JSON-RPC error; a tool that ran and failed returns a result marked isError, which the model can read and fix.">
       <rect class="zone" x="16" y="16" width="250" height="214" rx="8"/><text class="tl" x="30" y="36">HOST: THE AI APPLICATION</text>
       <rect class="n" x="30" y="50" width="222" height="40" rx="4"/><text class="ts" x="141" y="75" text-anchor="middle">the model and the conversation</text>
       <rect class="n-acc" x="30" y="104" width="130" height="36" rx="4"/><text class="ts" x="95" y="127" text-anchor="middle">client A</text>
       <rect class="n-acc" x="30" y="150" width="130" height="36" rx="4"/><text class="ts" x="95" y="173" text-anchor="middle">client B</text>
-      <text class="ts" x="30" y="210">client primitives: sampling, elicitation, roots</text>
+      <text class="ts" x="30" y="206">client feature: elicitation</text><text class="ts tmu" x="30" y="222">sampling and roots: deprecated</text>
       <rect class="n" x="330" y="40" width="220" height="80" rx="6"/><text class="tb" x="342" y="64">Local server (stdio)</text><text class="ts" x="342" y="84">a subprocess; stdout belongs</text><text class="ts" x="342" y="100">to the protocol</text>
-      <rect class="n" x="330" y="140" width="220" height="80" rx="6"/><text class="tb" x="342" y="164">Remote server</text><text class="ts" x="342" y="184">Streamable HTTP,</text><text class="ts" x="342" y="200">authorized with OAuth 2.1</text>
+      <rect class="n" x="330" y="140" width="220" height="80" rx="6"/><text class="tb" x="342" y="164">Remote server</text><text class="ts" x="342" y="184">Streamable HTTP,</text><text class="ts" x="342" y="200">OAuth 2.1 when it needs auth</text>
       <path class="e" d="M161,122 C250,122 250,80 328,80" marker-end="url(#a)"/><path class="e" d="M161,168 C250,168 250,180 328,180" marker-end="url(#a)"/>
       <rect class="n-soft" x="580" y="40" width="224" height="180" rx="6"/><text class="tb" x="592" y="64">Server primitives</text><text class="ts" x="592" y="88">tools: the model calls them</text><text class="ts" x="592" y="110">resources: data the app reads</text><text class="ts" x="592" y="132">prompts: templates a user picks</text><text class="tb" x="592" y="164">The wire</text><text class="ts" x="592" y="186">JSON-RPC 2.0:</text><text class="ts" x="592" y="202">tools/list, tools/call</text>
       <text class="ts" x="16" y="262"><tspan class="tb">Two kinds of error:</tspan> an unknown tool is a protocol error; a tool that ran and failed returns a result marked</text>
@@ -208,8 +208,8 @@ runbook controls its text - with credentials redacted, as in the pipeline.</code
     <figcaption><span class="fig-n">Figure 6.5</span>MCP's roles and primitives. The reference service runs a small stdio server with the same two read-only tools as its agent; it acts as one person's session, checks that session on every call so revoking it stops the server, and audits each call as coming through MCP.</figcaption>
   </figure>
 
-  <p>MCP's security model rests on the server, not on hints. Tool annotations such as "read-only" are hints and must not be trusted; servers validate, authorize and rate-limit; tokens are never passed through to downstream services; and hosts confirm sensitive calls. <strong>Tool poisoning</strong> is a malicious server whose tool descriptions, or instructions returned on connect, reach the model as prompt text: install MCP servers the way you install dependencies. A large public server illustrates the trade-offs: a handful of tools, one of which runs model-written code in a sandbox that can reach any API of the platform. The short tool list keeps the prompt cheap and the choice easy, but the power then sits in one tool, so the credentials behind it, not its "destructive" hint, set the blast radius. Its results include a record of what actually ran, and its description tells the model to check that record before trusting the return value.</p>
-  <p><strong>Skills</strong> are a related idea: a folder of markdown whose short description sits in the model's context and whose full text loads only when a task matches. A skill teaches how to do a job; a tool does it. Both are instruction channels from a source you must trust.</p>
+  <p>MCP's security model rests on the server, not on hints. Tool annotations such as "read-only" are hints and must not be trusted; servers validate, authorize and rate-limit; tokens are never passed through to downstream services; and hosts confirm sensitive calls. <strong>Tool poisoning</strong> is a malicious server whose tool descriptions, or its server instructions, reach the model as prompt text: install MCP servers the way you install dependencies. A large public server illustrates the trade-offs: a handful of tools, one of which runs model-written code in a sandbox that can reach any API of the platform. The short tool list keeps the prompt cheap and the choice easy, but the power then sits in one tool, so the credentials behind it, not its "destructive" hint, set the blast radius. Its results include a record of what actually ran, and its description tells the model to check that record before trusting the return value.</p>
+  <p><strong>Skills</strong> are a related idea: a folder with a markdown file whose short description sits in the model's context and whose full text loads only when a task matches, often with scripts the agent runs and reference files it reads. A skill teaches how to do a job; a tool does it. Both are instruction channels from a source you must trust, and a skill's scripts are code that runs with the agent's permissions: vet and pin them like any dependency.</p>
 
   <aside class="adr">
     <div class="adr-h"><span class="adr-id">ADR-0020</span><span class="adr-status">accepted</span></div>
@@ -258,11 +258,203 @@ runbook controls its text - with credentials redacted, as in the pipeline.</code
     <p>"Tools act as the asker with identity from the session, are read-only unless a person approves in a separate request, and every call is validated, bounded and audited."</p>
   </aside>
 
+  <h3 id="ch6-platforms">Where an agent runs: your code, n8n, or a managed platform</h3>
+  <p>Once the ladder says a workflow or an agent, there are three places to build it: in your own code, as the reference service does; in a workflow tool such as n8n; or on a managed agent platform such as AWS's AgentCore. They differ in who owns the loop, who runs the servers, and who provides the controls this chapter asks for. Choosing among them is an AI design decision; running whichever you choose is cloud work, covered in Handbook 3.</p>
+
+  <figure class="fig wide" id="fig-6-7">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 340" role="img" aria-label="Three places an agent can run. Your code: a Python service whose loop, tools, prompts and evaluations live in your repository; you host it, on ECS or Kubernetes for example, and you build sign-in, sessions, sandboxing and tracing. n8n: a workflow of nodes, where a trigger starts it and an AI Agent node with sub-nodes for the chat model, memory and tools runs the loop; it runs on n8n Cloud or on your own n8n instance, with Postgres and, to scale, Redis and workers; credentials are stored in n8n. AWS AgentCore: either the harness, where you declare the model, tools and prompt and AgentCore runs the loop, or Runtime, where your agent code in any framework runs in a container; each session gets its own microVM, and Gateway, Identity, Memory and Observability are managed services around it. Along the bottom: on the left you own the most and operate the most; on the right AWS operates the infrastructure.">
+      <rect class="n" x="16" y="16" width="252" height="244" rx="8"/>
+      <text class="tl" x="30" y="38">YOUR CODE</text>
+      <text class="tb" x="30" y="62">A Python service</text>
+      <text class="ts" x="30" y="84">loop, tools, prompts and evals</text>
+      <text class="ts" x="30" y="100">in your repository</text>
+      <text class="ts" x="30" y="124">tools act as the asking user,</text>
+      <text class="ts" x="30" y="140">tested with the rest of the code</text>
+      <rect class="n-soft" x="30" y="160" width="224" height="86" rx="5"/>
+      <text class="ts" x="42" y="180">you host it: ECS, Kubernetes</text>
+      <text class="ts" x="42" y="198">you build: sign-in, sessions,</text>
+      <text class="ts" x="42" y="214">sandboxing, tracing</text>
+      <text class="ts tmu" x="42" y="236">the reference service</text>
+
+      <rect class="n" x="284" y="16" width="252" height="244" rx="8"/>
+      <text class="tl" x="298" y="38">N8N</text>
+      <text class="tb" x="298" y="62">A workflow of nodes</text>
+      <text class="ts" x="298" y="84">a trigger starts it; an AI Agent</text>
+      <text class="ts" x="298" y="100">node runs the loop, with sub-</text>
+      <text class="ts" x="298" y="116">nodes: chat model, memory, tools</text>
+      <text class="ts" x="298" y="140">hundreds of app integrations</text>
+      <rect class="n-soft" x="298" y="160" width="224" height="86" rx="5"/>
+      <text class="ts" x="310" y="180">n8n Cloud, or your instance:</text>
+      <text class="ts" x="310" y="198">Docker, Postgres; to scale,</text>
+      <text class="ts" x="310" y="214">Redis and workers</text>
+      <text class="ts tmu" x="310" y="236">credentials stored in n8n</text>
+
+      <rect class="n-acc" x="552" y="16" width="252" height="244" rx="8"/>
+      <text class="tl" x="566" y="38">AWS AGENTCORE</text>
+      <text class="tb" x="566" y="62">Harness or Runtime</text>
+      <text class="ts" x="566" y="84">harness: declare model, tools,</text>
+      <text class="ts" x="566" y="100">prompt; AgentCore runs the loop</text>
+      <text class="ts" x="566" y="116">Runtime: your agent code, any</text>
+      <text class="ts" x="566" y="132">framework, in a container</text>
+      <rect class="n-soft" x="566" y="160" width="224" height="86" rx="5"/>
+      <text class="ts" x="578" y="180">a microVM per session</text>
+      <text class="ts" x="578" y="198">managed around it: Gateway,</text>
+      <text class="ts" x="578" y="214">Identity, Memory, Observability</text>
+      <text class="ts tmu" x="578" y="236">AWS runs the infrastructure</text>
+
+      <line class="rule-strong" x1="40" y1="290" x2="780" y2="290"/>
+      <text class="ts" x="40" y="284">you own and operate the most</text>
+      <text class="ts" x="780" y="284" text-anchor="end">the platform operates the most</text>
+      <text class="ts tmu" x="410" y="314" text-anchor="middle">All three can use the same patterns: a workflow or an agent, tools over MCP, a person approving actions.</text>
+      <text class="ts tmu" x="410" y="330" text-anchor="middle">What differs is who builds and runs the parts around the model.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 6.7</span>Three places an agent can run. The further right, the less you operate and the less you control: n8n trades code for a visual editor and ready-made integrations, AgentCore trades your servers for AWS's managed sessions, identity and gateway.</figcaption>
+  </figure>
+
+  <h4>n8n: a workflow of nodes</h4>
+  <p>n8n is a workflow automation tool with a visual editor, available as n8n Cloud or self-hosted. A <strong>workflow</strong> is a set of connected <strong>nodes</strong>. A <strong>trigger node</strong> starts it: a schedule, a webhook, an event in an app, a chat message. Every other node acts: it calls an app, transforms data, branches, or waits. Data passes between nodes as an array of items, each an object under a <code>json</code> key (and <code>binary</code> for files), and most nodes run once per item. Each node carries settings that decide failure behavior: <em>Retry On Fail</em>, and <em>On Error</em> to stop the workflow, continue, or continue through an error output that a later node can handle. A workflow can call another as a sub-workflow, and an error workflow runs when a workflow fails. Credentials for apps are stored in n8n and chosen on the nodes that use them; by default a workflow uses the same credential whoever runs it, and n8n also offers end-user credentials, where each user's own is used.</p>
+  <p>Where no node fits, the <strong>Code node</strong> runs JavaScript, or Python through task runners (the older Pyodide-based Python was removed in n8n 2.0). On n8n Cloud, Python code cannot import libraries; self-hosted, modules must be installed in the runner image and allowed explicitly. n8n's documentation calls task runners the only isolation layer between user code and n8n, and recommends running them in external mode, as separate containers. Community nodes, published by others, have full access to the machine n8n runs on and to the data in its workflows. n8n inspects some and lists them as verified; unverified ones come straight from npm, are not available on n8n Cloud, and can be switched off on a self-hosted instance.</p>
+
+  <figure class="fig wide" id="fig-6-8">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="An n8n agent workflow. A Chat Trigger node starts the workflow. The AI Agent node is a root node; below it hang sub-nodes: a chat model, which is required; memory, optional; and tools, at least one: an HTTP Request tool, a call to another n8n workflow, or an MCP Client Tool that uses an external MCP server's tools. A tool marked for approval pauses the workflow until a person approves in Slack or chat. The agent's answer, as items, passes to a Slack node. If any node fails, the error workflow runs. Items flowing between nodes look like a list of objects with a json key.">
+      <rect class="n" x="16" y="40" width="130" height="58" rx="6"/>
+      <text class="tb" x="81" y="64" text-anchor="middle">Chat Trigger</text>
+      <text class="ts" x="81" y="84" text-anchor="middle">starts the run</text>
+      <line class="e" x1="147" y1="69" x2="214" y2="69" marker-end="url(#a)"/>
+      <rect class="n-acc" x="218" y="30" width="250" height="78" rx="6"/>
+      <text class="tb" x="232" y="54">AI Agent (root node)</text>
+      <text class="ts" x="232" y="74">runs the loop: the model picks</text>
+      <text class="ts" x="232" y="90">tools until it can answer</text>
+      <line class="e" x1="469" y1="69" x2="560" y2="69" marker-end="url(#a)"/>
+      <text class="ts tmu" x="514" y="60" text-anchor="middle">items</text>
+      <rect class="n" x="564" y="40" width="130" height="58" rx="6"/>
+      <text class="tb" x="629" y="64" text-anchor="middle">Slack</text>
+      <text class="ts" x="629" y="84" text-anchor="middle">posts the answer</text>
+      <rect class="n-soft" x="708" y="40" width="96" height="58" rx="6"/>
+      <text class="ts" x="756" y="62" text-anchor="middle">error</text>
+      <text class="ts" x="756" y="78" text-anchor="middle">workflow, if</text>
+      <text class="ts" x="756" y="94" text-anchor="middle">a node fails</text>
+
+      <line class="e" x1="262" y1="109" x2="140" y2="150" marker-end="url(#a)"/>
+      <line class="e" x1="320" y1="109" x2="300" y2="150" marker-end="url(#a)"/>
+      <line class="e" x1="400" y1="109" x2="480" y2="150" marker-end="url(#a)"/>
+      <text class="tl" x="218" y="134">SUB-NODES</text>
+      <rect class="n" x="40" y="154" width="190" height="56" rx="5"/>
+      <text class="tb" x="52" y="176">Chat model</text><text class="ts" x="52" y="194">required: one per agent</text>
+      <rect class="n" x="246" y="154" width="150" height="56" rx="5"/>
+      <text class="tb" x="258" y="176">Memory</text><text class="ts" x="258" y="194">optional: chat history</text>
+      <rect class="n-acc" x="412" y="154" width="392" height="56" rx="5"/>
+      <text class="tb" x="424" y="176">Tools, at least one</text>
+      <text class="ts" x="424" y="194">HTTP Request · another workflow · MCP Client Tool</text>
+      <rect class="n-soft" x="412" y="222" width="392" height="40" rx="5"/>
+      <text class="ts" x="424" y="246">a tool marked for approval pauses until a person approves</text>
+      <text class="tm ts" x="16" y="250">[ {"json": {...}}, {"json": {...}} ]</text>
+      <text class="ts tmu" x="16" y="268">what flows between nodes: items</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 6.8</span>An n8n agent workflow. The AI Agent node is a root node, and its parts are sub-nodes: one chat model, optional memory, at least one tool. n8n's AI nodes implement LangChain's JavaScript framework. An MCP Client Tool lets the agent use an MCP server's tools, and an MCP Server Trigger does the reverse, exposing n8n workflows as tools to other MCP clients.</figcaption>
+  </figure>
+  <p>To scale a self-hosted instance, n8n's <strong>queue mode</strong> splits the work: the main instance takes timers and webhook calls and creates executions without running them; Redis queues them; workers pick them up and run them; Postgres stores the data. Queue mode is not supported on SQLite, the default database, and every worker needs the main instance's encryption key. Finished executions are pruned by default after 14 days or past 10,000. Features such as SSO, Git-based version control, multiple environments and log streaming need a paid plan.</p>
+  <p>n8n's code is published under the Sustainable Use License, not an open-source license. It allows use for your own internal business purposes, building workflows for clients as a service, and running n8n behind your own product. It does not allow hosting n8n as a service where clients build workflows, or letting external users build or configure workflows through your product. Read the license before a product depends on it.</p>
+
+  <h4>AWS: AgentCore, and what happened to Bedrock Agents</h4>
+  <p>AWS's first managed agent service, Bedrock Agents, is now <strong>Bedrock Agents Classic</strong>: closed to new customers, in maintenance mode, with no new features and a frozen model list. Accounts that already use it keep it, and AWS recommends migrating to <strong>Amazon Bedrock AgentCore</strong>. Bedrock itself, its models, knowledge bases and guardrails, is unaffected. AgentCore is a set of services that work together or alone, with any framework and any model. AWS offers two ways to run an agent on it, and its advice is plain: use the harness unless you have a specific reason to own the loop yourself.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th></th><th>Harness</th><th>Runtime</th></tr></thead>
+      <tbody>
+        <tr><td data-label="">You provide</td><td data-label="Harness">Configuration: model, system prompt, tools</td><td data-label="Runtime">Code: your agent in any framework (Strands, LangGraph, CrewAI, OpenAI Agents SDK, Claude Agent SDK, your own), as an ARM64 container</td></tr>
+        <tr><td data-label="">The loop</td><td data-label="Harness">Managed by AgentCore, built on Strands Agents</td><td data-label="Runtime">Yours</td></tr>
+        <tr><td data-label="">Each session</td><td data-label="Harness" colspan="2">Its own microVM, with its own CPU, memory and filesystem; destroyed and wiped when the session ends</td></tr>
+        <tr><td data-label="">Cannot do</td><td data-label="Harness">Choose the framework, graph or workflow patterns, two-way streaming</td><td data-label="Runtime">Nothing on that list, at the cost of writing and maintaining the code</td></tr>
+        <tr><td data-label="">Changes and rollback</td><td data-label="Harness" colspan="2">Immutable versions behind named endpoints (dev, test, prod); roll back by pointing an endpoint at an earlier version</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure class="fig wide" id="fig-6-9">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 380" role="img" aria-label="AgentCore around one agent. A caller, your application or a user, calls a Runtime endpoint, signed with IAM or carrying an OAuth token from your identity provider. The endpoint points at a version. Each session runs in its own microVM, which holds your agent code or the harness. From the session: Gateway turns APIs, Lambda functions, OpenAPI or Smithy services and existing MCP servers into one MCP endpoint of tools, injects each target's credentials, and Policy checks every tool call before it runs. Identity issues the outbound tokens, on behalf of the user or of the agent. Memory keeps short-term events and long-term records per user. Code Interpreter and Browser are sandboxes. The agent calls models in Bedrock or other providers. Observability sends OpenTelemetry traces to CloudWatch. In VPC mode, AgentCore places network interfaces in your subnets, with your security groups.">
+      <rect class="n" x="16" y="40" width="120" height="70" rx="6"/>
+      <text class="tb" x="76" y="66" text-anchor="middle">Caller</text>
+      <text class="ts" x="76" y="84" text-anchor="middle">your app</text>
+      <text class="ts" x="76" y="100" text-anchor="middle">or a user</text>
+      <line class="e-acc" x1="137" y1="75" x2="186" y2="75" marker-end="url(#a-acc)"/>
+      <text class="ts" x="16" y="132">signed with IAM, or</text>
+      <text class="ts" x="16" y="148">an OAuth token from</text>
+      <text class="ts" x="16" y="164">your identity provider</text>
+
+      <rect class="zone" x="190" y="20" width="270" height="250" rx="8"/>
+      <text class="tl" x="204" y="40">RUNTIME</text>
+      <rect class="n" x="204" y="52" width="242" height="40" rx="5"/>
+      <text class="ts" x="216" y="77">endpoint (prod) → version 7</text>
+      <rect class="n-acc" x="204" y="104" width="242" height="150" rx="5"/>
+      <text class="tb" x="216" y="126">a microVM per session</text>
+      <text class="ts" x="216" y="148">your agent code, or the harness</text>
+      <text class="ts" x="216" y="170">idle 15 min: environment ends</text>
+      <text class="ts" x="216" y="186">at most 8 h by default</text>
+      <text class="ts" x="216" y="208">state that must last goes</text>
+      <text class="ts" x="216" y="224">to Memory, not the session</text>
+      <text class="ts tmu" x="216" y="244">runs under an execution role</text>
+
+      <rect class="n-acc" x="500" y="20" width="304" height="42" rx="5"/><text class="tb" x="512" y="37">Gateway</text><text class="ts" x="512" y="54">tools as one MCP endpoint; Policy checks each call</text>
+      <path class="e" d="M447,180 C472,180 474,41 498,41" marker-end="url(#a)"/>
+      <rect class="n" x="500" y="70" width="304" height="42" rx="5"/><text class="tb" x="512" y="87">Identity</text><text class="ts" x="512" y="104">outbound tokens, for the user or the agent</text>
+      <path class="e" d="M447,180 C472,180 474,91 498,91" marker-end="url(#a)"/>
+      <rect class="n" x="500" y="120" width="304" height="42" rx="5"/><text class="tb" x="512" y="137">Memory</text><text class="ts" x="512" y="154">short- and long-term, kept per user</text>
+      <path class="e" d="M447,180 C472,180 474,141 498,141" marker-end="url(#a)"/>
+      <rect class="n" x="500" y="170" width="304" height="42" rx="5"/><text class="tb" x="512" y="187">Code Interpreter and Browser</text><text class="ts" x="512" y="204">sandboxes for code and for web pages</text>
+      <path class="e" d="M447,180 C472,180 474,191 498,191" marker-end="url(#a)"/>
+      <rect class="n" x="500" y="220" width="304" height="42" rx="5"/><text class="tb" x="512" y="237">Models</text><text class="ts" x="512" y="254">in Bedrock, or from other providers</text>
+      <path class="e" d="M447,180 C472,180 474,241 498,241" marker-end="url(#a)"/>
+
+      <rect class="n-soft" x="190" y="290" width="614" height="32" rx="5"/>
+      <text class="ts" x="204" y="311">Observability: OpenTelemetry traces of every step, to CloudWatch</text>
+      <rect class="zone" x="190" y="332" width="614" height="38" rx="6"/>
+      <text class="ts" x="204" y="356">VPC mode: network interfaces in your subnets, with your security groups; a public subnet gives no internet (use NAT)</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 6.9</span>AgentCore around one agent. The agent's session is isolated in its own microVM and short-lived; what must survive goes to Memory. Tools are reached through Gateway, where Policy can refuse a call before it runs, and Identity holds the tokens for third-party services, so the agent's code never stores them.</figcaption>
+  </figure>
+  <p>Limits shape the design. A synchronous request may run 15 minutes, a streaming connection 60, and an asynchronous job 8 hours; payloads go up to 100 MB. In an AWS account, AgentCore runs your agent under an execution role it assumes, which grants pulling the image from ECR and writing logs, traces and metrics. AWS warns that its managed full-access policy is broad and that the policies its CLI creates are for development only, so production roles are written by hand. The harness has no charge of its own; you pay for the underlying capabilities as you use them.</p>
+
+  <h4>Choosing, and when a team needs which</h4>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Option</th><th>Choose it when</th><th>What you give up</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Option">Your code (Python)</td><td data-label="Choose it when">The agent is part of your product; tools must act with each user's rights; the loop, prompts and tools are tested and evaluated in CI with the rest of the code; you need a loop no product offers</td><td data-label="What you give up">You build and run hosting, sessions, sandboxing, retries and tracing yourself</td></tr>
+        <tr><td data-label="Option">n8n</td><td data-label="Choose it when">The work is mostly connecting apps and moving data between them; the people who own the process should change it themselves in an editor; the automation is internal; a per-node execution log and retries are enough to operate it</td><td data-label="What you give up">Code review, tests and evals around the logic; offering workflow-building to external users (the license); some controls are on paid plans</td></tr>
+        <tr><td data-label="Option">AgentCore harness</td><td data-label="Choose it when">You are on AWS and want a working agent from configuration: a model, a prompt and tools, with sessions, memory, identity and tracing managed</td><td data-label="What you give up">Framework choice, graph or workflow patterns, two-way streaming; availability depends on the region</td></tr>
+        <tr><td data-label="Option">AgentCore Runtime</td><td data-label="Choose it when">You have agent code in a framework and want AWS to run it: isolated sessions up to hours long, managed identity and a gateway to tools</td><td data-label="What you give up">You still own the loop's code; you adopt AWS's session model, limits and pricing</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Why n8n over Python?</strong> Not because it is better at agents, but because it changes who can build and change the automation, and how fast. A support lead can wire a ticket system to Slack and a model in an afternoon, and adjust it the next day. When the same automation becomes part of the product, or must pass an evaluation before each release, it belongs in code. <strong>Why AgentCore?</strong> When a team on AWS would otherwise build per-session isolation, long-running sessions, OAuth to third-party tools and a policy check on every tool call, and would rather operate none of it. AWS describes a third use: a paved path for many teams, with approved tools, shared memory and governed access in one place.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Stage</th><th>What fits</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Stage">Trying an idea</td><td data-label="What fits">An n8n workflow, or a short script. Measure it on real cases before building more (the ladder, above).</td></tr>
+        <tr><td data-label="Stage">An internal automation, owned by an operations team</td><td data-label="What fits">n8n, self-hosted when the data must stay inside; a paid plan once SSO, Git versioning and environments matter.</td></tr>
+        <tr><td data-label="Stage">An agent in the product, owned by one team</td><td data-label="What fits">Code in the team's service, with evals in CI and tools that act as the user. On AWS, AgentCore Runtime when the team would rather not build sandboxed sessions.</td></tr>
+        <tr><td data-label="Stage">Many teams, many agents</td><td data-label="What fits">A shared platform: AgentCore's gateway, identity, policy and registry, or an in-house equivalent, so each team does not rebuild the same controls.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
   <h3 id="ch6-traps">Traps</h3>
   <div class="table-wrap">
     <table class="grid traps stack">
       <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
       <tbody>
+        <tr><td data-label="Symptom">Creating a Bedrock agent fails with AccessDenied in a new account</td><td data-label="Cause">Bedrock Agents Classic is closed to accounts that have not used it</td><td data-label="Fix">Build on AgentCore: the harness, or Runtime with your own code.</td></tr>
+        <tr><td data-label="Symptom">An agent forgets the conversation after a pause</td><td data-label="Cause">An AgentCore session's environment ends after 15 idle minutes, and its state with it</td><td data-label="Fix">Keep what must last in AgentCore Memory, keyed by user, not in the session.</td></tr>
+        <tr><td data-label="Symptom">An n8n Code node can read the server's secrets</td><td data-label="Cause">Task runners in internal mode run as a child process of n8n</td><td data-label="Fix">Run task runners in external mode, as separate containers.</td></tr>
+        <tr><td data-label="Symptom">n8n queue mode will not start reliably</td><td data-label="Cause">Queue mode on SQLite, or workers without the main instance's encryption key</td><td data-label="Fix">Postgres, Redis, and the same encryption key on every worker.</td></tr>
         <tr><td data-label="Symptom">The agent answers "no recent alerts" when there are some</td><td data-label="Cause">A prompt hint became a filter argument</td><td data-label="Fix">Read the tool calls in the audit trail; state the default call explicitly.</td></tr>
         <tr><td data-label="Symptom">An agent loops until the step limit</td><td data-label="Cause">Repeated calls, or errors it cannot read</td><td data-label="Fix">Refuse repeated calls; return readable errors; count steps.</td></tr>
         <tr><td data-label="Symptom">A planted instruction made a tool read other tenants' data</td><td data-label="Cause">The tool ran as a service account, or took a tenant from its arguments</td><td data-label="Fix">Act as the asker; identity from the session.</td></tr>
@@ -277,6 +469,14 @@ runbook controls its text - with credentials redacted, as in the pipeline.</code
 
   <h3 id="ch6-questions">Questions</h3>
   <ol class="qs">
+    <li>
+      <p>Why would a team build an automation in n8n rather than in Python, and when should it move to code?</p>
+      <details class="ans"><summary>Answer</summary><p>n8n changes who can build and change the automation, and how fast: people who own a process wire apps together in a visual editor, with ready-made integrations, per-node retries and an execution log. It moves to code when it becomes part of the product, must pass evaluations before each release, needs a loop or permissions the tool cannot express, or would let external users build workflows, which n8n's license does not allow.</p></details>
+    </li>
+    <li>
+      <p>On AgentCore, when would you choose Runtime over the harness?</p>
+      <details class="ans"><summary>Answer</summary><p>AWS's advice is the harness unless you have a reason to own the loop. Reasons are an existing agent codebase in a framework, or patterns the harness cannot express: a framework of your choice, graph or workflow-style orchestration, two-way streaming. Runtime runs your container in the same isolated per-session microVMs, and you call Memory, Gateway and Identity from your code.</p></details>
+    </li>
     <li>
       <p>When should you not use an agent?</p>
       <details class="ans"><summary>Answer</summary><p>When the steps are known in advance, when latency or cost matters, when the result must be predictable and auditable, and when the model is small. Code the steps as a workflow instead.</p></details>

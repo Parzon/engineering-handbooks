@@ -28,7 +28,7 @@
   <ol>
     <li><a href="#how-to-read">How to read this handbook</a></li>
     <li><a href="#contents">Contents</a></li>
-    <li class="toc-part"><span class="label">Part I · The new layer</span><ol><li><a href="#ch1">1 · What changed, and what did not</a></li><li class="toc-sub"><a href="#ch1-small">The AI part is small</a></li><li class="toc-sub"><a href="#ch1-new">What is genuinely new</a></li><li class="toc-sub"><a href="#ch1-evals">Tests and evals are different tools</a></li><li class="toc-sub"><a href="#ch1-code">Safety in code</a></li><li class="toc-sub"><a href="#ch1-map">How this handbook is organized</a></li><li class="toc-sub"><a href="#ch1-traps">Traps</a></li><li class="toc-sub"><a href="#ch1-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part II · How models run</span><ol><li><a href="#ch2">2 · How a model produces text</a></li><li class="toc-sub"><a href="#ch2-loop">The loop</a></li><li class="toc-sub"><a href="#ch2-attention">Attention</a></li><li class="toc-sub"><a href="#ch2-sampling">Logits</a></li><li class="toc-sub"><a href="#ch2-phases">Prefill and decode</a></li><li class="toc-sub"><a href="#ch2-window">The context window</a></li><li class="toc-sub"><a href="#ch2-traps">Traps</a></li><li class="toc-sub"><a href="#ch2-questions">Questions</a></li><li><a href="#ch3">3 · Serving models</a></li><li class="toc-sub"><a href="#ch3-batching">Throughput and latency</a></li><li class="toc-sub"><a href="#ch3-memory">GPU memory</a></li><li class="toc-sub"><a href="#ch3-parallel">Parallelism across GPUs</a></li><li class="toc-sub"><a href="#ch3-arch">The serving architecture</a></li><li class="toc-sub"><a href="#ch3-build">Managed API or self-hosted?</a></li><li class="toc-sub"><a href="#ch3-traps">Traps</a></li><li class="toc-sub"><a href="#ch3-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part III · Building with models</span><ol><li><a href="#ch4">4 · Retrieval-augmented generation</a></li><li class="toc-sub"><a href="#ch4-pipeline">The pipeline</a></li><li class="toc-sub"><a href="#ch4-chunking">Chunking</a></li><li class="toc-sub"><a href="#ch4-embed">Embeddings</a></li><li class="toc-sub"><a href="#ch4-hybrid">Hybrid search and fusion</a></li><li class="toc-sub"><a href="#ch4-tenants">Retrieval that respects who is asking</a></li><li class="toc-sub"><a href="#ch4-measure">Measuring retrieval</a></li><li class="toc-sub"><a href="#ch4-context">Context</a></li><li class="toc-sub"><a href="#ch4-traps">Traps</a></li><li class="toc-sub"><a href="#ch4-questions">Questions</a></li><li><a href="#ch5">5 · Knowledge graphs and GraphRAG</a></li><li class="toc-sub"><a href="#ch5-graph">What a knowledge graph is</a></li><li class="toc-sub"><a href="#ch5-graphrag">GraphRAG</a></li><li class="toc-sub"><a href="#ch5-worth">Is it worth building?</a></li><li class="toc-sub"><a href="#ch5-fill">Who fills it</a></li><li class="toc-sub"><a href="#ch5-current">Keeping it current</a></li><li class="toc-sub"><a href="#ch5-traps">Traps</a></li><li class="toc-sub"><a href="#ch5-questions">Questions</a></li><li><a href="#ch6">6 · Agents, tools and MCP</a></li><li class="toc-sub"><a href="#ch6-ladder">Workflow or agent</a></li><li class="toc-sub"><a href="#ch6-loop">The agent loop and its guards</a></li><li class="toc-sub"><a href="#ch6-tools">Tools</a></li><li class="toc-sub"><a href="#ch6-mcp">MCP</a></li><li class="toc-sub"><a href="#ch6-approval">Memory</a></li><li class="toc-sub"><a href="#ch6-observe">Observing and evaluating an agent</a></li><li class="toc-sub"><a href="#ch6-traps">Traps</a></li><li class="toc-sub"><a href="#ch6-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part IV · Proving it works</span><ol><li><a href="#ch7">7 · Evaluation</a></li><li class="toc-sub"><a href="#ch7-metrics">No single accuracy</a></li><li class="toc-sub"><a href="#ch7-harness">Cases</a></li><li class="toc-sub"><a href="#ch7-stats">How many runs</a></li><li class="toc-sub"><a href="#ch7-judge">The judge</a></li><li class="toc-sub"><a href="#ch7-prompt">Prompts have side effects</a></li><li class="toc-sub"><a href="#ch7-data">Datasets</a></li><li class="toc-sub"><a href="#ch7-traps">Traps</a></li><li class="toc-sub"><a href="#ch7-questions">Questions</a></li><li><a href="#ch8">8 · AI observability</a></li><li class="toc-sub"><a href="#ch8-trace">One question</a></li><li class="toc-sub"><a href="#ch8-diagnose">Diagnosing a worse answer</a></li><li class="toc-sub"><a href="#ch8-privacy">Telemetry is a copy of the data</a></li><li class="toc-sub"><a href="#ch8-cost">What tracing costs</a></li><li class="toc-sub"><a href="#ch8-link">Linking the signals</a></li><li class="toc-sub"><a href="#ch8-traps">Traps</a></li><li class="toc-sub"><a href="#ch8-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part V · Making it safe</span><ol><li><a href="#ch9">9 · AI security</a></li><li class="toc-sub"><a href="#ch9-chain">The chain</a></li><li class="toc-sub"><a href="#ch9-injection">Prompt injection is bounded by…</a></li><li class="toc-sub"><a href="#ch9-redact">Secrets</a></li><li class="toc-sub"><a href="#ch9-audit">An audit trail</a></li><li class="toc-sub"><a href="#ch9-owasp">Mapped to the OWASP Top 10 for LLM…</a></li><li class="toc-sub"><a href="#ch9-traps">Traps</a></li><li class="toc-sub"><a href="#ch9-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VI · Running it</span><ol><li><a href="#ch10">10 · Cost and performance</a></li><li class="toc-sub"><a href="#ch10-model">The cost model</a></li><li class="toc-sub"><a href="#ch10-levers">The levers</a></li><li class="toc-sub"><a href="#ch10-jump">When the bill jumps</a></li><li class="toc-sub"><a href="#ch10-perf">Performance</a></li><li class="toc-sub"><a href="#ch10-traps">Traps</a></li><li class="toc-sub"><a href="#ch10-questions">Questions</a></li><li><a href="#ch11">11 · Distributed AI systems</a></li><li class="toc-sub"><a href="#ch11-queue">Queues</a></li><li class="toc-sub"><a href="#ch11-retries">Retries</a></li><li class="toc-sub"><a href="#ch11-races">Races</a></li><li class="toc-sub"><a href="#ch11-traps">Traps</a></li><li class="toc-sub"><a href="#ch11-questions">Questions</a></li><li><a href="#ch12">12 · Production AI operations</a></li><li class="toc-sub"><a href="#ch12-versions">Version everything that changes…</a></li><li class="toc-sub"><a href="#ch12-release">Releasing a behavior change</a></li><li class="toc-sub"><a href="#ch12-rollback">One rollback per kind of change</a></li><li class="toc-sub"><a href="#ch12-slo">Service levels for an AI feature</a></li><li class="toc-sub"><a href="#ch12-checklist">The end-to-end checklist</a></li><li class="toc-sub"><a href="#ch12-traps">Traps</a></li><li class="toc-sub"><a href="#ch12-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VII · The data platform</span><ol><li><a href="#ch13">13 · Warehouses, lakehouses and streams</a></li><li class="toc-sub"><a href="#ch13-layers">The layers</a></li><li class="toc-sub"><a href="#ch13-cdc">Change data capture and streams</a></li><li class="toc-sub"><a href="#ch13-kimball">The classic warehouse</a></li><li class="toc-sub"><a href="#ch13-snowflake">A cloud warehouse's features</a></li><li class="toc-sub"><a href="#ch13-simple">When it is overcomplicated</a></li><li class="toc-sub"><a href="#ch13-traps">Traps</a></li><li class="toc-sub"><a href="#ch13-questions">Questions</a></li><li><a href="#ch14">14 · Data engineering for AI</a></li><li class="toc-sub"><a href="#ch14-path">The path data takes to an AI feature</a></li><li class="toc-sub"><a href="#ch14-contracts">Contracts</a></li><li class="toc-sub"><a href="#ch14-training">Features</a></li><li class="toc-sub"><a href="#ch14-traps">Traps</a></li><li class="toc-sub"><a href="#ch14-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VIII · Architecture and leadership</span><ol><li><a href="#ch15">15 · Making and recording decisions</a></li><li class="toc-sub"><a href="#ch15-record">A decision</a></li><li class="toc-sub"><a href="#ch15-criteria">What decides most choices</a></li><li class="toc-sub"><a href="#ch15-choices">The recurring AI choices</a></li><li class="toc-sub"><a href="#ch15-traps">Traps</a></li><li class="toc-sub"><a href="#ch15-questions">Questions</a></li><li><a href="#ch16">16 · Stack defaults and the complexity dial</a></li><li class="toc-sub"><a href="#ch16-principle">The governing principle</a></li><li class="toc-sub"><a href="#ch16-defaults">Defaults</a></li><li class="toc-sub"><a href="#ch16-dial">The dial</a></li><li class="toc-sub"><a href="#ch16-ai">The AI pieces on the dial</a></li><li class="toc-sub"><a href="#ch16-slo">Cost and latency as an explicit dial</a></li><li class="toc-sub"><a href="#ch16-traps">Traps</a></li><li class="toc-sub"><a href="#ch16-questions">Questions</a></li><li><a href="#ch17">17 · Leading AI delivery</a></li><li class="toc-sub"><a href="#ch17-shape">From a vague ask to slices with owners</a></li><li class="toc-sub"><a href="#ch17-twelve">A twelve-week shape</a></li><li class="toc-sub"><a href="#ch17-estimate">Estimates</a></li><li class="toc-sub"><a href="#ch17-pressure">Three weeks asked</a></li><li class="toc-sub"><a href="#ch17-team">Standards</a></li><li class="toc-sub"><a href="#ch17-traps">Traps</a></li><li class="toc-sub"><a href="#ch17-questions">Questions</a></li><li><a href="#ch18">18 · Working with AI coding agents</a></li><li class="toc-sub"><a href="#ch18-loop">The loop</a></li><li class="toc-sub"><a href="#ch18-contract">The repository is the contract</a></li><li class="toc-sub"><a href="#ch18-review">Reviewing agent-written code</a></li><li class="toc-sub"><a href="#ch18-n8n">Workflow tools beside code</a></li><li class="toc-sub"><a href="#ch18-features">And when building AI features</a></li><li class="toc-sub"><a href="#ch18-traps">Traps</a></li><li class="toc-sub"><a href="#ch18-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Appendices</span><ol><li><a href="#app-a">A · Glossary</a></li><li><a href="#app-b">B · Decision index</a></li><li><a href="#app-c">C · Repository index</a></li><li><a href="#app-d">D · Trap index</a></li></ol></li>
+    <li class="toc-part"><span class="label">Part I · The new layer</span><ol><li><a href="#ch1">1 · What changed, and what did not</a></li><li class="toc-sub"><a href="#ch1-small">The AI part is small</a></li><li class="toc-sub"><a href="#ch1-new">What is genuinely new</a></li><li class="toc-sub"><a href="#ch1-evals">Tests and evals are different tools</a></li><li class="toc-sub"><a href="#ch1-code">Safety in code</a></li><li class="toc-sub"><a href="#ch1-map">How this handbook is organized</a></li><li class="toc-sub"><a href="#ch1-traps">Traps</a></li><li class="toc-sub"><a href="#ch1-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part II · How models run</span><ol><li><a href="#ch2">2 · How a model produces text</a></li><li class="toc-sub"><a href="#ch2-loop">The loop</a></li><li class="toc-sub"><a href="#ch2-attention">Attention</a></li><li class="toc-sub"><a href="#ch2-sampling">Logits</a></li><li class="toc-sub"><a href="#ch2-phases">Prefill and decode</a></li><li class="toc-sub"><a href="#ch2-window">The context window</a></li><li class="toc-sub"><a href="#ch2-traps">Traps</a></li><li class="toc-sub"><a href="#ch2-questions">Questions</a></li><li><a href="#ch3">3 · Serving models</a></li><li class="toc-sub"><a href="#ch3-batching">Throughput and latency</a></li><li class="toc-sub"><a href="#ch3-memory">GPU memory</a></li><li class="toc-sub"><a href="#ch3-parallel">Parallelism across GPUs</a></li><li class="toc-sub"><a href="#ch3-arch">The serving architecture</a></li><li class="toc-sub"><a href="#ch3-build">Managed API or self-hosted?</a></li><li class="toc-sub"><a href="#ch3-traps">Traps</a></li><li class="toc-sub"><a href="#ch3-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part III · Building with models</span><ol><li><a href="#ch4">4 · Retrieval-augmented generation</a></li><li class="toc-sub"><a href="#ch4-pipeline">The pipeline</a></li><li class="toc-sub"><a href="#ch4-chunking">Chunking</a></li><li class="toc-sub"><a href="#ch4-embed">Embeddings</a></li><li class="toc-sub"><a href="#ch4-hybrid">Hybrid search and fusion</a></li><li class="toc-sub"><a href="#ch4-tenants">Retrieval that respects who is asking</a></li><li class="toc-sub"><a href="#ch4-measure">Measuring retrieval</a></li><li class="toc-sub"><a href="#ch4-context">Context</a></li><li class="toc-sub"><a href="#ch4-traps">Traps</a></li><li class="toc-sub"><a href="#ch4-questions">Questions</a></li><li><a href="#ch5">5 · Knowledge graphs and GraphRAG</a></li><li class="toc-sub"><a href="#ch5-graph">What a knowledge graph is</a></li><li class="toc-sub"><a href="#ch5-graphrag">GraphRAG</a></li><li class="toc-sub"><a href="#ch5-worth">Is it worth building?</a></li><li class="toc-sub"><a href="#ch5-fill">Who fills it</a></li><li class="toc-sub"><a href="#ch5-current">Keeping it current</a></li><li class="toc-sub"><a href="#ch5-traps">Traps</a></li><li class="toc-sub"><a href="#ch5-questions">Questions</a></li><li><a href="#ch6">6 · Agents, tools and MCP</a></li><li class="toc-sub"><a href="#ch6-ladder">Workflow or agent</a></li><li class="toc-sub"><a href="#ch6-loop">The agent loop and its guards</a></li><li class="toc-sub"><a href="#ch6-tools">Tools</a></li><li class="toc-sub"><a href="#ch6-mcp">MCP</a></li><li class="toc-sub"><a href="#ch6-approval">Memory</a></li><li class="toc-sub"><a href="#ch6-observe">Observing and evaluating an agent</a></li><li class="toc-sub"><a href="#ch6-platforms">Where an agent runs</a></li><li class="toc-sub"><a href="#ch6-traps">Traps</a></li><li class="toc-sub"><a href="#ch6-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part IV · Proving it works</span><ol><li><a href="#ch7">7 · Evaluation</a></li><li class="toc-sub"><a href="#ch7-metrics">No single accuracy</a></li><li class="toc-sub"><a href="#ch7-harness">Cases</a></li><li class="toc-sub"><a href="#ch7-stats">How many runs</a></li><li class="toc-sub"><a href="#ch7-judge">The judge</a></li><li class="toc-sub"><a href="#ch7-prompt">Prompts have side effects</a></li><li class="toc-sub"><a href="#ch7-data">Datasets</a></li><li class="toc-sub"><a href="#ch7-traps">Traps</a></li><li class="toc-sub"><a href="#ch7-questions">Questions</a></li><li><a href="#ch8">8 · AI observability</a></li><li class="toc-sub"><a href="#ch8-trace">One question</a></li><li class="toc-sub"><a href="#ch8-diagnose">Diagnosing a worse answer</a></li><li class="toc-sub"><a href="#ch8-privacy">Telemetry is a copy of the data</a></li><li class="toc-sub"><a href="#ch8-cost">What tracing costs</a></li><li class="toc-sub"><a href="#ch8-link">Linking the signals</a></li><li class="toc-sub"><a href="#ch8-traps">Traps</a></li><li class="toc-sub"><a href="#ch8-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part V · Making it safe</span><ol><li><a href="#ch9">9 · AI security</a></li><li class="toc-sub"><a href="#ch9-chain">The chain</a></li><li class="toc-sub"><a href="#ch9-injection">Prompt injection is bounded by…</a></li><li class="toc-sub"><a href="#ch9-redact">Secrets</a></li><li class="toc-sub"><a href="#ch9-audit">An audit trail</a></li><li class="toc-sub"><a href="#ch9-owasp">Mapped to the OWASP Top 10 for LLM…</a></li><li class="toc-sub"><a href="#ch9-traps">Traps</a></li><li class="toc-sub"><a href="#ch9-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VI · Running it</span><ol><li><a href="#ch10">10 · Cost and performance</a></li><li class="toc-sub"><a href="#ch10-model">The cost model</a></li><li class="toc-sub"><a href="#ch10-levers">The levers</a></li><li class="toc-sub"><a href="#ch10-jump">When the bill jumps</a></li><li class="toc-sub"><a href="#ch10-perf">Performance</a></li><li class="toc-sub"><a href="#ch10-traps">Traps</a></li><li class="toc-sub"><a href="#ch10-questions">Questions</a></li><li><a href="#ch11">11 · Distributed AI systems</a></li><li class="toc-sub"><a href="#ch11-queue">Queues</a></li><li class="toc-sub"><a href="#ch11-retries">Retries</a></li><li class="toc-sub"><a href="#ch11-races">Races</a></li><li class="toc-sub"><a href="#ch11-traps">Traps</a></li><li class="toc-sub"><a href="#ch11-questions">Questions</a></li><li><a href="#ch12">12 · Production AI operations</a></li><li class="toc-sub"><a href="#ch12-versions">Version everything that changes…</a></li><li class="toc-sub"><a href="#ch12-release">Releasing a behavior change</a></li><li class="toc-sub"><a href="#ch12-rollback">One rollback per kind of change</a></li><li class="toc-sub"><a href="#ch12-slo">Service levels for an AI feature</a></li><li class="toc-sub"><a href="#ch12-checklist">The end-to-end checklist</a></li><li class="toc-sub"><a href="#ch12-traps">Traps</a></li><li class="toc-sub"><a href="#ch12-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VII · The data platform</span><ol><li><a href="#ch13">13 · Warehouses, lakehouses and streams</a></li><li class="toc-sub"><a href="#ch13-layers">The layers</a></li><li class="toc-sub"><a href="#ch13-cdc">Change data capture and streams</a></li><li class="toc-sub"><a href="#ch13-kimball">The classic warehouse</a></li><li class="toc-sub"><a href="#ch13-inside">Snowflake</a></li><li class="toc-sub"><a href="#ch13-snowflake">A cloud warehouse's features</a></li><li class="toc-sub"><a href="#ch13-simple">When it is overcomplicated</a></li><li class="toc-sub"><a href="#ch13-traps">Traps</a></li><li class="toc-sub"><a href="#ch13-questions">Questions</a></li><li><a href="#ch14">14 · Data engineering for AI</a></li><li class="toc-sub"><a href="#ch14-path">The path data takes to an AI feature</a></li><li class="toc-sub"><a href="#ch14-contracts">Contracts</a></li><li class="toc-sub"><a href="#ch14-training">Features</a></li><li class="toc-sub"><a href="#ch14-traps">Traps</a></li><li class="toc-sub"><a href="#ch14-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VIII · Architecture and leadership</span><ol><li><a href="#ch15">15 · Making and recording decisions</a></li><li class="toc-sub"><a href="#ch15-record">A decision</a></li><li class="toc-sub"><a href="#ch15-criteria">What decides most choices</a></li><li class="toc-sub"><a href="#ch15-choices">The recurring AI choices</a></li><li class="toc-sub"><a href="#ch15-traps">Traps</a></li><li class="toc-sub"><a href="#ch15-questions">Questions</a></li><li><a href="#ch16">16 · Stack defaults and the complexity dial</a></li><li class="toc-sub"><a href="#ch16-principle">The governing principle</a></li><li class="toc-sub"><a href="#ch16-defaults">Defaults</a></li><li class="toc-sub"><a href="#ch16-dial">The dial</a></li><li class="toc-sub"><a href="#ch16-ai">The AI pieces on the dial</a></li><li class="toc-sub"><a href="#ch16-slo">Cost and latency as an explicit dial</a></li><li class="toc-sub"><a href="#ch16-traps">Traps</a></li><li class="toc-sub"><a href="#ch16-questions">Questions</a></li><li><a href="#ch17">17 · Leading AI delivery</a></li><li class="toc-sub"><a href="#ch17-shape">From a vague ask to slices with owners</a></li><li class="toc-sub"><a href="#ch17-twelve">A twelve-week shape</a></li><li class="toc-sub"><a href="#ch17-estimate">Estimates</a></li><li class="toc-sub"><a href="#ch17-pressure">Three weeks asked</a></li><li class="toc-sub"><a href="#ch17-team">Standards</a></li><li class="toc-sub"><a href="#ch17-traps">Traps</a></li><li class="toc-sub"><a href="#ch17-questions">Questions</a></li><li><a href="#ch18">18 · Working with AI coding agents</a></li><li class="toc-sub"><a href="#ch18-loop">The loop</a></li><li class="toc-sub"><a href="#ch18-contract">The repository is the contract</a></li><li class="toc-sub"><a href="#ch18-review">Reviewing agent-written code</a></li><li class="toc-sub"><a href="#ch18-n8n">Workflow tools beside code</a></li><li class="toc-sub"><a href="#ch18-features">And when building AI features</a></li><li class="toc-sub"><a href="#ch18-traps">Traps</a></li><li class="toc-sub"><a href="#ch18-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Appendices</span><ol><li><a href="#app-a">A · Glossary</a></li><li><a href="#app-b">B · Decision index</a></li><li><a href="#app-c">C · Repository index</a></li><li><a href="#app-d">D · Trap index</a></li></ol></li>
   </ol>
 </nav>
 
@@ -49,7 +49,7 @@
   <div class="series-list">
     <div class="here"><span class="n">1 · AI Engineering &amp; Architecture</span><span>The new layer: models, retrieval, agents, evaluation, safety.</span></div><a href="software-engineering.html"><span class="n">2 · Modern Software Engineering</span><span>Your skills, brought up to date: the service and its repository.</span></a><a href="cloud-delivery.html"><span class="n">3 · Cloud Delivery &amp; DevOps</span><span>From a laptop to production: pipelines, identity, the cloud.</span></a>
   </div>
-  <p class="edition">Edition 1 · Reference implementation: <code>triage-assistant</code> at <code>handbook-1 (0b81c10)</code></p>
+  <p class="edition">Edition 1 · Reference implementation: <code>triage-assistant</code> at <code>handbook-1 (3fc2c43)</code></p>
 </header>
 
 <section class="front" id="how-to-read">
@@ -104,7 +104,7 @@
       <li>The familiar part: seams and adapters, timeouts, streaming, access control, observability, capacity, supply chain. All of it still applies, and most of an AI service is this.</li>
       <li>Tests prove the code; <strong>evals</strong> measure the model and prompt together, as a pass rate over repeated runs.</li>
       <li>A safety property that matters goes in code, not in the prompt: a prompt rule is a probability.</li>
-      <li>In the reference service, the AI-specific logic is two small modules; everything around them is the standard platform.</li>
+      <li>In the reference service, the AI-specific logic is a handful of modules: the prompt, the model seam, retrieval, redaction and the agent's tools. Everything around them is the standard platform.</li>
     </ul>
   </div>
 
@@ -142,7 +142,7 @@
     <figcaption><span class="fig-n">Figure 1.1</span>One question through the reference service. The AI-specific parts are the accented boxes; the rest is the platform that Handbook 2 covers, which the AI parts rely on for their safety: the model is only ever given what the visibility query returns.</figcaption>
   </figure>
 
-  <p>The reference service is an incident triage assistant: an on-call engineer asks about the alerts their teams can see, and a model answers from those alerts and the teams' runbooks, streaming its answer and citing the runbook sections it used. Its AI-specific logic lives in two modules, one deciding what the model sees and one talking to any OpenAI-compatible endpoint. Everything else (sign-in, roles, database isolation, rate limits, streaming, telemetry, deployment) is the same platform a service without a model would need, and that is deliberate: a new project replaces the domain and the prompt, and keeps the rest.</p>
+  <p>The reference service is an incident triage assistant: an on-call engineer asks about the alerts their teams can see, and a model answers from those alerts and the teams' runbooks, streaming its answer and citing the runbook sections it used. Its AI-specific logic lives in a handful of modules: the prompt builder, the seam that talks to any OpenAI-compatible endpoint, runbook retrieval, credential redaction and, in agent mode, the tool loop and its tools, about a third of the application code. Everything else (sign-in, roles, database isolation, rate limits, streaming, telemetry, deployment) is the same platform a service without a model would need, and that is deliberate: a new project replaces the domain and the prompt, and keeps the rest.</p>
 
   <section class="repo">
     <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/app/triage.py#L1-L5">apps/api/app/triage.py</a><span class="lines">the one module a new project rewrites</span></header>
@@ -290,7 +290,7 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
     <span class="label">At a glance</span>
     <ul>
       <li>One forward pass per output token. Prices, limits and speed are all counted in tokens.</li>
-      <li>Two phases: <strong>prefill</strong> reads the prompt in parallel and sets the time to first token; <strong>decode</strong> writes one token at a time and sets tokens per second.</li>
+      <li>Two phases: <strong>prefill</strong> reads the prompt in parallel and sets the time to first token; <strong>decode</strong> writes one token at a time and sets tokens per second. A reasoning model also decodes its hidden thinking before the first answer token.</li>
       <li>Sampling (temperature, top-p) is why the same prompt answers differently, and why evals repeat runs.</li>
       <li>The context window holds input and output together; hidden reasoning spends the output budget too.</li>
       <li>The KV cache holds every earlier token's keys and values in GPU memory, and caps how many requests fit at once.</li>
@@ -357,7 +357,7 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
   <h3 id="ch2-sampling">Logits, sampling and temperature</h3>
   <figure class="fig wide" id="fig-2-3">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 260" role="img" aria-label="Next-token probabilities after 'the disk is', as bars for full, nearly, at, almost and other tokens. Low temperature sharpens the distribution toward 'full'; high temperature flattens it. Temperature 0 is greedy: always the top token. Top-p keeps only the smallest set of tokens whose probabilities reach p, here full and nearly, and samples among them. Low temperature suits extraction, classification, judges and tool calls; higher suits drafting.">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Next-token probabilities after 'the disk is', as bars for full, nearly, at, almost and other tokens. Low temperature sharpens the distribution toward 'full'; high temperature flattens it. Temperature 0 is greedy: always the top token. Top-p keeps only the smallest set of tokens whose probabilities reach p, here full and nearly, and samples among them; top-k keeps only the k likeliest. Adjust temperature or top-p, usually not both. Low temperature suits extraction, classification, judges and tool calls; higher suits drafting.">
       <text class="tl" x="16" y="22">TEMPERATURE 0.3: SHARP</text>
       <g class="ts">
       <text x="16" y="52">full</text><rect class="fill-acc" x="80" y="40" width="210" height="16"/><text x="298" y="52">0.82</text>
@@ -367,15 +367,15 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
       </g>
       <text class="tl" x="430" y="22">TEMPERATURE 1.5: FLAT</text>
       <g class="ts">
-      <text x="430" y="52">full</text><rect class="fill-acc" x="494" y="40" width="110" height="16"/><text x="612" y="52">0.43</text>
+      <text x="430" y="52">full</text><rect class="fill-acc" x="494" y="40" width="97" height="16"/><text x="599" y="52">0.38</text>
       <text x="430" y="76">nearly</text><rect class="fill-acc" x="494" y="64" width="67" height="16"/><text x="569" y="76">0.26</text>
-      <text x="430" y="100">at</text><rect class="fill-acc" x="494" y="88" width="46" height="16"/><text x="548" y="100">0.18</text>
-      <text x="430" y="124">almost</text><rect class="fill-acc" x="494" y="112" width="33" height="16"/><text x="535" y="124">0.13</text>
+      <text x="430" y="100">at</text><rect class="fill-acc" x="494" y="88" width="54" height="16"/><text x="556" y="100">0.21</text>
+      <text x="430" y="124">almost</text><rect class="fill-acc" x="494" y="112" width="41" height="16"/><text x="543" y="124">0.16</text>
       </g>
       <rect class="n-soft" x="16" y="150" width="788" height="96" rx="6"/>
       <text class="ts" x="28" y="172"><tspan class="tb">Temperature</tspan> divides the logits before softmax: below 1 sharpens toward the likeliest token, above 1 flattens.</text>
       <text class="ts" x="28" y="192"><tspan class="tb">0 is greedy</tspan>: always the top token, the most repeatable setting, though not bit-identical on GPUs that batch requests.</text>
-      <text class="ts" x="28" y="212"><tspan class="tb">Top-p</tspan>: sample only from the smallest set reaching probability p; <tspan class="tb">top-k</tspan>: only the k likeliest. Tune one, not both.</text>
+      <text class="ts" x="28" y="212"><tspan class="tb">Top-p</tspan>: sample only from the smallest set reaching probability p; <tspan class="tb">top-k</tspan>: only the k likeliest. Adjust temperature or top-p, usually not both.</text>
       <text class="ts" x="28" y="232">Low temperature for extraction, classification, judges and tool calls; higher for drafting.</text>
     </svg>
     </div>
@@ -385,17 +385,17 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
   <h3 id="ch2-phases">Prefill and decode: two phases, two bottlenecks</h3>
   <figure class="fig wide" id="fig-2-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 250" role="img" aria-label="A request's timeline. Prefill runs the whole prompt through the model in one parallel pass and builds the KV cache; it is compute-bound, grows with the prompt and sets the time to first token. Decode produces one token per forward pass, reading all the weights and the KV cache from GPU memory each time; it is memory-bandwidth-bound and sets tokens per second per stream. Total time is roughly the time to first token plus output tokens divided by tokens per second. Measured for a 20-billion-parameter model on one GPU: time to first token about 0.2 to 0.3 seconds, and 176 tokens per second for a single stream.">
+    <svg viewBox="0 0 820 250" role="img" aria-label="A request's timeline. Prefill runs the whole prompt through the model in one parallel pass and builds the KV cache; it is compute-bound, grows with the prompt and sets the time to first token. Decode produces one token per forward pass, reading all the weights and the KV cache from GPU memory each time; it is memory-bandwidth-bound and sets tokens per second per stream. Total time is roughly the time to first token plus output tokens divided by tokens per second. Measured for a 20-billion-parameter reasoning model on one GPU: time to the first answer token about 0.2 to 0.3 seconds, which includes its hidden thinking as well as prefill, and 176 tokens per second for a single stream.">
       <rect class="n-acc" x="16" y="40" width="150" height="50" rx="4"/><text class="tb" x="91" y="62" text-anchor="middle">prefill</text><text class="ts" x="91" y="80" text-anchor="middle">whole prompt, parallel</text>
       <g class="fill-good"><rect x="172" y="50" width="22" height="30"/><rect x="198" y="50" width="22" height="30"/><rect x="224" y="50" width="22" height="30"/><rect x="250" y="50" width="22" height="30"/><rect x="276" y="50" width="22" height="30"/><rect x="302" y="50" width="22" height="30"/><rect x="328" y="50" width="22" height="30"/><rect x="354" y="50" width="22" height="30"/><rect x="380" y="50" width="22" height="30"/><rect x="406" y="50" width="22" height="30"/><rect x="432" y="50" width="22" height="30"/><rect x="458" y="50" width="22" height="30"/><rect x="484" y="50" width="22" height="30"/><rect x="510" y="50" width="22" height="30"/><rect x="536" y="50" width="22" height="30"/><rect x="562" y="50" width="22" height="30"/></g>
       <text class="ts" x="380" y="36" text-anchor="middle">decode: one token per forward pass</text>
       <line class="rule-strong" x1="166" y1="100" x2="166" y2="116"/><text class="ts" x="166" y="130" text-anchor="middle">first token</text>
       <text class="tb" x="600" y="70">total ≈ TTFT + N ÷ tok/s</text>
-      <rect class="n" x="16" y="150" width="384" height="86" rx="6"/><text class="tb" x="28" y="172">Prefill: compute-bound</text><text class="ts" x="28" y="192">large matrix multiplications keep the GPU busy;</text><text class="ts" x="28" y="208">grows with the prompt; sets time to first token</text><text class="ts" x="28" y="226">measured: about 0.2 to 0.3 s</text>
+      <rect class="n" x="16" y="150" width="384" height="86" rx="6"/><text class="tb" x="28" y="172">Prefill: compute-bound</text><text class="ts" x="28" y="192">large matrix multiplications keep the GPU busy;</text><text class="ts" x="28" y="208">grows with the prompt; sets time to first token</text><text class="ts" x="28" y="226">measured: 0.2 to 0.3 s, model thinking included</text>
       <rect class="n" x="420" y="150" width="384" height="86" rx="6"/><text class="tb" x="432" y="172">Decode: memory-bandwidth-bound</text><text class="ts" x="432" y="192">each pass reads all weights and the KV cache</text><text class="ts" x="432" y="208">to do little arithmetic; sets tokens per second</text><text class="ts" x="432" y="226">measured: 176 tokens/s, one stream</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 2.4</span>The two phases of a request, measured for a 20-billion-parameter open model on one 48 GB GPU. A longer prompt raises the time to first token; a longer answer raises total time at a steady rate. Hence: short prompts for a quick first word, streaming so users wait for the first token rather than the whole answer, and a cap on output.</figcaption>
+    <figcaption><span class="fig-n">Figure 2.4</span>The two phases of a request, measured for a 20-billion-parameter open model on one 48 GB GPU. A longer prompt raises the time to first token; a longer answer raises total time at a steady rate. This model reasons before it answers, so its measured time to the first answer token includes hidden thinking as well as prefill; Chapter 8 measures the two apart. Hence: short prompts for a quick first word, streaming so users wait for the first token rather than the whole answer, and a cap on output.</figcaption>
   </figure>
 
   <h4>The KV cache</h4>
@@ -452,7 +452,7 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
 
   <aside class="say">
     <span class="label">How to say it</span>
-    <p>"Time to first token is prefill, which grows with the prompt; tokens per second is decode, which is memory-bound. Total is roughly TTFT plus output tokens over the decode rate."</p>
+    <p>"Time to first token is prefill, which grows with the prompt, plus, for a reasoning model, its hidden thinking; tokens per second is decode, which is memory-bound. Total is roughly TTFT plus output tokens over the decode rate."</p>
     <p>"Reasoning tokens are output: they count against the limit and the bill, so an empty answer is an error we count and alert on."</p>
   </aside>
 
@@ -475,7 +475,7 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
   <ol class="qs">
     <li>
       <p>Which phase sets the time to first token, which sets tokens per second, and what makes each worse?</p>
-      <details class="ans"><summary>Answer</summary><p>Prefill sets the time to first token and grows with the prompt's length; it is compute-bound. Decode sets tokens per second; it is memory-bandwidth-bound and slows as more streams share the GPU or the cache grows.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Prefill sets the time to first token and grows with the prompt's length; it is compute-bound. Decode sets tokens per second; it is memory-bandwidth-bound and slows as more streams share the GPU or the cache grows. For a reasoning model, the first answer token also waits for its hidden thinking, which grows with reasoning effort; the time to the first chunk is the closer measure of prefill.</p></details>
     </li>
     <li>
       <p>What does temperature do, and why do evals repeat runs?</p>
@@ -504,7 +504,7 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
   <div class="glance">
     <span class="label">At a glance</span>
     <ul>
-      <li>Batching runs several sequences per forward pass: total throughput rises a lot, and each stream slows a little.</li>
+      <li>Batching runs several sequences per forward pass: total throughput rises a lot, and each stream slows, here to about half its speed at four at a time. Set concurrency against a per-stream latency target.</li>
       <li>GPU memory holds the weights (parameters × bytes each) plus the KV cache, which grows with concurrency and context.</li>
       <li>Quantization saves memory and speeds decode, and costs quality unevenly: evaluate the quantized model itself.</li>
       <li>Replicas when the model fits on one GPU; tensor parallelism within a node when it does not; pipeline parallelism across nodes only when you must.</li>
@@ -516,7 +516,7 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
     <caption>Then and now</caption>
     <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
     <tbody>
-      <tr><td data-label="Then">A model served one request at a time</td><td>Continuous batching in an inference server (vLLM, TGI, TensorRT-LLM)</td><td>Decode leaves compute idle while waiting on memory; batching fills it.</td></tr>
+      <tr><td data-label="Then">A model served one request at a time</td><td>Continuous batching in an inference server (vLLM, SGLang, TensorRT-LLM)</td><td>Decode leaves compute idle while waiting on memory; batching fills it.</td></tr>
       <tr><td data-label="Then">16- or 32-bit weights only</td><td>8- and 4-bit quantized weights as a common choice</td><td>Memory and bandwidth are the bottleneck, not arithmetic.</td></tr>
       <tr><td data-label="Then">A vendor SDK in application code</td><td>An OpenAI-compatible API in front of every backend</td><td>Changing the model or provider becomes configuration.</td></tr>
     </tbody>
@@ -580,7 +580,7 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
   <h3 id="ch3-arch">The serving architecture, and the seam</h3>
   <figure class="fig wide" id="fig-3-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 290" role="img" aria-label="Inside the application, every model call goes through one seam that speaks the OpenAI-compatible API and maps failures to a small set of typed errors; a mock server sits behind the same seam in tests. When several services share models, a gateway sits between applications and backends: authentication, request and token limits per user or tenant, routing to the cheapest model that handles each request, fallback on errors or 429s, logging and cost tracking. Behind it: managed APIs, or inference servers such as vLLM, TGI or Ollama doing batching, KV cache management and streaming on GPUs.">
+    <svg viewBox="0 0 820 290" role="img" aria-label="Inside the application, every model call goes through one seam that speaks the OpenAI-compatible API and maps failures to a small set of typed errors; a mock server sits behind the same seam in tests. When several services share models, a gateway sits between applications and backends: authentication, request and token limits per user or tenant, routing to the cheapest model that handles each request, fallback on errors or 429s, logging and cost tracking. Behind it: managed APIs, or inference servers such as vLLM, SGLang or Ollama doing batching, KV cache management and streaming on GPUs.">
       <rect class="zone" x="16" y="16" width="230" height="258" rx="8"/><text class="tl" x="30" y="36">THE APPLICATION</text>
       <rect class="n" x="30" y="50" width="200" height="44" rx="5"/><text class="ts" x="130" y="76" text-anchor="middle">the prompt, the context</text>
       <rect class="n-acc" x="30" y="110" width="200" height="64" rx="5"/><text class="tb" x="130" y="134" text-anchor="middle">the seam</text><text class="ts" x="130" y="152" text-anchor="middle">one API, typed errors,</text><text class="ts" x="130" y="166" text-anchor="middle">explicit timeouts</text>
@@ -590,7 +590,7 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
       <g class="ts"><text x="302" y="118">authentication</text><text x="302" y="138">request and token limits per tenant</text><text x="302" y="158">routing to the cheapest model</text><text x="302" y="178">fallback on errors and 429s</text><text x="302" y="198">logging, cost tracking</text></g>
       <line class="e" x1="231" y1="142" x2="288" y2="142" marker-end="url(#a)"/>
       <rect class="n" x="566" y="40" width="238" height="80" rx="6"/><text class="tb" x="578" y="64">Managed APIs</text><text class="ts" x="578" y="84">strongest models, priced per token;</text><text class="ts" x="578" y="100">their terms and rate limits</text>
-      <rect class="n" x="566" y="150" width="238" height="100" rx="6"/><text class="tb" x="578" y="174">Inference servers</text><text class="ts" x="578" y="194">vLLM, TGI, Ollama: batching,</text><text class="ts" x="578" y="210">KV cache, streaming, on GPUs</text><text class="ts" x="578" y="230">you run them, busy or idle</text>
+      <rect class="n" x="566" y="150" width="238" height="100" rx="6"/><text class="tb" x="578" y="174">Inference servers</text><text class="ts" x="578" y="194">vLLM, SGLang, Ollama: batching,</text><text class="ts" x="578" y="210">KV cache, streaming, on GPUs</text><text class="ts" x="578" y="230">you run them, busy or idle</text>
       <path class="e" d="M521,120 C545,120 545,80 564,80" marker-end="url(#a)"/><path class="e" d="M521,170 C545,170 545,200 564,200" marker-end="url(#a)"/>
     </svg>
     </div>
@@ -774,8 +774,8 @@ PROMPT = PromptRef.of("triage", SYSTEM_PROMPT, PROMPT_VERSION)</code></pre>
   <h3 id="ch4-chunking">Chunking</h3>
   <figure class="fig wide" id="fig-4-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 240" role="img" aria-label="Too small: a step loses its condition; 'Never delete files in the data directory' was cut into '...Never' and 'the data directory by hand'. Too large: one match is diluted, and the prompt pays for the rest. Structure-aware chunking at headings is the default for documentation, with a word cap. Small-to-big: find by small chunk, hand the model its neighbors or the whole document.">
-      <rect class="n-bad" x="16" y="16" width="250" height="110" rx="6"/><text class="tb" x="28" y="40">Too small</text><text class="ts" x="28" y="62">a step loses its condition:</text><text class="tm" x="28" y="84">"...Never" |</text><text class="tm" x="28" y="102">"the data directory</text><text class="tm" x="28" y="118"> by hand."</text>
+    <svg viewBox="0 0 820 240" role="img" aria-label="Too small: a step loses its condition; 'Never delete files inside the data directory by hand' was cut into '...Never delete files inside' and 'the data directory by hand'. Too large: one match is diluted, and the prompt pays for the rest. Structure-aware chunking at headings is the default for documentation, with a word cap. Small-to-big: find by small chunk, hand the model its neighbors or the whole document.">
+      <rect class="n-bad" x="16" y="16" width="250" height="110" rx="6"/><text class="tb" x="28" y="40">Too small</text><text class="ts" x="28" y="62">a step loses its condition:</text><text class="tm" x="28" y="84">"...Never delete files</text><text class="tm" x="28" y="101"> inside" |</text><text class="tm" x="28" y="118">"the data directory by hand."</text>
       <rect class="n-warn" x="285" y="16" width="250" height="110" rx="6"/><text class="tb" x="297" y="40">Too large</text><text class="ts" x="297" y="62">one relevant sentence is</text><text class="ts" x="297" y="78">diluted in a long chunk;</text><text class="ts" x="297" y="94">the prompt pays for the rest</text>
       <rect class="n-good" x="554" y="16" width="250" height="110" rx="6"/><text class="tb" x="566" y="40">At the document's structure</text><text class="ts" x="566" y="62">split at headings, with a cap;</text><text class="ts" x="566" y="78">the default for documentation;</text><text class="ts" x="566" y="94">the reference service: sections</text><text class="ts" x="566" y="110">of a runbook</text>
       <text class="tl" x="16" y="160">OTHER STRATEGIES</text>
@@ -887,18 +887,18 @@ semantic AS (
   <h3 id="ch4-measure">Measuring retrieval</h3>
   <figure class="fig wide" id="fig-4-5">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 250" role="img" aria-label="Measured on 8 runbooks, 31 sections, 19 answerable labeled questions and 3 that nothing answers. Hybrid search with nomic-embed-text: recall at 1 is 0.79, at 3 is 0.95, at 5 is 1.00; MRR 0.87. Keyword search alone: recall at 1 is 0.68, at 5 is 0.95; MRR 0.77. All three embedding models tried found every answer in the first five; differences at rank 1 were two questions of nineteen, noise at this size.">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Measured on 8 runbooks, 31 sections, 19 answerable labeled questions and 3 that nothing answers. Hybrid search with nomic-embed-text: recall at 1 is 0.79, at 3 is 0.95, at 5 is 1.00; MRR 0.87. Keyword search alone: recall at 1 is 0.68, at 5 is 0.95; MRR 0.77. All three embedding models tried found every answer in the first five; differences at rank 1 were two questions of nineteen, noise at this size. Recall at k here is a hit rate: whether a relevant chunk is in the top k.">
       <text class="tl" x="16" y="22">RECALL@K AND MRR, 19 LABELED QUESTIONS</text>
       <line class="rule" x1="150" y1="34" x2="150" y2="176"/><line class="rule dash" x1="550" y1="34" x2="550" y2="176"/><text class="ts tmu" x="550" y="190" text-anchor="middle">1.00</text>
       <text class="ts" x="16" y="54">recall@1</text><rect class="fill-acc" x="150" y="42" width="316" height="14"/><text class="ts" x="474" y="54">0.79 hybrid</text><rect class="n-soft" x="150" y="58" width="272" height="10"/><text class="ts tmu" x="430" y="68">0.68 keyword</text>
       <text class="ts" x="16" y="96">recall@3</text><rect class="fill-acc" x="150" y="84" width="380" height="14"/><text class="ts" x="538" y="96">0.95</text>
       <text class="ts" x="16" y="128">recall@5</text><rect class="fill-acc" x="150" y="116" width="400" height="14"/><text class="ts" x="558" y="128">1.00</text><rect class="n-soft" x="150" y="132" width="380" height="10"/><text class="ts tmu" x="538" y="142">0.95 keyword</text>
       <text class="ts" x="16" y="166">MRR</text><rect class="fill-acc" x="150" y="154" width="348" height="14"/><text class="ts" x="506" y="166">0.87</text><rect class="n-soft" x="150" y="170" width="308" height="10"/><text class="ts tmu" x="466" y="180">0.77</text>
-      <text class="ts" x="16" y="216"><tspan class="tb">recall@k:</tspan> a relevant chunk is in the top k; it bounds the answer. <tspan class="tb">MRR:</tspan> the mean of 1 ÷ rank of the first relevant chunk.</text>
+      <text class="ts" x="16" y="216"><tspan class="tb">recall@k</tspan> here is a hit rate: a relevant chunk is in the top k; it bounds the answer. <tspan class="tb">MRR:</tspan> mean of 1 ÷ rank of the first relevant chunk.</text>
       <text class="ts" x="16" y="236"><tspan class="tb">Read the benchmark's size:</tspan> 19 questions show that each model works; they cannot rank models two questions apart.</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 4.5</span>Retrieval measured on its own, through the service, before any prompt work. Recall on the whole corpus says nothing about recall under a tenant filter: that needs its own benchmark, large enough that a tenant's share is smaller than the candidate list.</figcaption>
+    <figcaption><span class="fig-n">Figure 4.5</span>Retrieval measured on its own, through the service, before any prompt work. The benchmark's recall@k is a hit rate, whether any relevant chunk is in the top k; the standard recall@k is the share of all relevant chunks found there, and the two agree only when a question has one relevant chunk. Recall on the whole corpus says nothing about recall under a tenant filter: that needs its own benchmark, large enough that a tenant's share is smaller than the candidate list.</figcaption>
   </figure>
 
   <h3 id="ch4-context">Context, citations and freshness</h3>
@@ -951,7 +951,7 @@ semantic AS (
     </li>
     <li>
       <p>What do recall@k and MRR measure, and what can a 19-question benchmark not tell you?</p>
-      <details class="ans"><summary>Answer</summary><p>Recall@k: whether a relevant chunk is in the top k. MRR: how high the first relevant chunk ranks on average. A small benchmark shows each model works; it cannot rank models whose difference is a couple of questions.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Recall@k, as the benchmark counts it: whether a relevant chunk is in the top k, a hit rate (the standard definition is the share of all relevant chunks in the top k). MRR: how high the first relevant chunk ranks on average. A small benchmark shows each model works; it cannot rank models whose difference is a couple of questions.</p></details>
     </li>
   </ol>
 </section>
@@ -1019,9 +1019,9 @@ semantic AS (
       <thead><tr><th>Choice</th><th>What it means</th><th>Use it for</th></tr></thead>
       <tbody>
         <tr><td data-label="Choice">Property graph</td><td data-label="Means">Nodes and edges with key-value properties; queried with Cypher, GQL or Gremlin</td><td data-label="Use">Application data (Neo4j, Amazon Neptune)</td></tr>
-        <tr><td data-label="Choice">RDF</td><td data-label="Means">Every fact a triple of URIs; queried with SPARQL</td><td data-label="Use">Ontologies and merging sources; publishers' taxonomies</td></tr>
+        <tr><td data-label="Choice">RDF</td><td data-label="Means">Every fact a triple: subject, predicate, object, named by URIs, the object often a literal value; queried with SPARQL</td><td data-label="Use">Ontologies and merging sources; publishers' taxonomies</td></tr>
         <tr><td data-label="Choice">Recursive SQL</td><td data-label="Means">A foreign key is already an edge; each hop is a join, variable depth is <code>WITH RECURSIVE</code></td><td data-label="Use">Shallow, occasional traversals; the place to start</td></tr>
-        <tr><td data-label="Choice">A graph extension in Postgres</td><td data-label="Means">Cypher queries over tables (Apache AGE)</td><td data-label="Use">Graph queries without a second database</td></tr>
+        <tr><td data-label="Choice">A graph extension in Postgres</td><td data-label="Means">Cypher over a graph kept in its own Postgres tables, loaded from your data rather than read in place (Apache AGE)</td><td data-label="Use">Graph queries without a second database</td></tr>
       </tbody>
     </table>
   </div>
@@ -1339,14 +1339,14 @@ runbook controls its text - with credentials redacted, as in the pipeline.</code
   <h3 id="ch6-mcp">MCP: the Model Context Protocol</h3>
   <figure class="fig wide" id="fig-6-5">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="MCP. A host, the AI application, runs one client per server. Servers offer tools, which the model calls; resources, data the application reads; and prompts, templates the user picks. Clients offer sampling, where the server asks the host's model; elicitation, where the server asks the user; and roots. The wire is JSON-RPC 2.0 with tools/list and tools/call. Transports: stdio, a local subprocess whose standard output belongs to the protocol; and Streamable HTTP, remote, authorized with OAuth 2.1. Two kinds of error: a protocol error such as an unknown tool is a JSON-RPC error; a tool that ran and failed returns a result marked isError, which the model can read and fix.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="MCP. A host, the AI application, runs one client per server. Servers offer tools, which the model calls; resources, data the application reads; and prompts, templates the user picks. Clients offer elicitation, where the server asks the user; sampling and roots, from earlier revisions, are deprecated. Each request is self-contained, with no connect handshake. The wire is JSON-RPC 2.0 with tools/list and tools/call. Transports: stdio, a local subprocess whose standard output belongs to the protocol; and Streamable HTTP, remote, with OAuth 2.1-based authorization when the server requires it. Two kinds of error: a protocol error such as an unknown tool is a JSON-RPC error; a tool that ran and failed returns a result marked isError, which the model can read and fix.">
       <rect class="zone" x="16" y="16" width="250" height="214" rx="8"/><text class="tl" x="30" y="36">HOST: THE AI APPLICATION</text>
       <rect class="n" x="30" y="50" width="222" height="40" rx="4"/><text class="ts" x="141" y="75" text-anchor="middle">the model and the conversation</text>
       <rect class="n-acc" x="30" y="104" width="130" height="36" rx="4"/><text class="ts" x="95" y="127" text-anchor="middle">client A</text>
       <rect class="n-acc" x="30" y="150" width="130" height="36" rx="4"/><text class="ts" x="95" y="173" text-anchor="middle">client B</text>
-      <text class="ts" x="30" y="210">client primitives: sampling, elicitation, roots</text>
+      <text class="ts" x="30" y="206">client feature: elicitation</text><text class="ts tmu" x="30" y="222">sampling and roots: deprecated</text>
       <rect class="n" x="330" y="40" width="220" height="80" rx="6"/><text class="tb" x="342" y="64">Local server (stdio)</text><text class="ts" x="342" y="84">a subprocess; stdout belongs</text><text class="ts" x="342" y="100">to the protocol</text>
-      <rect class="n" x="330" y="140" width="220" height="80" rx="6"/><text class="tb" x="342" y="164">Remote server</text><text class="ts" x="342" y="184">Streamable HTTP,</text><text class="ts" x="342" y="200">authorized with OAuth 2.1</text>
+      <rect class="n" x="330" y="140" width="220" height="80" rx="6"/><text class="tb" x="342" y="164">Remote server</text><text class="ts" x="342" y="184">Streamable HTTP,</text><text class="ts" x="342" y="200">OAuth 2.1 when it needs auth</text>
       <path class="e" d="M161,122 C250,122 250,80 328,80" marker-end="url(#a)"/><path class="e" d="M161,168 C250,168 250,180 328,180" marker-end="url(#a)"/>
       <rect class="n-soft" x="580" y="40" width="224" height="180" rx="6"/><text class="tb" x="592" y="64">Server primitives</text><text class="ts" x="592" y="88">tools: the model calls them</text><text class="ts" x="592" y="110">resources: data the app reads</text><text class="ts" x="592" y="132">prompts: templates a user picks</text><text class="tb" x="592" y="164">The wire</text><text class="ts" x="592" y="186">JSON-RPC 2.0:</text><text class="ts" x="592" y="202">tools/list, tools/call</text>
       <text class="ts" x="16" y="262"><tspan class="tb">Two kinds of error:</tspan> an unknown tool is a protocol error; a tool that ran and failed returns a result marked</text>
@@ -1356,8 +1356,8 @@ runbook controls its text - with credentials redacted, as in the pipeline.</code
     <figcaption><span class="fig-n">Figure 6.5</span>MCP's roles and primitives. The reference service runs a small stdio server with the same two read-only tools as its agent; it acts as one person's session, checks that session on every call so revoking it stops the server, and audits each call as coming through MCP.</figcaption>
   </figure>
 
-  <p>MCP's security model rests on the server, not on hints. Tool annotations such as "read-only" are hints and must not be trusted; servers validate, authorize and rate-limit; tokens are never passed through to downstream services; and hosts confirm sensitive calls. <strong>Tool poisoning</strong> is a malicious server whose tool descriptions, or instructions returned on connect, reach the model as prompt text: install MCP servers the way you install dependencies. A large public server illustrates the trade-offs: a handful of tools, one of which runs model-written code in a sandbox that can reach any API of the platform. The short tool list keeps the prompt cheap and the choice easy, but the power then sits in one tool, so the credentials behind it, not its "destructive" hint, set the blast radius. Its results include a record of what actually ran, and its description tells the model to check that record before trusting the return value.</p>
-  <p><strong>Skills</strong> are a related idea: a folder of markdown whose short description sits in the model's context and whose full text loads only when a task matches. A skill teaches how to do a job; a tool does it. Both are instruction channels from a source you must trust.</p>
+  <p>MCP's security model rests on the server, not on hints. Tool annotations such as "read-only" are hints and must not be trusted; servers validate, authorize and rate-limit; tokens are never passed through to downstream services; and hosts confirm sensitive calls. <strong>Tool poisoning</strong> is a malicious server whose tool descriptions, or its server instructions, reach the model as prompt text: install MCP servers the way you install dependencies. A large public server illustrates the trade-offs: a handful of tools, one of which runs model-written code in a sandbox that can reach any API of the platform. The short tool list keeps the prompt cheap and the choice easy, but the power then sits in one tool, so the credentials behind it, not its "destructive" hint, set the blast radius. Its results include a record of what actually ran, and its description tells the model to check that record before trusting the return value.</p>
+  <p><strong>Skills</strong> are a related idea: a folder with a markdown file whose short description sits in the model's context and whose full text loads only when a task matches, often with scripts the agent runs and reference files it reads. A skill teaches how to do a job; a tool does it. Both are instruction channels from a source you must trust, and a skill's scripts are code that runs with the agent's permissions: vet and pin them like any dependency.</p>
 
   <aside class="adr">
     <div class="adr-h"><span class="adr-id">ADR-0020</span><span class="adr-status">accepted</span></div>
@@ -1406,11 +1406,203 @@ runbook controls its text - with credentials redacted, as in the pipeline.</code
     <p>"Tools act as the asker with identity from the session, are read-only unless a person approves in a separate request, and every call is validated, bounded and audited."</p>
   </aside>
 
+  <h3 id="ch6-platforms">Where an agent runs: your code, n8n, or a managed platform</h3>
+  <p>Once the ladder says a workflow or an agent, there are three places to build it: in your own code, as the reference service does; in a workflow tool such as n8n; or on a managed agent platform such as AWS's AgentCore. They differ in who owns the loop, who runs the servers, and who provides the controls this chapter asks for. Choosing among them is an AI design decision; running whichever you choose is cloud work, covered in Handbook 3.</p>
+
+  <figure class="fig wide" id="fig-6-7">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 340" role="img" aria-label="Three places an agent can run. Your code: a Python service whose loop, tools, prompts and evaluations live in your repository; you host it, on ECS or Kubernetes for example, and you build sign-in, sessions, sandboxing and tracing. n8n: a workflow of nodes, where a trigger starts it and an AI Agent node with sub-nodes for the chat model, memory and tools runs the loop; it runs on n8n Cloud or on your own n8n instance, with Postgres and, to scale, Redis and workers; credentials are stored in n8n. AWS AgentCore: either the harness, where you declare the model, tools and prompt and AgentCore runs the loop, or Runtime, where your agent code in any framework runs in a container; each session gets its own microVM, and Gateway, Identity, Memory and Observability are managed services around it. Along the bottom: on the left you own the most and operate the most; on the right AWS operates the infrastructure.">
+      <rect class="n" x="16" y="16" width="252" height="244" rx="8"/>
+      <text class="tl" x="30" y="38">YOUR CODE</text>
+      <text class="tb" x="30" y="62">A Python service</text>
+      <text class="ts" x="30" y="84">loop, tools, prompts and evals</text>
+      <text class="ts" x="30" y="100">in your repository</text>
+      <text class="ts" x="30" y="124">tools act as the asking user,</text>
+      <text class="ts" x="30" y="140">tested with the rest of the code</text>
+      <rect class="n-soft" x="30" y="160" width="224" height="86" rx="5"/>
+      <text class="ts" x="42" y="180">you host it: ECS, Kubernetes</text>
+      <text class="ts" x="42" y="198">you build: sign-in, sessions,</text>
+      <text class="ts" x="42" y="214">sandboxing, tracing</text>
+      <text class="ts tmu" x="42" y="236">the reference service</text>
+
+      <rect class="n" x="284" y="16" width="252" height="244" rx="8"/>
+      <text class="tl" x="298" y="38">N8N</text>
+      <text class="tb" x="298" y="62">A workflow of nodes</text>
+      <text class="ts" x="298" y="84">a trigger starts it; an AI Agent</text>
+      <text class="ts" x="298" y="100">node runs the loop, with sub-</text>
+      <text class="ts" x="298" y="116">nodes: chat model, memory, tools</text>
+      <text class="ts" x="298" y="140">hundreds of app integrations</text>
+      <rect class="n-soft" x="298" y="160" width="224" height="86" rx="5"/>
+      <text class="ts" x="310" y="180">n8n Cloud, or your instance:</text>
+      <text class="ts" x="310" y="198">Docker, Postgres; to scale,</text>
+      <text class="ts" x="310" y="214">Redis and workers</text>
+      <text class="ts tmu" x="310" y="236">credentials stored in n8n</text>
+
+      <rect class="n-acc" x="552" y="16" width="252" height="244" rx="8"/>
+      <text class="tl" x="566" y="38">AWS AGENTCORE</text>
+      <text class="tb" x="566" y="62">Harness or Runtime</text>
+      <text class="ts" x="566" y="84">harness: declare model, tools,</text>
+      <text class="ts" x="566" y="100">prompt; AgentCore runs the loop</text>
+      <text class="ts" x="566" y="116">Runtime: your agent code, any</text>
+      <text class="ts" x="566" y="132">framework, in a container</text>
+      <rect class="n-soft" x="566" y="160" width="224" height="86" rx="5"/>
+      <text class="ts" x="578" y="180">a microVM per session</text>
+      <text class="ts" x="578" y="198">managed around it: Gateway,</text>
+      <text class="ts" x="578" y="214">Identity, Memory, Observability</text>
+      <text class="ts tmu" x="578" y="236">AWS runs the infrastructure</text>
+
+      <line class="rule-strong" x1="40" y1="290" x2="780" y2="290"/>
+      <text class="ts" x="40" y="284">you own and operate the most</text>
+      <text class="ts" x="780" y="284" text-anchor="end">the platform operates the most</text>
+      <text class="ts tmu" x="410" y="314" text-anchor="middle">All three can use the same patterns: a workflow or an agent, tools over MCP, a person approving actions.</text>
+      <text class="ts tmu" x="410" y="330" text-anchor="middle">What differs is who builds and runs the parts around the model.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 6.7</span>Three places an agent can run. The further right, the less you operate and the less you control: n8n trades code for a visual editor and ready-made integrations, AgentCore trades your servers for AWS's managed sessions, identity and gateway.</figcaption>
+  </figure>
+
+  <h4>n8n: a workflow of nodes</h4>
+  <p>n8n is a workflow automation tool with a visual editor, available as n8n Cloud or self-hosted. A <strong>workflow</strong> is a set of connected <strong>nodes</strong>. A <strong>trigger node</strong> starts it: a schedule, a webhook, an event in an app, a chat message. Every other node acts: it calls an app, transforms data, branches, or waits. Data passes between nodes as an array of items, each an object under a <code>json</code> key (and <code>binary</code> for files), and most nodes run once per item. Each node carries settings that decide failure behavior: <em>Retry On Fail</em>, and <em>On Error</em> to stop the workflow, continue, or continue through an error output that a later node can handle. A workflow can call another as a sub-workflow, and an error workflow runs when a workflow fails. Credentials for apps are stored in n8n and chosen on the nodes that use them; by default a workflow uses the same credential whoever runs it, and n8n also offers end-user credentials, where each user's own is used.</p>
+  <p>Where no node fits, the <strong>Code node</strong> runs JavaScript, or Python through task runners (the older Pyodide-based Python was removed in n8n 2.0). On n8n Cloud, Python code cannot import libraries; self-hosted, modules must be installed in the runner image and allowed explicitly. n8n's documentation calls task runners the only isolation layer between user code and n8n, and recommends running them in external mode, as separate containers. Community nodes, published by others, have full access to the machine n8n runs on and to the data in its workflows. n8n inspects some and lists them as verified; unverified ones come straight from npm, are not available on n8n Cloud, and can be switched off on a self-hosted instance.</p>
+
+  <figure class="fig wide" id="fig-6-8">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="An n8n agent workflow. A Chat Trigger node starts the workflow. The AI Agent node is a root node; below it hang sub-nodes: a chat model, which is required; memory, optional; and tools, at least one: an HTTP Request tool, a call to another n8n workflow, or an MCP Client Tool that uses an external MCP server's tools. A tool marked for approval pauses the workflow until a person approves in Slack or chat. The agent's answer, as items, passes to a Slack node. If any node fails, the error workflow runs. Items flowing between nodes look like a list of objects with a json key.">
+      <rect class="n" x="16" y="40" width="130" height="58" rx="6"/>
+      <text class="tb" x="81" y="64" text-anchor="middle">Chat Trigger</text>
+      <text class="ts" x="81" y="84" text-anchor="middle">starts the run</text>
+      <line class="e" x1="147" y1="69" x2="214" y2="69" marker-end="url(#a)"/>
+      <rect class="n-acc" x="218" y="30" width="250" height="78" rx="6"/>
+      <text class="tb" x="232" y="54">AI Agent (root node)</text>
+      <text class="ts" x="232" y="74">runs the loop: the model picks</text>
+      <text class="ts" x="232" y="90">tools until it can answer</text>
+      <line class="e" x1="469" y1="69" x2="560" y2="69" marker-end="url(#a)"/>
+      <text class="ts tmu" x="514" y="60" text-anchor="middle">items</text>
+      <rect class="n" x="564" y="40" width="130" height="58" rx="6"/>
+      <text class="tb" x="629" y="64" text-anchor="middle">Slack</text>
+      <text class="ts" x="629" y="84" text-anchor="middle">posts the answer</text>
+      <rect class="n-soft" x="708" y="40" width="96" height="58" rx="6"/>
+      <text class="ts" x="756" y="62" text-anchor="middle">error</text>
+      <text class="ts" x="756" y="78" text-anchor="middle">workflow, if</text>
+      <text class="ts" x="756" y="94" text-anchor="middle">a node fails</text>
+
+      <line class="e" x1="262" y1="109" x2="140" y2="150" marker-end="url(#a)"/>
+      <line class="e" x1="320" y1="109" x2="300" y2="150" marker-end="url(#a)"/>
+      <line class="e" x1="400" y1="109" x2="480" y2="150" marker-end="url(#a)"/>
+      <text class="tl" x="218" y="134">SUB-NODES</text>
+      <rect class="n" x="40" y="154" width="190" height="56" rx="5"/>
+      <text class="tb" x="52" y="176">Chat model</text><text class="ts" x="52" y="194">required: one per agent</text>
+      <rect class="n" x="246" y="154" width="150" height="56" rx="5"/>
+      <text class="tb" x="258" y="176">Memory</text><text class="ts" x="258" y="194">optional: chat history</text>
+      <rect class="n-acc" x="412" y="154" width="392" height="56" rx="5"/>
+      <text class="tb" x="424" y="176">Tools, at least one</text>
+      <text class="ts" x="424" y="194">HTTP Request · another workflow · MCP Client Tool</text>
+      <rect class="n-soft" x="412" y="222" width="392" height="40" rx="5"/>
+      <text class="ts" x="424" y="246">a tool marked for approval pauses until a person approves</text>
+      <text class="tm ts" x="16" y="250">[ {"json": {...}}, {"json": {...}} ]</text>
+      <text class="ts tmu" x="16" y="268">what flows between nodes: items</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 6.8</span>An n8n agent workflow. The AI Agent node is a root node, and its parts are sub-nodes: one chat model, optional memory, at least one tool. n8n's AI nodes implement LangChain's JavaScript framework. An MCP Client Tool lets the agent use an MCP server's tools, and an MCP Server Trigger does the reverse, exposing n8n workflows as tools to other MCP clients.</figcaption>
+  </figure>
+  <p>To scale a self-hosted instance, n8n's <strong>queue mode</strong> splits the work: the main instance takes timers and webhook calls and creates executions without running them; Redis queues them; workers pick them up and run them; Postgres stores the data. Queue mode is not supported on SQLite, the default database, and every worker needs the main instance's encryption key. Finished executions are pruned by default after 14 days or past 10,000. Features such as SSO, Git-based version control, multiple environments and log streaming need a paid plan.</p>
+  <p>n8n's code is published under the Sustainable Use License, not an open-source license. It allows use for your own internal business purposes, building workflows for clients as a service, and running n8n behind your own product. It does not allow hosting n8n as a service where clients build workflows, or letting external users build or configure workflows through your product. Read the license before a product depends on it.</p>
+
+  <h4>AWS: AgentCore, and what happened to Bedrock Agents</h4>
+  <p>AWS's first managed agent service, Bedrock Agents, is now <strong>Bedrock Agents Classic</strong>: closed to new customers, in maintenance mode, with no new features and a frozen model list. Accounts that already use it keep it, and AWS recommends migrating to <strong>Amazon Bedrock AgentCore</strong>. Bedrock itself, its models, knowledge bases and guardrails, is unaffected. AgentCore is a set of services that work together or alone, with any framework and any model. AWS offers two ways to run an agent on it, and its advice is plain: use the harness unless you have a specific reason to own the loop yourself.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th></th><th>Harness</th><th>Runtime</th></tr></thead>
+      <tbody>
+        <tr><td data-label="">You provide</td><td data-label="Harness">Configuration: model, system prompt, tools</td><td data-label="Runtime">Code: your agent in any framework (Strands, LangGraph, CrewAI, OpenAI Agents SDK, Claude Agent SDK, your own), as an ARM64 container</td></tr>
+        <tr><td data-label="">The loop</td><td data-label="Harness">Managed by AgentCore, built on Strands Agents</td><td data-label="Runtime">Yours</td></tr>
+        <tr><td data-label="">Each session</td><td data-label="Harness" colspan="2">Its own microVM, with its own CPU, memory and filesystem; destroyed and wiped when the session ends</td></tr>
+        <tr><td data-label="">Cannot do</td><td data-label="Harness">Choose the framework, graph or workflow patterns, two-way streaming</td><td data-label="Runtime">Nothing on that list, at the cost of writing and maintaining the code</td></tr>
+        <tr><td data-label="">Changes and rollback</td><td data-label="Harness" colspan="2">Immutable versions behind named endpoints (dev, test, prod); roll back by pointing an endpoint at an earlier version</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure class="fig wide" id="fig-6-9">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 380" role="img" aria-label="AgentCore around one agent. A caller, your application or a user, calls a Runtime endpoint, signed with IAM or carrying an OAuth token from your identity provider. The endpoint points at a version. Each session runs in its own microVM, which holds your agent code or the harness. From the session: Gateway turns APIs, Lambda functions, OpenAPI or Smithy services and existing MCP servers into one MCP endpoint of tools, injects each target's credentials, and Policy checks every tool call before it runs. Identity issues the outbound tokens, on behalf of the user or of the agent. Memory keeps short-term events and long-term records per user. Code Interpreter and Browser are sandboxes. The agent calls models in Bedrock or other providers. Observability sends OpenTelemetry traces to CloudWatch. In VPC mode, AgentCore places network interfaces in your subnets, with your security groups.">
+      <rect class="n" x="16" y="40" width="120" height="70" rx="6"/>
+      <text class="tb" x="76" y="66" text-anchor="middle">Caller</text>
+      <text class="ts" x="76" y="84" text-anchor="middle">your app</text>
+      <text class="ts" x="76" y="100" text-anchor="middle">or a user</text>
+      <line class="e-acc" x1="137" y1="75" x2="186" y2="75" marker-end="url(#a-acc)"/>
+      <text class="ts" x="16" y="132">signed with IAM, or</text>
+      <text class="ts" x="16" y="148">an OAuth token from</text>
+      <text class="ts" x="16" y="164">your identity provider</text>
+
+      <rect class="zone" x="190" y="20" width="270" height="250" rx="8"/>
+      <text class="tl" x="204" y="40">RUNTIME</text>
+      <rect class="n" x="204" y="52" width="242" height="40" rx="5"/>
+      <text class="ts" x="216" y="77">endpoint (prod) → version 7</text>
+      <rect class="n-acc" x="204" y="104" width="242" height="150" rx="5"/>
+      <text class="tb" x="216" y="126">a microVM per session</text>
+      <text class="ts" x="216" y="148">your agent code, or the harness</text>
+      <text class="ts" x="216" y="170">idle 15 min: environment ends</text>
+      <text class="ts" x="216" y="186">at most 8 h by default</text>
+      <text class="ts" x="216" y="208">state that must last goes</text>
+      <text class="ts" x="216" y="224">to Memory, not the session</text>
+      <text class="ts tmu" x="216" y="244">runs under an execution role</text>
+
+      <rect class="n-acc" x="500" y="20" width="304" height="42" rx="5"/><text class="tb" x="512" y="37">Gateway</text><text class="ts" x="512" y="54">tools as one MCP endpoint; Policy checks each call</text>
+      <path class="e" d="M447,180 C472,180 474,41 498,41" marker-end="url(#a)"/>
+      <rect class="n" x="500" y="70" width="304" height="42" rx="5"/><text class="tb" x="512" y="87">Identity</text><text class="ts" x="512" y="104">outbound tokens, for the user or the agent</text>
+      <path class="e" d="M447,180 C472,180 474,91 498,91" marker-end="url(#a)"/>
+      <rect class="n" x="500" y="120" width="304" height="42" rx="5"/><text class="tb" x="512" y="137">Memory</text><text class="ts" x="512" y="154">short- and long-term, kept per user</text>
+      <path class="e" d="M447,180 C472,180 474,141 498,141" marker-end="url(#a)"/>
+      <rect class="n" x="500" y="170" width="304" height="42" rx="5"/><text class="tb" x="512" y="187">Code Interpreter and Browser</text><text class="ts" x="512" y="204">sandboxes for code and for web pages</text>
+      <path class="e" d="M447,180 C472,180 474,191 498,191" marker-end="url(#a)"/>
+      <rect class="n" x="500" y="220" width="304" height="42" rx="5"/><text class="tb" x="512" y="237">Models</text><text class="ts" x="512" y="254">in Bedrock, or from other providers</text>
+      <path class="e" d="M447,180 C472,180 474,241 498,241" marker-end="url(#a)"/>
+
+      <rect class="n-soft" x="190" y="290" width="614" height="32" rx="5"/>
+      <text class="ts" x="204" y="311">Observability: OpenTelemetry traces of every step, to CloudWatch</text>
+      <rect class="zone" x="190" y="332" width="614" height="38" rx="6"/>
+      <text class="ts" x="204" y="356">VPC mode: network interfaces in your subnets, with your security groups; a public subnet gives no internet (use NAT)</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 6.9</span>AgentCore around one agent. The agent's session is isolated in its own microVM and short-lived; what must survive goes to Memory. Tools are reached through Gateway, where Policy can refuse a call before it runs, and Identity holds the tokens for third-party services, so the agent's code never stores them.</figcaption>
+  </figure>
+  <p>Limits shape the design. A synchronous request may run 15 minutes, a streaming connection 60, and an asynchronous job 8 hours; payloads go up to 100 MB. In an AWS account, AgentCore runs your agent under an execution role it assumes, which grants pulling the image from ECR and writing logs, traces and metrics. AWS warns that its managed full-access policy is broad and that the policies its CLI creates are for development only, so production roles are written by hand. The harness has no charge of its own; you pay for the underlying capabilities as you use them.</p>
+
+  <h4>Choosing, and when a team needs which</h4>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Option</th><th>Choose it when</th><th>What you give up</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Option">Your code (Python)</td><td data-label="Choose it when">The agent is part of your product; tools must act with each user's rights; the loop, prompts and tools are tested and evaluated in CI with the rest of the code; you need a loop no product offers</td><td data-label="What you give up">You build and run hosting, sessions, sandboxing, retries and tracing yourself</td></tr>
+        <tr><td data-label="Option">n8n</td><td data-label="Choose it when">The work is mostly connecting apps and moving data between them; the people who own the process should change it themselves in an editor; the automation is internal; a per-node execution log and retries are enough to operate it</td><td data-label="What you give up">Code review, tests and evals around the logic; offering workflow-building to external users (the license); some controls are on paid plans</td></tr>
+        <tr><td data-label="Option">AgentCore harness</td><td data-label="Choose it when">You are on AWS and want a working agent from configuration: a model, a prompt and tools, with sessions, memory, identity and tracing managed</td><td data-label="What you give up">Framework choice, graph or workflow patterns, two-way streaming; availability depends on the region</td></tr>
+        <tr><td data-label="Option">AgentCore Runtime</td><td data-label="Choose it when">You have agent code in a framework and want AWS to run it: isolated sessions up to hours long, managed identity and a gateway to tools</td><td data-label="What you give up">You still own the loop's code; you adopt AWS's session model, limits and pricing</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>Why n8n over Python?</strong> Not because it is better at agents, but because it changes who can build and change the automation, and how fast. A support lead can wire a ticket system to Slack and a model in an afternoon, and adjust it the next day. When the same automation becomes part of the product, or must pass an evaluation before each release, it belongs in code. <strong>Why AgentCore?</strong> When a team on AWS would otherwise build per-session isolation, long-running sessions, OAuth to third-party tools and a policy check on every tool call, and would rather operate none of it. AWS describes a third use: a paved path for many teams, with approved tools, shared memory and governed access in one place.</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Stage</th><th>What fits</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Stage">Trying an idea</td><td data-label="What fits">An n8n workflow, or a short script. Measure it on real cases before building more (the ladder, above).</td></tr>
+        <tr><td data-label="Stage">An internal automation, owned by an operations team</td><td data-label="What fits">n8n, self-hosted when the data must stay inside; a paid plan once SSO, Git versioning and environments matter.</td></tr>
+        <tr><td data-label="Stage">An agent in the product, owned by one team</td><td data-label="What fits">Code in the team's service, with evals in CI and tools that act as the user. On AWS, AgentCore Runtime when the team would rather not build sandboxed sessions.</td></tr>
+        <tr><td data-label="Stage">Many teams, many agents</td><td data-label="What fits">A shared platform: AgentCore's gateway, identity, policy and registry, or an in-house equivalent, so each team does not rebuild the same controls.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
   <h3 id="ch6-traps">Traps</h3>
   <div class="table-wrap">
     <table class="grid traps stack">
       <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
       <tbody>
+        <tr><td data-label="Symptom">Creating a Bedrock agent fails with AccessDenied in a new account</td><td data-label="Cause">Bedrock Agents Classic is closed to accounts that have not used it</td><td data-label="Fix">Build on AgentCore: the harness, or Runtime with your own code.</td></tr>
+        <tr><td data-label="Symptom">An agent forgets the conversation after a pause</td><td data-label="Cause">An AgentCore session's environment ends after 15 idle minutes, and its state with it</td><td data-label="Fix">Keep what must last in AgentCore Memory, keyed by user, not in the session.</td></tr>
+        <tr><td data-label="Symptom">An n8n Code node can read the server's secrets</td><td data-label="Cause">Task runners in internal mode run as a child process of n8n</td><td data-label="Fix">Run task runners in external mode, as separate containers.</td></tr>
+        <tr><td data-label="Symptom">n8n queue mode will not start reliably</td><td data-label="Cause">Queue mode on SQLite, or workers without the main instance's encryption key</td><td data-label="Fix">Postgres, Redis, and the same encryption key on every worker.</td></tr>
         <tr><td data-label="Symptom">The agent answers "no recent alerts" when there are some</td><td data-label="Cause">A prompt hint became a filter argument</td><td data-label="Fix">Read the tool calls in the audit trail; state the default call explicitly.</td></tr>
         <tr><td data-label="Symptom">An agent loops until the step limit</td><td data-label="Cause">Repeated calls, or errors it cannot read</td><td data-label="Fix">Refuse repeated calls; return readable errors; count steps.</td></tr>
         <tr><td data-label="Symptom">A planted instruction made a tool read other tenants' data</td><td data-label="Cause">The tool ran as a service account, or took a tenant from its arguments</td><td data-label="Fix">Act as the asker; identity from the session.</td></tr>
@@ -1425,6 +1617,14 @@ runbook controls its text - with credentials redacted, as in the pipeline.</code
 
   <h3 id="ch6-questions">Questions</h3>
   <ol class="qs">
+    <li>
+      <p>Why would a team build an automation in n8n rather than in Python, and when should it move to code?</p>
+      <details class="ans"><summary>Answer</summary><p>n8n changes who can build and change the automation, and how fast: people who own a process wire apps together in a visual editor, with ready-made integrations, per-node retries and an execution log. It moves to code when it becomes part of the product, must pass evaluations before each release, needs a loop or permissions the tool cannot express, or would let external users build workflows, which n8n's license does not allow.</p></details>
+    </li>
+    <li>
+      <p>On AgentCore, when would you choose Runtime over the harness?</p>
+      <details class="ans"><summary>Answer</summary><p>AWS's advice is the harness unless you have a reason to own the loop. Reasons are an existing agent codebase in a framework, or patterns the harness cannot express: a framework of your choice, graph or workflow-style orchestration, two-way streaming. Runtime runs your container in the same isolated per-session microVMs, and you call Memory, Gateway and Identity from your code.</p></details>
+    </li>
     <li>
       <p>When should you not use an agent?</p>
       <details class="ans"><summary>Answer</summary><p>When the steps are known in advance, when latency or cost matters, when the result must be predictable and auditable, and when the model is small. Code the steps as a workflow instead.</p></details>
@@ -1766,7 +1966,7 @@ def fisher_worse(fails_now: int, runs_now: int, fails_before: int, runs_before: 
     <tbody>
       <tr><td data-label="Then">Logging the request and the response</td><td>Spans with ids, counts and versions; content only by explicit choice</td><td>Prompts and answers are the most sensitive data a system holds.</td></tr>
       <tr><td data-label="Then">Latency as one number</td><td>Time to first chunk, time to first answer token, total</td><td>A cold model and a thinking model look the same in one number.</td></tr>
-      <tr><td data-label="Then">Vendor-specific LLM monitoring</td><td>OpenTelemetry's GenAI semantic conventions</td><td>One vocabulary across providers and backends, though still marked experimental.</td></tr>
+      <tr><td data-label="Then">Vendor-specific LLM monitoring</td><td>OpenTelemetry's GenAI semantic conventions</td><td>One vocabulary across providers and backends, though still marked Development: names may change.</td></tr>
     </tbody>
   </table>
 
@@ -2146,7 +2346,7 @@ One append-only table (ADR-0019):
         <tr><td data-label="Risk">LLM02 Sensitive information disclosure</td><td data-label="Here">Credentials redacted before any model call; the context holds only the asker's data; isolation cases</td></tr>
         <tr><td data-label="Risk">LLM05 Improper output handling</td><td data-label="Here">Answers rendered as text, never HTML; a test enforces it</td></tr>
         <tr><td data-label="Risk">LLM06 Excessive agency</td><td data-label="Here">Read-only tools acting as the asker; any future action confirmed by a person</td></tr>
-        <tr><td data-label="Risk">LLM07 System prompt leakage</td><td data-label="Here">The prompt holds no secrets; leaks are measured (5 in 200 brought to 0 in 200)</td></tr>
+        <tr><td data-label="Risk">LLM07 System prompt leakage</td><td data-label="Here">The prompt holds no secrets; leaks are measured against a 1.5% target: 5 in 200 at v4, 2 in 600 at the current v6 (95% bound 1.05%)</td></tr>
         <tr><td data-label="Risk">LLM08 Vector and embedding weaknesses</td><td data-label="Here">Retrieval filtered by the asker's teams inside the query; embeddings redacted too</td></tr>
         <tr><td data-label="Risk">LLM09 Misinformation</td><td data-label="Here">Grounding and refusal cases; citations verified; the judge</td></tr>
         <tr><td data-label="Risk">LLM10 Unbounded consumption</td><td data-label="Here">Rate limits, an output cap, a stream time cap, a cost panel</td></tr>
@@ -2288,7 +2488,7 @@ One append-only table (ADR-0019):
     <figcaption><span class="fig-n">Figure 10.3</span>Cost levers, judged for the reference service. Green: worth using, with evals. Red: does not apply to this prompt or is unsafe here. Gray: applies elsewhere, or later.</figcaption>
   </figure>
 
-  <p><strong>Prompt caching</strong> charges about a tenth for input the provider has seen recently, if it is a long, identical prefix: at least 1,024 tokens on most models (4,096 on some), with static content first. It pays for a large system prompt, a document asked about many times, or a long conversation; it does not pay when the stable part is short and variable context sits early. <strong>Semantic caching</strong> reuses an answer for a similar question. In the reference benchmark, the closest pair of questions (distance 0.261) was a question and its follow-up, which needed the next step; and since answers are built from the asker's teams' live alerts, a cached answer is either stale or another team's. A cache key including the access scope and the context's version leaves almost nothing to hit.</p>
+  <p><strong>Prompt caching</strong> charges about a tenth for input the provider has seen recently, if it is a long, identical prefix, with static content first. Some providers also charge extra to write the cache (on Anthropic's models, 1.25 times the input price for a five-minute cache), so it pays only when the prefix is read again before it expires. The minimum prefix depends on the model, from 512 to 4,096 tokens: check the one you use. It pays for a large system prompt, a document asked about many times, or a long conversation; it does not pay when the stable part is short and variable context sits early. <strong>Semantic caching</strong> reuses an answer for a similar question. In the reference benchmark, the closest pair of questions (distance 0.261) was a question and its follow-up, which needed the next step; and since answers are built from the asker's teams' live alerts, a cached answer is either stale or another team's. A cache key including the access scope and the context's version leaves almost nothing to hit.</p>
 
   <h3 id="ch10-jump">When the bill jumps</h3>
   <figure class="fig wide" id="fig-10-4">
@@ -2491,15 +2691,16 @@ add("stat", "Estimated model cost / hour",
   <h3 id="ch11-retries">Retries, breakers and bulkheads</h3>
   <figure class="fig wide" id="fig-11-3">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="Retries: only what can succeed, timeouts, 429 and 5xx, never a 400; honor Retry-After; capped exponential backoff with full jitter, sleep a random time between zero and the smaller of the cap and base times two to the attempt; without jitter, clients that failed together retry together. Retry at one layer: three layers of three retries make 27 calls. A circuit breaker: closed, calls pass; after N consecutive failures it opens and stops calling for a cooldown; half-open lets one trial through; success closes it. Pair it with a fallback: keyword search, a smaller model, or 'the assistant is unavailable'.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Retries: only what can succeed, timeouts, 429 and 5xx, never a 400; honor Retry-After; capped exponential backoff with full jitter, sleep a random time between zero and the smaller of the cap and base times two to the attempt; without jitter, clients that failed together retry together. Retry at one layer: three layers of three attempts each make 27 calls, and of three retries each, 64. A circuit breaker: closed, calls pass; after N consecutive failures it opens and stops calling for a cooldown; half-open lets one trial through; success closes it, and failure opens it again for another cooldown. Pair it with a fallback: keyword search, a smaller model, or 'the assistant is unavailable'.">
       <rect class="n" x="16" y="16" width="384" height="150" rx="6"/><text class="tb" x="28" y="40">Retries</text>
-      <g class="ts"><text x="28" y="62">only what can succeed: timeouts, 429, 5xx</text><text x="28" y="80">honor Retry-After; never retry a 400</text><text x="28" y="104" class="tb">sleep = random(0, min(cap, base × 2^n))</text><text x="28" y="126">no jitter: clients that failed together</text><text x="28" y="142">retry together, a thundering herd</text><text x="28" y="160" class="tr">3 layers × 3 retries = 27 calls</text></g>
+      <g class="ts"><text x="28" y="62">only what can succeed: timeouts, 429, 5xx</text><text x="28" y="80">honor Retry-After; never retry a 400</text><text x="28" y="104" class="tb">sleep = random(0, min(cap, base × 2^n))</text><text x="28" y="126">no jitter: clients that failed together</text><text x="28" y="142">retry together, a thundering herd</text><text x="28" y="160" class="tr">3 layers × 3 attempts each = 27 calls</text></g>
       <rect class="n" x="420" y="16" width="384" height="150" rx="6"/><text class="tb" x="432" y="40">Circuit breaker</text>
       <circle class="dot-good" cx="470" cy="100" r="22"/><text class="ts" x="470" y="70" text-anchor="middle">closed</text>
       <circle class="dot-bad" cx="612" cy="100" r="22"/><text class="ts" x="612" y="70" text-anchor="middle">open</text>
       <circle class="dot-muted" cx="754" cy="100" r="22"/><text class="ts" x="754" y="70" text-anchor="middle">half-open</text>
       <path class="e" d="M494,100 L586,100" marker-end="url(#a)"/><text class="ts" x="540" y="92" text-anchor="middle">N failures</text>
-      <path class="e" d="M636,100 L728,100" marker-end="url(#a)"/><text class="ts" x="682" y="92" text-anchor="middle">cooldown</text>
+      <path class="e" d="M634,93 L731,93" marker-end="url(#a)"/><text class="ts" x="682" y="86" text-anchor="middle">cooldown</text>
+      <path class="e-bad" d="M732,108 L635,108" marker-end="url(#a-bad)"/><text class="ts tr" x="682" y="124" text-anchor="middle">trial fails</text>
       <path class="e-good" d="M754,124 C754,160 470,160 470,126" marker-end="url(#a-good)"/><text class="ts" x="612" y="142" text-anchor="middle">one trial succeeds</text>
       <rect class="n-warn" x="16" y="186" width="788" height="96" rx="6"/><text class="tb" x="28" y="210">Bulkheads: separate pools, so one workload cannot starve another</text>
       <text class="ts" x="28" y="232">A bulk re-index and the chat's question embeddings share one embedding server. Unbounded, the re-index pushes the chat's</text>
@@ -2688,7 +2889,7 @@ add("stat", "Estimated model cost / hour",
       <text class="ts tmu" x="16" y="214">Schema rollbacks and the deploy ladder: Handbook 3, Chapter 13. The off switch: Handbook 2, Chapter 17.</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 12.3</span>The rollback for each kind of change in an AI service. Each is decided before the change ships, and practiced; the fastest for a misbehaving AI feature is a switch that takes effect in seconds without a deploy.</figcaption>
+    <figcaption><span class="fig-n">Figure 12.3</span>The rollback for each kind of change in an AI service. Each is decided before the change ships, and practiced; the fastest for a misbehaving AI feature is a switch that takes effect in seconds without a deploy. The reference service has two of these switches, not all: its prompt is code, pinned by a test, so a prompt rolls back with the previous tag, and only the model is configuration; and it re-embeds in place, so there is no old index to switch back to, and stale sections are found by keyword only until the re-embed finishes. A prompt read from configuration and an index built beside the old one are what the other two switches would take.</figcaption>
   </figure>
 
   <h3 id="ch12-slo">Service levels for an AI feature</h3>
@@ -2720,7 +2921,7 @@ add("stat", "Estimated model cost / hour",
   <aside class="say">
     <span class="label">How to say it</span>
     <p>"We pin exact model versions, version the prompt with a hash, and record both on every answer, so a change in answers lines up with a change in what runs."</p>
-    <p>"Each kind of change has its rollback: a tag, a config switch for the prompt or model, a flag, the old index, and fix-forward for the schema. AI incidents can show no errors, so we watch quality indicators too."</p>
+    <p>"Each kind of change has its rollback: a tag for code, and for a prompt that lives in code; a config switch for the model; a flag; the old index, if we kept it beside the new one; and fix-forward for the schema. AI incidents can show no errors, so we watch quality indicators too."</p>
   </aside>
 
   <h3 id="ch12-traps">Traps</h3>
@@ -2746,7 +2947,7 @@ add("stat", "Estimated model cost / hour",
     </li>
     <li>
       <p>What is the rollback for a prompt change, a new feature, a re-embedding and a schema change?</p>
-      <details class="ans"><summary>Answer</summary><p>Prompt: switch the version back in configuration. Feature: its flag (or, for the AI itself, the off switch). Re-embedding: switch back to the old index kept beside the new one. Schema: do not roll back; roll the code back alone and fix forward.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Prompt: switch the version back in configuration if prompts are configuration; if the prompt is code, as in the reference service, redeploy the previous tag. Feature: its flag (or, for the AI itself, the off switch). Re-embedding: switch back to the old index kept beside the new one; a re-embed in place, as in the reference service, has no switch back, only keyword search for the stale sections until it finishes. Schema: do not roll back; roll the code back alone and fix forward.</p></details>
     </li>
     <li>
       <p>What quality indicators would you add to the service levels of an AI feature?</p>
@@ -2763,15 +2964,17 @@ add("stat", "Estimated model cost / hour",
     <h2>Warehouses, lakehouses and streams</h2>
     <p class="lede">The modern data platform keeps the ideas of the classic warehouse (staging, cleansing, star schemas) but separates storage from compute, loads raw data before transforming it, and stores tables in open formats that several engines can read.</p>
   </header>
+  <p class="note"><strong>Data and cloud, not AI.</strong> This chapter is about the data platform: warehouses such as Snowflake, lakehouse tables and streams, all run on a cloud. A team needs it whether or not it uses models. Chapter 14 is where data meets AI. A data platform's own AI features, such as Snowflake Cortex, are AI features: judge them with Chapters 4 to 8.</p>
 
   <div class="glance">
     <span class="label">At a glance</span>
     <ul>
       <li>Each tool lives in one layer: storage, file format, table format, catalog, compute, or movement. Knowing the layer explains the tool.</li>
       <li>Parquet lays bytes out by column; Iceberg turns a folder of Parquet files into a table with atomic commits, schema evolution and time travel.</li>
-      <li>Change data capture reads a database's write-ahead log and publishes every change as an event, with almost no load on the source.</li>
+      <li>Change data capture reads a database's write-ahead log and publishes every change as an event, with little query load on the source. It is not free: the source keeps its log until the consumer confirms it, so a stopped connector can fill the source's disk.</li>
       <li>Bronze, silver and gold are the new names for staging, the conformed layer and the star schema.</li>
       <li>Start with a warehouse and dbt; add a streaming log, a lakehouse table format or a dataflow tool only for a specific pain.</li>
+      <li>Snowflake separates cloud services, compute and storage: warehouses bill per second while running, and micro-partition metadata lets a query skip most of a table. It is a data platform; its AI features are a layer on top.</li>
     </ul>
   </div>
 
@@ -2781,7 +2984,7 @@ add("stat", "Estimated model cost / hour",
     <tbody>
       <tr><td data-label="Then">ETL: transform before loading</td><td>ELT: load raw, transform inside the engine</td><td>Storage became cheap and compute elastic; raw data kept lets every later layer be rebuilt.</td></tr>
       <tr><td data-label="Then">Storage and compute in one database server</td><td>Object storage, with compute engines that scale separately</td><td>Pay for compute only while queries run; several engines can share one copy.</td></tr>
-      <tr><td data-label="Then">Nightly extracts by modified date</td><td>Change data capture from the database log</td><td>Near-real-time, captures deletes, and puts almost no load on the source.</td></tr>
+      <tr><td data-label="Then">Nightly extracts by modified date</td><td>Change data capture from the database log</td><td>Near-real-time, captures deletes, and puts little query load on the source.</td></tr>
       <tr><td data-label="Then">Proprietary table storage</td><td>Open formats: Parquet files, Iceberg tables</td><td>Less lock-in; Spark, Trino, Snowflake and DuckDB read the same table.</td></tr>
     </tbody>
   </table>
@@ -2810,7 +3013,7 @@ add("stat", "Estimated model cost / hour",
 
   <figure class="fig wide" id="fig-13-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 230" role="img" aria-label="How an Iceberg table commits. The catalog holds a pointer to the current metadata file, which records the schema and snapshots; it points to a manifest list, which points to manifests listing data files with per-column statistics, which point to Parquet files. A write creates new data files and new metadata, then atomically swaps the catalog's pointer. Readers see the old version or the new one, never a mix: ACID. Every old pointer is a snapshot, so time travel comes free. Columns are tracked by id, so renames are safe.">
+    <svg viewBox="0 0 820 230" role="img" aria-label="How an Iceberg table commits. The catalog holds a pointer to the current metadata file, which records the schema and snapshots; it points to a manifest list, which points to manifests listing data files with per-column statistics, which point to Parquet files. A write creates new data files and new metadata, then atomically swaps the catalog's pointer. Readers see the old version or the new one, never a mix: ACID. The metadata lists past snapshots, so time travel and rollback can read an older one, until snapshot expiration, routine maintenance, removes it and the files only it used. Columns are tracked by id, so renames are safe.">
       <g class="ts">
       <rect class="n-acc" x="16" y="30" width="120" height="50" rx="5"/><text x="76" y="52" text-anchor="middle" class="tb">catalog</text><text x="76" y="68" text-anchor="middle">pointer</text>
       <rect class="n" x="166" y="30" width="140" height="50" rx="5"/><text x="236" y="52" text-anchor="middle" class="tb">metadata</text><text x="236" y="68" text-anchor="middle">schema, snapshots</text>
@@ -2822,7 +3025,7 @@ add("stat", "Estimated model cost / hour",
       <rect class="n-good" x="16" y="110" width="788" height="100" rx="6"/>
       <text class="tb" x="28" y="134">A write: new files, new metadata, then one atomic swap of the catalog's pointer</text>
       <text class="ts" x="28" y="158">readers see the old version or the new one, never a mix: ACID on plain object storage</text>
-      <text class="ts" x="28" y="178">every old pointer is a snapshot: time travel and rollback come free</text>
+      <text class="ts" x="28" y="178">the metadata lists past snapshots: time travel and rollback read one, kept with its files until snapshot expiration</text>
       <text class="ts" x="28" y="198">columns are tracked by id, so renaming and reordering are safe; engines skip files using the column statistics</text>
     </svg>
     </div>
@@ -2832,7 +3035,7 @@ add("stat", "Estimated model cost / hour",
   <h3 id="ch13-cdc">Change data capture and streams</h3>
   <figure class="fig wide" id="fig-13-3">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 230" role="img" aria-label="A change-data-capture pipeline. Postgres writes every insert, update and delete to its write-ahead log before applying it. Debezium reads the log and publishes one event per change, with the operation and the old and new rows, to Kafka, one topic per table. NiFi or Spark reads the events and writes Iceberg tables on S3, cataloged in Glue. Snowflake, Trino or Spark query them, and dbt builds the analytics tables. Compared with a nightly extract by modified date: almost no load on the source, near-real-time, captures deletes, replayable.">
+    <svg viewBox="0 0 820 230" role="img" aria-label="A change-data-capture pipeline. Postgres writes every insert, update and delete to its write-ahead log before applying it. Debezium reads the log and publishes one event per change, with the operation and the old and new rows, to Kafka, one topic per table. NiFi or Spark reads the events and writes Iceberg tables on S3, cataloged in Glue. Snowflake, Trino or Spark query them, and dbt builds the analytics tables. Compared with a nightly extract by modified date: little query load on the source, near-real-time, captures deletes, replayable. The cost: Postgres keeps the log for the replication slot until Debezium confirms it.">
       <g class="ts">
       <rect class="n" x="16" y="30" width="110" height="60" rx="5"/><text x="71" y="54" text-anchor="middle" class="tb">Postgres</text><text x="71" y="72" text-anchor="middle">write-ahead log</text>
       <rect class="n" x="146" y="30" width="110" height="60" rx="5"/><text x="201" y="54" text-anchor="middle" class="tb">Debezium</text><text x="201" y="72" text-anchor="middle">one event/change</text>
@@ -2846,7 +3049,7 @@ add("stat", "Estimated model cost / hour",
       <rect class="n-soft" x="420" y="118" width="384" height="94" rx="6"/><text class="tb" x="432" y="140">NiFi</text><text class="ts" x="432" y="162">processors joined by queues with backpressure;</text><text class="ts" x="432" y="178">provenance for every record; written to disk</text><text class="ts" x="432" y="194">before acknowledged; moves, not analyzes</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 13.3</span>A change-data-capture pipeline from an application database to analytics. Kafka stores events durably; NiFi moves data between systems; Kafka no longer needs ZooKeeper, which consensus inside Kafka (KRaft) replaced.</figcaption>
+    <figcaption><span class="fig-n">Figure 13.3</span>A change-data-capture pipeline from an application database to analytics. Kafka stores events durably; NiFi moves data between systems; Kafka no longer needs ZooKeeper, which consensus inside Kafka (KRaft) replaced. On Postgres, the connector reads through a replication slot, and the database keeps every log segment the slot has not confirmed: if the connector stops or lags, the log grows until the disk fills and the source database stops. Alert on slot lag, cap it with <code>max_slot_wal_keep_size</code>, and use Debezium's heartbeats when the captured tables are quiet while others are busy.</figcaption>
   </figure>
 
   <h3 id="ch13-kimball">The classic warehouse, renamed</h3>
@@ -2873,6 +3076,115 @@ add("stat", "Estimated model cost / hour",
 
   <p><strong>Schema on write</strong> (Postgres) defines columns first and validates data as it loads. <strong>Schema on read</strong> (a semi-structured column holding JSON, queried by path) loads raw data and applies structure at query time: flexible and fast to ingest, with no enforcement and looser queries. <strong>dbt</strong> is the transformation layer: each model is a <code>SELECT</code> in Git, compiled into tables or views inside the warehouse in dependency order, with tests and documentation; it neither moves data nor schedules itself.</p>
 
+  <h3 id="ch13-inside">Snowflake, from the inside</h3>
+  <p>Snowflake is the warehouse many teams meet first, so it pays to know how it works underneath. It is a managed service and nothing else: an account runs on AWS, Azure or Google Cloud, all three of its layers on that one cloud, and it cannot be installed on your own servers. It is a data platform, not an AI product. Its AI features sit on top of it, and this section keeps them to one paragraph at the end.</p>
+
+  <figure class="fig wide" id="fig-13-5">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 372" role="img" aria-label="Snowflake's three layers. Cloud services handle sign-in and access control, metadata and statistics, and query parsing and optimization; they are billed only above 10 percent of the day's warehouse credits. Compute is virtual warehouses, each isolated with its own cache, for example one for loading, one multi-cluster warehouse for dashboards, one Snowpark-optimized warehouse for data science; they bill per second while running with a 60-second minimum per start, and a suspended warehouse uses no credits. Serverless features such as Snowpipe and serverless tasks use compute Snowflake sizes itself. Storage is managed by Snowflake in the cloud provider's object storage, as micro-partitions of 50 to 500 megabytes uncompressed, columnar, with value ranges per column, so a query reads only the micro-partitions that can match. Time Travel keeps changed data 1 day by default, up to 90; Fail-safe keeps it 7 more days, recoverable only through Snowflake Support.">
+      <text class="ts" x="16" y="30">a query</text>
+      <line class="e" x1="70" y1="26" x2="104" y2="26" marker-end="url(#a)"/>
+      <rect class="zone" x="108" y="10" width="696" height="66" rx="8"/>
+      <text class="tl" x="122" y="30">CLOUD SERVICES</text>
+      <text class="ts" x="122" y="50">sign-in and access control · metadata and statistics · parsing and optimizing</text>
+      <text class="ts tmu" x="122" y="67">billed only above 10% of the day's warehouse credits</text>
+
+      <line class="e" x1="456" y1="77" x2="456" y2="99" marker-end="url(#a)"/>
+      <text class="ts" x="466" y="93">plan and dispatch</text>
+
+      <rect class="zone" x="16" y="102" width="788" height="140" rx="8"/>
+      <text class="tl" x="30" y="122">COMPUTE: VIRTUAL WAREHOUSES</text>
+      <rect class="n" x="30" y="132" width="170" height="62" rx="5"/>
+      <text class="tb" x="42" y="153">loading</text><text class="ts" x="42" y="172">one size, e.g. Medium</text><text class="ts tmu" x="42" y="187">own cache</text>
+      <rect class="n-acc" x="212" y="132" width="196" height="62" rx="5"/>
+      <text class="tb" x="224" y="153">dashboards</text><text class="ts" x="224" y="172">multi-cluster: more clusters</text><text class="ts" x="224" y="187">start as queries queue</text>
+      <rect class="n" x="420" y="132" width="170" height="62" rx="5"/>
+      <text class="tb" x="432" y="153">data science</text><text class="ts" x="432" y="172">Snowpark-optimized</text><text class="ts tmu" x="432" y="187">own cache</text>
+      <rect class="n-soft" x="604" y="132" width="188" height="62" rx="5"/>
+      <text class="tb" x="616" y="153">serverless</text><text class="ts" x="616" y="172">Snowpipe, serverless tasks:</text><text class="ts" x="616" y="187">Snowflake sizes the compute</text>
+      <text class="ts" x="30" y="216">Isolated from each other. Billed per second while running, 60 s minimum per start; a suspended</text>
+      <text class="ts" x="30" y="233">warehouse uses no credits, and drops its cache. Bigger = faster big queries; more clusters = more users.</text>
+
+      <line class="e" x1="456" y1="243" x2="456" y2="265" marker-end="url(#a)"/>
+      <text class="ts" x="466" y="259">read only what can match</text>
+
+      <rect class="zone" x="16" y="268" width="788" height="96" rx="8"/>
+      <text class="tl" x="30" y="288">STORAGE: MANAGED BY SNOWFLAKE, IN THE CLOUD PROVIDER'S OBJECT STORAGE</text>
+      <rect class="n-acc" x="30" y="300" width="34" height="26" rx="2"/><rect class="n" x="70" y="300" width="34" height="26" rx="2"/><rect class="n" x="110" y="300" width="34" height="26" rx="2"/><rect class="n-acc" x="150" y="300" width="34" height="26" rx="2"/><rect class="n" x="190" y="300" width="34" height="26" rx="2"/><rect class="n" x="230" y="300" width="34" height="26" rx="2"/>
+      <text class="ts" x="30" y="346">micro-partitions: 50-500 MB uncompressed,</text>
+      <text class="ts" x="30" y="360">columnar, with each column's value range</text>
+      <text class="ts" x="300" y="310">a filter that matches only the highlighted</text>
+      <text class="ts" x="300" y="326">ranges reads those two micro-partitions,</text>
+      <text class="ts" x="300" y="342">then only the columns it needs</text>
+      <rect class="n-soft" x="604" y="296" width="188" height="58" rx="5"/>
+      <text class="ts" x="616" y="316">Time Travel: 1 day default,</text>
+      <text class="ts" x="616" y="331">up to 90 (Enterprise)</text>
+      <text class="ts" x="616" y="346">then Fail-safe: 7 days, via Support</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.5</span>Snowflake's three layers. Storage and compute are separate, so several warehouses read the same data without slowing each other, and each is paid for only while it runs. What makes a query cheap happens in storage: the metadata of each micro-partition lets the engine skip most of a table before reading it.</figcaption>
+  </figure>
+
+  <h4>What makes a query cheap, and what you pay for</h4>
+  <p>Every table is split automatically into micro-partitions in the order rows arrive, and Snowflake keeps each column's range of values per micro-partition. A query prunes in two steps: first the micro-partitions whose ranges cannot match its filter, then the columns it does not need. A filter written as a subquery does not prune, even when it returns a constant. Two caches help again: the result cache returns a repeated query's result without running it, for 24 hours (extended on each reuse, up to 31 days) as long as the query text is identical and the data has not changed; and each running warehouse caches the data it read, a cache that is dropped when the warehouse suspends, so the first queries after a resume can be slower.</p>
+  <p>The bill has three parts. <strong>Compute</strong> is paid in credits: warehouses per second while running, with a 60-second minimum each time one starts, doubling with each size step; serverless features such as Snowpipe; and the cloud services layer, charged only for the part above 10% of the day's warehouse use. <strong>Storage</strong> is billed monthly on the average bytes stored each day, and a longer Time Travel retention stores more. <strong>Data transfer</strong> is free into Snowflake and charged out of a region or cloud. Auto-suspend and auto-resume are on by default; the trade-off is the cache, so a dashboard warehouse that suspends after a minute saves credits and pays for it with slower first queries. A bigger warehouse makes one big query faster; more clusters of the same size (multi-cluster, an Enterprise feature) serve more users at once. Newer warehouse generations and types exist, and which is the default varies, so check what an account actually runs before comparing numbers.</p>
+
+  <h4>Getting data in, and keeping tables current</h4>
+  <figure class="fig wide" id="fig-13-6">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Getting data into Snowflake, three ways, and keeping derived tables current, two ways. Files in S3 are loaded by COPY INTO, in batches, on a warehouse you choose; or by Snowpipe, which an S3 event notification triggers through SQS, on serverless compute, within minutes. Rows from an application or a Kafka topic are written by Snowpipe Streaming through an SDK or the Kafka connector, with no files, queryable in seconds. All three land in a raw table. Downstream, either a stream records the raw table's changes and a task, on a schedule or when the stream has data, merges them into a clean table; or a dynamic table declares the clean table as a SELECT with a target lag of at least 60 seconds, and Snowflake refreshes it and infers the pipeline.">
+      <rect class="zone" x="16" y="16" width="236" height="268" rx="8"/>
+      <text class="tl" x="30" y="36">SOURCES</text>
+      <rect class="n" x="30" y="48" width="208" height="56" rx="5"/><text class="tb" x="42" y="70">Files in S3</text><text class="ts" x="42" y="89">exports, logs, partner drops</text>
+      <rect class="n" x="30" y="200" width="208" height="56" rx="5"/><text class="tb" x="42" y="222">Rows from an app or Kafka</text><text class="ts" x="42" y="241">through an SDK or the connector</text>
+
+      <rect class="n" x="290" y="30" width="196" height="54" rx="5"/><text class="tb" x="302" y="52">COPY INTO</text><text class="ts" x="302" y="70">batches, on your warehouse</text>
+      <rect class="n" x="290" y="100" width="196" height="70" rx="5"/><text class="tb" x="302" y="122">Snowpipe</text><text class="ts" x="302" y="140">S3 event → SQS; serverless;</text><text class="ts" x="302" y="157">within minutes</text>
+      <rect class="n-acc" x="290" y="200" width="196" height="56" rx="5"/><text class="tb" x="302" y="222">Snowpipe Streaming</text><text class="ts" x="302" y="241">no files; queryable in seconds</text>
+      <path class="e" d="M239,70 C262,70 266,57 288,57" marker-end="url(#a)"/>
+      <path class="e" d="M239,82 C264,82 264,135 288,135" marker-end="url(#a)"/>
+      <line class="e" x1="239" y1="228" x2="288" y2="228" marker-end="url(#a)"/>
+
+      <rect class="n-soft" x="520" y="118" width="96" height="56" rx="5"/><text class="tb" x="568" y="142" text-anchor="middle">raw table</text><text class="ts" x="568" y="160" text-anchor="middle">bronze</text>
+      <path class="e" d="M487,57 C506,57 500,130 518,130" marker-end="url(#a)"/>
+      <line class="e" x1="487" y1="140" x2="518" y2="140" marker-end="url(#a)"/>
+      <path class="e" d="M487,228 C506,228 500,162 518,162" marker-end="url(#a)"/>
+
+      <rect class="n" x="648" y="30" width="156" height="96" rx="5"/><text class="tb" x="660" y="52">stream + task</text><text class="ts" x="660" y="71">a stream records changes;</text><text class="ts" x="660" y="87">a task merges them, on a</text><text class="ts" x="660" y="103">schedule or when there</text><text class="ts" x="660" y="119">are changes</text>
+      <rect class="n-acc" x="648" y="150" width="156" height="96" rx="5"/><text class="tb" x="660" y="172">dynamic table</text><text class="ts" x="660" y="191">declare a SELECT and a</text><text class="ts" x="660" y="207">target lag (60 s minimum);</text><text class="ts" x="660" y="223">Snowflake refreshes it</text><text class="ts" x="660" y="239">and infers the pipeline</text>
+      <path class="e" d="M617,134 C632,134 630,78 646,78" marker-end="url(#a)"/>
+      <path class="e" d="M617,158 C632,158 630,198 646,198" marker-end="url(#a)"/>
+      <text class="ts tmu" x="648" y="272">either way: a clean, current table</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.6</span>Getting data in, and keeping derived tables current. Pick the loading path by the shape of the source (files or rows) and the latency you need; never load the same files with both COPY and Snowpipe. Streams and tasks are imperative, step by step; a dynamic table is declarative, and its lag is a target, not a guarantee.</figcaption>
+  </figure>
+  <p>Snowpipe Streaming has two architectures. The current, high-performance one offers named channels with ordered, exactly-once ingestion; the classic one is planned for deprecation, so new work should not start on it.</p>
+
+  <h4>Open tables, access and the connection to AWS</h4>
+  <ul>
+    <li><strong>Iceberg tables.</strong> Snowflake can keep a table in the open Iceberg format. Snowflake-managed, it gets full support, compaction and Fail-safe; on your own bucket you own its protection and recovery; and with an external catalog (such as AWS Glue) Snowflake's support is limited and it manages none of the table's lifecycle.</li>
+    <li><strong>Access.</strong> Privileges go to roles, roles to users or to other roles, and anything not granted is denied. Each object is owned by one role. Keep <code>ACCOUNTADMIN</code> to a few people and hang custom roles under <code>SYSADMIN</code>. Network policies, written with network rules, decide who may connect at all; by default anyone may.</li>
+    <li><strong>Reading your S3 without keys.</strong> A storage integration lets Snowflake assume an IAM role in your account, trusted only for Snowflake's IAM user and an external ID, and limited to the buckets you allow; no access keys are stored in Snowflake. It is the same keyless trust as a CI pipeline's (Handbook 3, Chapter 5). Snowpipe learns of new files from S3 event notifications delivered through SQS.</li>
+    <li><strong>Private connectivity.</strong> AWS PrivateLink keeps traffic from your VPC to Snowflake off the internet, and needs the Business Critical edition or higher. It covers inbound traffic only, and Snowpipe's SQS notifications do not travel through it.</li>
+  </ul>
+
+  <h4>Its AI layer, kept apart</h4>
+  <p>Snowflake Cortex is a set of AI features over the data: SQL functions such as <code>AI_COMPLETE</code>, <code>AI_CLASSIFY</code> and <code>AI_EXTRACT</code>, hybrid search for retrieval, and agents and text-to-SQL over semantic models. The models run inside Snowflake's security perimeter, and Cortex is billed differently from warehouses. These are AI features that happen to live in the warehouse; how retrieval, agents and evaluation work, and how to judge them, is in Chapters 4, 6 and 7.</p>
+
+  <h4>Where it fits for a team, and when</h4>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Stage</th><th>What the data needs</th><th>What fits</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Stage">One application</td><td data-label="What the data needs">Reports on the application's own data</td><td data-label="What fits">The application's Postgres, a read replica, or a small engine such as DuckDB. A warehouse is premature.</td></tr>
+        <tr><td data-label="Stage">Several sources, an analyst or two</td><td data-label="What the data needs">SQL across sources, history, dashboards</td><td data-label="What fits">A managed warehouse such as Snowflake, with dbt (this chapter's starting point). Per-second billing and auto-suspend make a small start cheap.</td></tr>
+        <tr><td data-label="Stage">Many users, partners, a data lake</td><td data-label="What the data needs">Concurrency, sharing, open formats</td><td data-label="What fits">Multi-cluster warehouses, sharing without copies, Iceberg tables that other engines read too.</td></tr>
+        <tr><td data-label="Stage">Transactions</td><td data-label="What the data needs">Row lookups and updates for an application</td><td data-label="What fits">Keep them in an operational database. Snowflake positions its standard tables for warehousing; its hybrid tables target lightweight transactional work, with limits such as 2 TB per database and no Google Cloud.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
   <h3 id="ch13-snowflake">A cloud warehouse's features, in one table</h3>
   <div class="table-wrap">
     <table class="grid stack">
@@ -2894,7 +3206,7 @@ add("stat", "Estimated model cost / hour",
   <p class="note">Warehouse vendors rename and add features often: check names and editions against current documentation before relying on them.</p>
 
   <h3 id="ch13-simple">When it is overcomplicated</h3>
-  <figure class="fig wide" id="fig-13-5">
+  <figure class="fig wide" id="fig-13-7">
     <div class="fig-scroll">
     <svg viewBox="0 0 820 214" role="img" aria-label="Start with a warehouse and dbt. Add a piece only for its pain: near-real-time changes without loading production, add CDC and Kafka; many sources and formats with lineage, add NiFi or a managed connector; data too big for one database, cheap storage, several engines or less lock-in, add Iceberg on object storage with a catalog. Red flags: Kafka for a nightly batch; Iceberg with only one engine; Spark under about 100 GB; NiFi where a Python script would do.">
       <rect class="n-good" x="16" y="16" width="200" height="70" rx="6"/><text class="tb" x="28" y="42">Start here</text><text class="ts" x="28" y="62">a warehouse and dbt</text>
@@ -2907,7 +3219,7 @@ add("stat", "Estimated model cost / hour",
       <g class="ts"><text x="28" y="164">Kafka for a nightly batch</text><text x="28" y="186">Iceberg with only one engine reading it</text><text x="420" y="164">Spark for under about 100 GB</text><text x="420" y="186">NiFi where a short script would do</text></g>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 13.5</span>The complexity dial applied to data platforms: each piece is added for a pain you can name, the same rule as for application architecture (Chapter 16).</figcaption>
+    <figcaption><span class="fig-n">Figure 13.7</span>The complexity dial applied to data platforms: each piece is added for a pain you can name, the same rule as for application architecture (Chapter 16).</figcaption>
   </figure>
 
   <aside class="say">
@@ -2921,8 +3233,12 @@ add("stat", "Estimated model cost / hour",
     <table class="grid traps stack">
       <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
       <tbody>
+        <tr><td data-label="Symptom">The warehouse bill grows while nobody is querying</td><td data-label="Cause">A warehouse left running, or auto-suspend set long, bills per second while running</td><td data-label="Fix">Keep auto-suspend on, short for bursty use; a suspended warehouse uses no credits.</td></tr>
+        <tr><td data-label="Symptom">Every morning's first dashboards are slow</td><td data-label="Cause">The warehouse suspended overnight and dropped its cache</td><td data-label="Fix">Accept it, or weigh a longer auto-suspend against the credits it costs.</td></tr>
+        <tr><td data-label="Symptom">Rows are loaded twice</td><td data-label="Cause">The same files were loaded by both COPY and Snowpipe</td><td data-label="Fix">One loading path per set of files.</td></tr>
         <tr><td data-label="Symptom">Readers see half-written data in the lake</td><td data-label="Cause">A folder of files with no table format</td><td data-label="Fix">A table format with atomic commits.</td></tr>
         <tr><td data-label="Symptom">Deleted rows linger in analytics</td><td data-label="Cause">Extracts by modified date cannot see deletes</td><td data-label="Fix">Change data capture from the log.</td></tr>
+        <tr><td data-label="Symptom">The source database's disk fills, though its data barely grew</td><td data-label="Cause">A CDC replication slot keeps the write-ahead log its stopped or lagging connector has not confirmed</td><td data-label="Fix">Alert on slot lag; cap it with <code>max_slot_wal_keep_size</code>; heartbeats for quiet tables.</td></tr>
         <tr><td data-label="Symptom">A rebuild of the gold layer is impossible</td><td data-label="Cause">Raw data was transformed and discarded</td><td data-label="Fix">Keep bronze; transform after loading.</td></tr>
         <tr><td data-label="Symptom">Production changes made by hand cannot be reproduced</td><td data-label="Cause">Warehouse objects edited in the UI</td><td data-label="Fix">Objects as code, deployed from CI.</td></tr>
         <tr><td data-label="Symptom">The platform costs more than the questions it answers</td><td data-label="Cause">Streaming, lakehouse and dataflow tools added before any pain</td><td data-label="Fix">A warehouse and dbt first; add pieces for named needs.</td></tr>
@@ -2933,12 +3249,20 @@ add("stat", "Estimated model cost / hour",
   <h3 id="ch13-questions">Questions</h3>
   <ol class="qs">
     <li>
+      <p>In Snowflake, when does a bigger warehouse help, and when do more clusters help?</p>
+      <details class="ans"><summary>Answer</summary><p>A bigger warehouse gives one query more compute, so large queries finish faster (loading does not always speed up). More clusters of the same size, a multi-cluster warehouse, serve more queries at once: Snowflake starts clusters as queries begin to queue. Size is for heavy queries; clusters are for many users.</p></details>
+    </li>
+    <li>
+      <p>How does Snowflake read files in your S3 bucket without storing AWS access keys?</p>
+      <details class="ans"><summary>Answer</summary><p>Through a storage integration: an IAM role in your account whose trust policy names Snowflake's IAM user and an external ID, with permissions on only the buckets you allow. Snowflake assumes the role when it needs the files. It is the same keyless pattern as a CI pipeline assuming a role through OIDC.</p></details>
+    </li>
+    <li>
       <p>What problem does a table format such as Iceberg solve?</p>
       <details class="ans"><summary>Answer</summary><p>A folder of Parquet files has no atomic commit, so readers can see partial writes and schema changes are painful. Iceberg's metadata layer and an atomic swap of the catalog's pointer give ACID commits, snapshots for time travel, and safe schema evolution.</p></details>
     </li>
     <li>
       <p>Why is change data capture usually better than a nightly extract by modified date?</p>
-      <details class="ans"><summary>Answer</summary><p>It reads the database's log rather than querying tables, so it adds almost no load, is near-real-time, captures deletes, and the events can be replayed.</p></details>
+      <details class="ans"><summary>Answer</summary><p>It reads the database's log rather than querying tables, so it adds little query load, is near-real-time, captures deletes, and the events can be replayed. Its cost: the source keeps its log until the consumer confirms it, so a stopped connector must be noticed before the source's disk fills.</p></details>
     </li>
     <li>
       <p>Map staging, the conformed layer and the star schema to their lakehouse names.</p>
@@ -3037,7 +3361,7 @@ add("stat", "Estimated model cost / hour",
         <p>Two small data-engineering decisions in the reference service: a key that records how every vector was made, and the date shown to the model beside every section.</p>
         <ul class="notice">
           <li>The embedding key names the model, the size and a hash of the document prefix; vectors with another key are ignored until a re-embed, because they are not comparable.</li>
-          <li>A prefix change alone moved every vector: measured, the same text with and without the prefix differed by 0.06 in distance.</li>
+          <li>A prefix change alone moves every vector, so old and new vectors cannot be mixed. In the retrieval measurements, dropping embeddinggemma's prompts shrank the gap between relevant sections and unanswerable questions from 0.12 to 0.06 in distance.</li>
           <li>Each section reaches the model with its team and its last update date, so a stale step is visible as stale.</li>
         </ul>
       </div>
@@ -3048,8 +3372,8 @@ add("stat", "Estimated model cost / hour",
     document prefix. Stored with every vector; vectors with another key are
     not comparable, so retrieval ignores them until they are re-embedded
     (`python -m app.cli reembed`). A prefix change alone moves every vector:
-    measured, embeddinggemma with and without its prompts gave distances
-    0.06 apart on the same text."""
+    measured, dropping embeddinggemma's prompts shrank the gap between
+    relevant and unanswerable distances from 0.12 to 0.06 (rag.md)."""
     prefix = hashlib.sha256(settings.embedding_document_prefix.encode()).hexdigest()[:8]
     return f"{settings.embedding_model}|{settings.embedding_dimensions or 'native'}|{prefix}"</code></pre>
         </div>
@@ -3805,7 +4129,7 @@ What this makes easier, what it makes harder, what it costs.
       <tbody>
         <tr><td data-label="Rule">The prompt is code: reviewed, versioned, changed only with eval runs before and after</td><td data-label="Where">Chapters 1 and 7</td></tr>
         <tr><td data-label="Rule">The model sees only what the asker may see</td><td data-label="Where">Chapters 4 and 9</td></tr>
-        <tr><td data-label="Rule">Model output is untrusted: rendered as text, never executed, never fed to a tool without confirmation</td><td data-label="Where">Chapters 6 and 9</td></tr>
+        <tr><td data-label="Rule">Model output is untrusted: rendered as text, never executed; the tool calls it writes are validated like any input, and reach a state-changing tool only after a person confirms</td><td data-label="Where">Chapters 6 and 9</td></tr>
         <tr><td data-label="Rule">Tools read only, as the asker; a tool that changes anything waits for a confirmation step and a least-privilege account</td><td data-label="Where">Chapter 6</td></tr>
         <tr><td data-label="Rule">Quality measured with a calibrated judge; releases gated on safety cases</td><td data-label="Where">Chapter 7</td></tr>
         <tr><td data-label="Rule">Every model call bounded: rate limits, output tokens, stream duration; the cost on a dashboard</td><td data-label="Where">Chapters 3 and 10</td></tr>
@@ -3863,6 +4187,8 @@ What this makes easier, what it makes harder, what it costs.
 <dl class="glossary">
   <dt>Agent</dt>
   <dd>A model that directs its own steps: which tool to call, with what arguments, and when to stop. Contrast with a workflow. <a class="see" href="#ch6">Chapter 6</a></dd>
+  <dt>AgentCore</dt>
+  <dd>AWS's managed services for running agents: a harness that runs an agent from configuration, or Runtime for your own agent code, each session in its own microVM, with a gateway, identity, memory and observability around it. <a class="see" href="#ch6">Chapter 6</a></dd>
   <dt>Attention</dt>
   <dd>The step in each transformer layer where a token's vector mixes in information from earlier tokens, weighted by how well its query matches their keys. <a class="see" href="#ch2">Chapter 2</a></dd>
   <dt>Audit trail</dt>
@@ -3880,7 +4206,7 @@ What this makes easier, what it makes harder, what it costs.
   <dt>Chunk</dt>
   <dd>The unit a document is split into for retrieval: both what the search matches and what the model reads. <a class="see" href="#ch4">Chapter 4</a></dd>
   <dt>Circuit breaker</dt>
-  <dd>Stops calling a dependency after repeated failures, lets one trial through after a cooldown, and closes again on success. <a class="see" href="#ch11">Chapter 11</a></dd>
+  <dd>Stops calling a dependency after repeated failures, lets one trial through after a cooldown, closes again if it succeeds, and opens for another cooldown if it fails. <a class="see" href="#ch11">Chapter 11</a></dd>
   <dt>Confused deputy</dt>
   <dd>A component with more rights than its caller, used by the caller (or by text that steers a model) to act beyond the caller's own rights. <a class="see" href="#ch6">Chapter 6</a></dd>
   <dt>Context window</dt>
@@ -3906,7 +4232,7 @@ What this makes easier, what it makes harder, what it costs.
   <dt>Gateway (model)</dt>
   <dd>A service between applications and model backends: authentication, request and token limits, routing, fallback, logging and cost tracking. <a class="see" href="#ch3">Chapter 3</a></dd>
   <dt>GenAI semantic conventions</dt>
-  <dd>OpenTelemetry's names for model spans and attributes: models, tokens, finish reasons, time to first chunk. Still marked experimental. <a class="see" href="#ch8">Chapter 8</a></dd>
+  <dd>OpenTelemetry's names for model spans and attributes: models, tokens, finish reasons, time to first chunk. Still marked Development, not yet stable: names may change. <a class="see" href="#ch8">Chapter 8</a></dd>
   <dt>GraphRAG</dt>
   <dd>Retrieval that finds entry points by similarity and then follows relationships in a knowledge graph. <a class="see" href="#ch5">Chapter 5</a></dd>
   <dt>HNSW</dt>
@@ -3922,7 +4248,7 @@ What this makes easier, what it makes harder, what it costs.
   <dt>Knowledge graph</dt>
   <dd>Entities as nodes and typed relationships as edges, stored as subject, predicate, object facts. <a class="see" href="#ch5">Chapter 5</a></dd>
   <dt>KV cache</dt>
-  <dd>The keys and values of every earlier token, kept per layer in GPU memory so decode does not recompute them; it caps concurrency. <a class="see" href="#ch3">Chapter 3</a></dd>
+  <dd>The keys and values of every earlier token, kept per layer in GPU memory so decode does not recompute them; it caps concurrency. <a class="see" href="#ch2">Chapter 2</a></dd>
   <dt>Lakehouse</dt>
   <dd>Files in object storage plus a table format, giving warehouse-like tables that several engines can read. <a class="see" href="#ch13">Chapter 13</a></dd>
   <dt>Lethal trifecta</dt>
@@ -3933,8 +4259,12 @@ What this makes easier, what it makes harder, what it costs.
   <dd>The Model Context Protocol: one protocol between AI applications (hosts) and servers offering tools, resources and prompts. <a class="see" href="#ch6">Chapter 6</a></dd>
   <dt>Medallion layers</dt>
   <dd>Bronze (raw, kept), silver (cleaned, typed) and gold (the modeled tables) in a lakehouse. <a class="see" href="#ch13">Chapter 13</a></dd>
+  <dt>Micro-partition</dt>
+  <dd>Snowflake's unit of storage: 50 to 500 MB of rows, stored by column with each column's range of values, so a query can skip the ones that cannot match. <a class="see" href="#ch13">Chapter 13</a></dd>
   <dt>MRR</dt>
   <dd>Mean reciprocal rank: the average of 1 ÷ the rank of the first relevant result. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dt>n8n</dt>
+  <dd>A workflow automation tool with a visual editor: workflows of trigger and action nodes, including an AI Agent node whose sub-nodes are a chat model, memory and tools. <a class="see" href="#ch6">Chapter 6</a></dd>
   <dt>Off switch</dt>
   <dd>A setting that stops an AI feature in seconds on every server, without a deploy, while the rest of the service keeps working. <a class="see" href="#ch12">Chapter 12</a></dd>
   <dt>Overfiltering</dt>
@@ -3942,7 +4272,7 @@ What this makes easier, what it makes harder, what it costs.
   <dt>Point-in-time correctness</dt>
   <dd>A training row uses only data that existed at its moment; a join that leaks later data inflates offline results. <a class="see" href="#ch14">Chapter 14</a></dd>
   <dt>Prefill</dt>
-  <dd>The phase that reads the whole prompt in one parallel pass and builds the KV cache; compute-bound; sets time to first token. <a class="see" href="#ch2">Chapter 2</a></dd>
+  <dd>The phase that reads the whole prompt in one parallel pass and builds the KV cache; compute-bound; sets time to first token, to which a reasoning model adds its hidden thinking. <a class="see" href="#ch2">Chapter 2</a></dd>
   <dt>Prompt caching</dt>
   <dd>A provider's discount for a long, identical prompt prefix it has seen recently. <a class="see" href="#ch10">Chapter 10</a></dd>
   <dt>Prompt injection</dt>
@@ -3952,7 +4282,7 @@ What this makes easier, what it makes harder, what it costs.
   <dt>Reasoning model</dt>
   <dd>A model that spends hidden output tokens thinking before it answers; the thinking counts against the output limit and is billed. <a class="see" href="#ch2">Chapter 2</a></dd>
   <dt>Recall@k</dt>
-  <dd>Whether a relevant item is in the top k results; it bounds what generation can use. <a class="see" href="#ch4">Chapter 4</a></dd>
+  <dd>The share of the relevant items that appear in the top k results; it bounds what generation can use. With one relevant item per question it is a hit rate, whether a relevant item is in the top k, which is how the reference benchmark counts it. <a class="see" href="#ch4">Chapter 4</a></dd>
   <dt>Reciprocal rank fusion</dt>
   <dd>Merging ranked lists by summing 1 ÷ (60 + rank) per item, so their scores need no calibration. <a class="see" href="#ch4">Chapter 4</a></dd>
   <dt>Redaction</dt>
@@ -3979,6 +4309,8 @@ What this makes easier, what it makes harder, what it costs.
   <dd>Sampling only from the smallest set of tokens whose probabilities reach p. <a class="see" href="#ch2">Chapter 2</a></dd>
   <dt>Training-serving skew</dt>
   <dd>A feature computed one way for training and another for serving, so the model sees different numbers live. <a class="see" href="#ch14">Chapter 14</a></dd>
+  <dt>Virtual warehouse</dt>
+  <dd>Snowflake's compute: a cluster that runs queries and loads, isolated from other warehouses and billed per second while it runs. <a class="see" href="#ch13">Chapter 13</a></dd>
   <dt>Workflow</dt>
   <dd>Models and tools run through code paths written in advance; contrast with an agent. <a class="see" href="#ch6">Chapter 6</a></dd>
 </dl>
@@ -4068,6 +4400,10 @@ What this makes easier, what it makes harder, what it costs.
 <tr><td data-label="Symptom">A graph program delivers nothing after months</td><td data-label="Fix">Competency questions, one consumer, a kill criterion.</td><td data-label="Chapter"><a href="#ch5">5 · Knowledge graphs and GraphRAG</a></td></tr>
 <tr><td data-label="Symptom">GraphRAG is no better than plain retrieval</td><td data-label="Fix">Baseline against vector plus keyword search first.</td><td data-label="Chapter"><a href="#ch5">5 · Knowledge graphs and GraphRAG</a></td></tr>
 <tr><td data-label="Symptom">The ontology no longer matches reality</td><td data-label="Fix">Name an owner; treat schema changes as migrations.</td><td data-label="Chapter"><a href="#ch5">5 · Knowledge graphs and GraphRAG</a></td></tr>
+<tr><td data-label="Symptom">Creating a Bedrock agent fails with AccessDenied in a new account</td><td data-label="Fix">Build on AgentCore: the harness, or Runtime with your own code.</td><td data-label="Chapter"><a href="#ch6">6 · Agents, tools and MCP</a></td></tr>
+<tr><td data-label="Symptom">An agent forgets the conversation after a pause</td><td data-label="Fix">Keep what must last in AgentCore Memory, keyed by user, not in the session.</td><td data-label="Chapter"><a href="#ch6">6 · Agents, tools and MCP</a></td></tr>
+<tr><td data-label="Symptom">An n8n Code node can read the server's secrets</td><td data-label="Fix">Run task runners in external mode, as separate containers.</td><td data-label="Chapter"><a href="#ch6">6 · Agents, tools and MCP</a></td></tr>
+<tr><td data-label="Symptom">n8n queue mode will not start reliably</td><td data-label="Fix">Postgres, Redis, and the same encryption key on every worker.</td><td data-label="Chapter"><a href="#ch6">6 · Agents, tools and MCP</a></td></tr>
 <tr><td data-label="Symptom">The agent answers "no recent alerts" when there are some</td><td data-label="Fix">Read the tool calls in the audit trail; state the default call explicitly.</td><td data-label="Chapter"><a href="#ch6">6 · Agents, tools and MCP</a></td></tr>
 <tr><td data-label="Symptom">An agent loops until the step limit</td><td data-label="Fix">Refuse repeated calls; return readable errors; count steps.</td><td data-label="Chapter"><a href="#ch6">6 · Agents, tools and MCP</a></td></tr>
 <tr><td data-label="Symptom">A planted instruction made a tool read other tenants' data</td><td data-label="Fix">Act as the asker; identity from the session.</td><td data-label="Chapter"><a href="#ch6">6 · Agents, tools and MCP</a></td></tr>
@@ -4122,8 +4458,12 @@ What this makes easier, what it makes harder, what it costs.
 <tr><td data-label="Symptom">A model rollback is slow</td><td data-label="Fix">Model and prompt versions as configuration; keep the old values.</td><td data-label="Chapter"><a href="#ch12">12 · Production AI operations</a></td></tr>
 <tr><td data-label="Symptom">Search quality collapsed during a re-embed</td><td data-label="Fix">Build the new index beside the old; evaluate; switch.</td><td data-label="Chapter"><a href="#ch12">12 · Production AI operations</a></td></tr>
 <tr><td data-label="Symptom">The same failure returns after a fix</td><td data-label="Fix">Every production failure becomes a case.</td><td data-label="Chapter"><a href="#ch12">12 · Production AI operations</a></td></tr>
+<tr><td data-label="Symptom">The warehouse bill grows while nobody is querying</td><td data-label="Fix">Keep auto-suspend on, short for bursty use; a suspended warehouse uses no credits.</td><td data-label="Chapter"><a href="#ch13">13 · Warehouses, lakehouses and streams</a></td></tr>
+<tr><td data-label="Symptom">Every morning's first dashboards are slow</td><td data-label="Fix">Accept it, or weigh a longer auto-suspend against the credits it costs.</td><td data-label="Chapter"><a href="#ch13">13 · Warehouses, lakehouses and streams</a></td></tr>
+<tr><td data-label="Symptom">Rows are loaded twice</td><td data-label="Fix">One loading path per set of files.</td><td data-label="Chapter"><a href="#ch13">13 · Warehouses, lakehouses and streams</a></td></tr>
 <tr><td data-label="Symptom">Readers see half-written data in the lake</td><td data-label="Fix">A table format with atomic commits.</td><td data-label="Chapter"><a href="#ch13">13 · Warehouses, lakehouses and streams</a></td></tr>
 <tr><td data-label="Symptom">Deleted rows linger in analytics</td><td data-label="Fix">Change data capture from the log.</td><td data-label="Chapter"><a href="#ch13">13 · Warehouses, lakehouses and streams</a></td></tr>
+<tr><td data-label="Symptom">The source database's disk fills, though its data barely grew</td><td data-label="Fix">Alert on slot lag; cap it with <code>max_slot_wal_keep_size</code>; heartbeats for quiet tables.</td><td data-label="Chapter"><a href="#ch13">13 · Warehouses, lakehouses and streams</a></td></tr>
 <tr><td data-label="Symptom">A rebuild of the gold layer is impossible</td><td data-label="Fix">Keep bronze; transform after loading.</td><td data-label="Chapter"><a href="#ch13">13 · Warehouses, lakehouses and streams</a></td></tr>
 <tr><td data-label="Symptom">Production changes made by hand cannot be reproduced</td><td data-label="Fix">Objects as code, deployed from CI.</td><td data-label="Chapter"><a href="#ch13">13 · Warehouses, lakehouses and streams</a></td></tr>
 <tr><td data-label="Symptom">The platform costs more than the questions it answers</td><td data-label="Fix">A warehouse and dbt first; add pieces for named needs.</td><td data-label="Chapter"><a href="#ch13">13 · Warehouses, lakehouses and streams</a></td></tr>
@@ -4159,7 +4499,7 @@ What this makes easier, what it makes harder, what it costs.
 
 <footer class="series-foot">
   <p>Engineering Handbooks · Handbook 1 of 3 · AI Engineering &amp; Architecture · Edition 1</p>
-  <p>Reference implementation: <a href="https://github.com/Parzon/triage-assistant">triage-assistant</a> at <code>handbook-1 (0b81c10)</code>.</p>
+  <p>Reference implementation: <a href="https://github.com/Parzon/triage-assistant">triage-assistant</a> at <code>handbook-1 (3fc2c43)</code>.</p>
 </footer>
 </main>
 </div>

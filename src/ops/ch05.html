@@ -24,7 +24,7 @@
       <tr><td data-label="Then">An IAM user per developer, with access keys in <code>~/.aws/credentials</code></td><td>Single sign-on behind the company identity provider, with role sessions that expire</td><td>A key on a laptop leaks with the laptop. A session dies on its own.</td></tr>
       <tr><td data-label="Then">Access keys stored as CI secrets</td><td>OIDC federation: the job's signed token is exchanged for one-hour credentials</td><td>Stored CI keys are the classic leak, and someone has to rotate them.</td></tr>
       <tr><td data-label="Then">Keys in a config file or baked into a server image</td><td>A role attached to the VM or container; credentials served by the platform and rotated</td><td>A server that holds no secret cannot leak one.</td></tr>
-      <tr><td data-label="Then">SSH keys and port 22 for operators</td><td>Session Manager and Run Command, authorized by IAM and recorded</td><td>No open port, and every command is attributed to a person.</td></tr>
+      <tr><td data-label="Then">SSH keys and port 22 for operators</td><td>Session Manager and Run Command, authorized by IAM and recorded</td><td>No open port, and every session or command sent is attributed to a person; session logging keeps what was typed.</td></tr>
       <tr><td data-label="Then">A shared admin account for deploys</td><td>Pipelines deploy; people are read-only in production and request elevated access when needed</td><td>Every production change goes through a reviewed, recorded path.</td></tr>
     </tbody>
   </table>
@@ -97,7 +97,7 @@
       <line class="e-acc" x1="573" y1="251" x2="628" y2="251" marker-end="url(#a-acc)"/>
       <text class="ts" x="601" y="244" text-anchor="middle">issues</text>
 
-      <text class="ts" x="400" y="310" text-anchor="middle">Every call made with these credentials is recorded in CloudTrail under the caller's identity.</text>
+      <text class="ts" x="400" y="310" text-anchor="middle">Calls made with these credentials are recorded in CloudTrail under the caller's identity (management calls by default).</text>
     </svg>
     </div>
     <figcaption><span class="fig-n">Figure 5.1</span>Three kinds of caller, three routes to the same result: credentials that expire on their own. No route stores a permanent key.</figcaption>
@@ -167,7 +167,7 @@
   <p>Four pieces make it work:</p>
   <ol>
     <li><strong>The job asks for a token.</strong> GitHub signs a JSON Web Token (JWT) for each job that has <code>permissions: id-token: write</code>. Without that line, no token is issued.</li>
-    <li><strong>The token describes the job.</strong> Its <code>iss</code> (issuer) is GitHub's token service, its <code>aud</code> (audience) is <code>sts.amazonaws.com</code>, and its <code>sub</code> (subject) names the repository and either the git ref that triggered the job or the GitHub environment the job runs in.</li>
+    <li><strong>The token describes the job.</strong> Its <code>iss</code> (issuer) is GitHub's token service. Its <code>aud</code> (audience) is whatever the job asks for: the AWS login action, <code>aws-actions/configure-aws-credentials</code>, asks for <code>sts.amazonaws.com</code>, while a token fetched without an audience carries the repository owner's URL and fails the trust policy. Its <code>sub</code> (subject) names the repository and either the git ref that triggered the job or the GitHub environment the job runs in.</li>
     <li><strong>AWS trusts the issuer once per account.</strong> An IAM OIDC provider entry tells AWS to accept tokens signed by GitHub's published keys.</li>
     <li><strong>A role decides which jobs it will serve.</strong> Its trust policy allows <code>sts:AssumeRoleWithWebIdentity</code> only when <code>aud</code> and <code>sub</code> match. A different repository, branch, tag or environment is refused.</li>
   </ol>
@@ -192,6 +192,7 @@
       <text class="tb" x="20" y="116">Audience</text>
       <text class="ts" x="130" y="112">token</text>
       <text class="tm" x="180" y="112">sts.amazonaws.com</text>
+      <text class="ts" x="330" y="112">requested by the AWS login action</text>
       <text class="ts" x="130" y="134">policy</text>
       <text class="tm" x="180" y="134">StringEquals  aud = sts.amazonaws.com</text>
       <rect class="n-good" x="716" y="106" width="84" height="22" rx="11"/>
@@ -203,8 +204,8 @@
       <text class="tm" x="180" y="174">repo:Parzon@124113141/triage-assistant@1381921470:ref:refs/tags/v0.8.2</text>
       <text class="ts" x="130" y="196">policy</text>
       <text class="tm" x="180" y="196">StringLike    sub = repo:Parzon@124113141/triage-assistant@1381921470:ref:refs/tags/v*</text>
-      <rect class="n-good" x="716" y="168" width="84" height="22" rx="11"/>
-      <text class="ts tg tb" x="758" y="183" text-anchor="middle">match</text>
+      <rect class="n-good" x="716" y="208" width="84" height="22" rx="11"/>
+      <text class="ts tg tb" x="758" y="223" text-anchor="middle">match</text>
       <line class="rule" x1="20" y1="240" x2="800" y2="240"/>
 
       <text class="tb tr" x="20" y="268">Subject</text>
@@ -411,7 +412,7 @@ deploy.add_to_policy(
 
   <figure class="fig wide" id="fig-5-5">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="Left: on ECS, the execution role lets ECS pull the image from ECR and inject secrets from Secrets Manager at task start; the task role is what the code calls AWS with. Right: on EC2, the instance profile lets the ECR credential helper pull images without a password, and operators reach the VM through Session Manager rather than SSH; port 22 is closed.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Left: on ECS, the execution role lets ECS pull the image from ECR and inject secrets from Secrets Manager at task start; the task role is what the code calls AWS with. Right: on EC2, the instance profile lets the ECR credential helper pull images without a password, and operators reach the VM through Session Manager rather than SSH; port 22 is closed. CloudTrail records who opened a session or sent a command.">
       <text class="tl" x="20" y="18">ECS TASK ON FARGATE</text>
       <text class="tl" x="440" y="18">EC2 VIRTUAL MACHINE</text>
       <line class="rule" x1="420" y1="10" x2="420" y2="290"/>
@@ -460,16 +461,16 @@ deploy.add_to_policy(
       <rect class="n-bad" x="640" y="196" width="160" height="40" rx="5"/>
       <text class="tb tr" x="720" y="214" text-anchor="middle">SSH, port 22</text>
       <text class="ts" x="720" y="229" text-anchor="middle">closed; no key exists</text>
-      <text class="ts" x="440" y="270">Every operator command is recorded in CloudTrail.</text>
+      <text class="ts" x="440" y="270">CloudTrail records who opened a session or sent a command.</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 5.5</span>Workload identity on the two AWS compute types used in the reference build. Neither holds a key: the role is attached to the compute, and the platform supplies the credentials.</figcaption>
+    <figcaption><span class="fig-n">Figure 5.5</span>Workload identity on the two AWS compute types used in the reference build. Neither holds a key: the role is attached to the compute, and the platform supplies the credentials. CloudTrail records the session and command API calls, not what is typed inside a session; keeping that needs Session Manager session logging.</figcaption>
   </figure>
 
   <p>Application secrets that are not AWS credentials, such as a database password or a model provider's API key, follow the same principle. They are generated by Secrets Manager, read by ECS when the task starts, and handed to the container as environment variables. They never appear in the image, the task definition, the CloudFormation template or the repository.</p>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L87-L106">infra/aws/service.py</a><span class="lines">and</span><a href="{{TA}}/infra/aws/vm.py#L1-L10">infra/aws/vm.py</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L87-L106">infra/aws/service.py</a><span class="lines">and</span><a href="{{TA}}/infra/aws/vm.py#L1-L11">infra/aws/vm.py</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>Two helpers in the ECS stack: one asks Secrets Manager to generate a secret, the other tells ECS to inject a field of it into a container at start. The VM stack's docstring lists what makes a single VM acceptable to a platform team.</p>
@@ -478,6 +479,7 @@ deploy.add_to_policy(
           <li>The comment on <code>exclude_punctuation</code> records a real constraint: the api builds a database URL from the password.</li>
           <li>In this throwaway account a secret is deleted with the stack; the <code>production:</code> comment says to keep it (<code>RETAIN</code>), since the database it opens may outlive the stack.</li>
           <li>The VM has no SSH key and no port 22. Images come from ECR through the instance role, so no registry password exists anywhere.</li>
+          <li>CloudTrail records who opened a session or sent a command, to which instance, and when, as the docstring says. It does not record the commands typed inside a session, and it hides a Run Command's parameters. Keeping those needs Session Manager session logging and Run Command output sent to S3 or CloudWatch Logs, which this stack does not configure.</li>
         </ul>
       </div>
       <div class="repo-codes">
@@ -504,11 +506,12 @@ def secret(s: sm.ISecret, field: str) -&gt; ecs.Secret:
     return ecs.Secret.from_secrets_manager(s, field)</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="1-10"><code class="language-python">"""Stage 3: the one-VM deployment, done the way a platform team would accept it.
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="1-11"><code class="language-python">"""Stage 3: the one-VM deployment, done the way a platform team would accept it.
 
 Compared with a hand-built VM:
 - no SSH key and no port 22: operators use SSM Session Manager / Run Command, which the
-  instance role allows and CloudTrail records (who ran what, when);
+  instance role allows; CloudTrail records who started a session or sent a command, and
+  when (what ran inside a session needs session logging, not set up here);
 - images come from ECR, authenticated by the instance role through the ECR credential helper,
   so no registry password exists anywhere;
 - IMDSv2 only, encrypted disk, a security group that admits HTTP and nothing else;
@@ -623,7 +626,7 @@ Compared with a hand-built VM:
   <details class="deep">
     <summary><span class="label">Going deeper</span> What a trust policy can and cannot see</summary>
     <div class="deep-body">
-      <p>GitHub's token carries many claims: the repository and its owner, the ref, the commit, the workflow file, the environment, the event that triggered the run. AWS IAM can write conditions on only a few of them, chiefly <code>aud</code> and <code>sub</code>. That is why the subject's format matters so much, and why GitHub lets a repository or organization customize which claims are combined into the subject. Including the workflow file in the subject, for example, lets a role trust one specific workflow rather than any job in the repository.</p>
+      <p>GitHub's token carries many claims: the repository and its owner, the ref, the commit, the workflow file, the environment, the event that triggered the run. A trust policy can always test <code>aud</code> and <code>sub</code>, and AWS STS now also accepts several of GitHub's own claims as condition keys, among them <code>repository_id</code>, <code>repository_owner_id</code>, <code>ref</code>, <code>environment</code> and <code>job_workflow_ref</code>. A role can then trust one workflow file directly. AWS advises the immutable IDs over names, because a renamed or deleted repository's name can be claimed by someone else. The subject still matters most, because every cloud's trust policy can match it, and GitHub lets a repository or organization customize which claims are combined into it. Including the workflow file in the subject, for example, is the portable way to let a role trust one specific workflow rather than any job in the repository.</p>
       <p>The same customization setting is what produced the immutable form seen in the case above. Reading it, rather than assuming the default, is the reliable way to know what the policy must match.</p>
       <p><code>StringLike</code> allows the wildcards <code>*</code> and <code>?</code>; <code>StringEquals</code> does not. Use the exact form wherever there is nothing variable to allow, as the deploy role does, so a typo cannot widen the trust.</p>
       <p>One OIDC provider entry per issuer is allowed in each account. Several roles can trust the same provider, each with its own conditions, which is how one account serves several repositories and environments.</p>
@@ -650,7 +653,7 @@ Compared with a hand-built VM:
     </li>
     <li>
       <p>Why is removing SSH access a security improvement rather than only an inconvenience?</p>
-      <details class="ans"><summary>Answer</summary><p>There is no key to leak, no open port to attack, and every command run through Session Manager or Run Command is authorized by IAM and recorded in CloudTrail against a named person.</p></details>
+      <details class="ans"><summary>Answer</summary><p>There is no key to leak, no open port to attack, and every session or command is authorized by IAM, and CloudTrail records who opened or sent it, to which instance and when. To keep the commands themselves, turn on Session Manager session logging and Run Command output to S3 or CloudWatch Logs.</p></details>
     </li>
     <li>
       <p>Which permission in the image-push role cannot be limited to the three repositories, and how is that handled?</p>

@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 380" role="img" aria-label="AgentCore around one agent. A caller, your application or a user, calls a Runtime endpoint, signed with IAM or carrying an OAuth token from your identity provider. The endpoint points at a version. Each session runs in its own microVM, which holds your agent code or the harness. From the session: Gateway turns APIs, Lambda functions, OpenAPI or Smithy services and existing MCP servers into one MCP endpoint of tools, injects each target's credentials, and Policy checks every tool call before it runs. Identity issues the outbound tokens, on behalf of the user or of the agent. Memory keeps short-term events and long-term records per user. Code Interpreter and Browser are sandboxes. The agent calls models in Bedrock or other providers. Observability sends OpenTelemetry traces to CloudWatch. In VPC mode, AgentCore places network interfaces in your subnets, with your security groups."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="380" fill="#ffffff"/>
+      <rect class="n" x="16" y="40" width="120" height="70" rx="6"/>
+      <text class="tb" x="76" y="66" text-anchor="middle">Caller</text>
+      <text class="ts" x="76" y="84" text-anchor="middle">your app</text>
+      <text class="ts" x="76" y="100" text-anchor="middle">or a user</text>
+      <line class="e-acc" x1="137" y1="75" x2="186" y2="75" marker-end="url(#a-acc)"/>
+      <text class="ts" x="16" y="132">signed with IAM, or</text>
+      <text class="ts" x="16" y="148">an OAuth token from</text>
+      <text class="ts" x="16" y="164">your identity provider</text>
+
+      <rect class="zone" x="190" y="20" width="270" height="250" rx="8"/>
+      <text class="tl" x="204" y="40">RUNTIME</text>
+      <rect class="n" x="204" y="52" width="242" height="40" rx="5"/>
+      <text class="ts" x="216" y="77">endpoint (prod) → version 7</text>
+      <rect class="n-acc" x="204" y="104" width="242" height="150" rx="5"/>
+      <text class="tb" x="216" y="126">a microVM per session</text>
+      <text class="ts" x="216" y="148">your agent code, or the harness</text>
+      <text class="ts" x="216" y="170">idle 15 min: environment ends</text>
+      <text class="ts" x="216" y="186">at most 8 h by default</text>
+      <text class="ts" x="216" y="208">state that must last goes</text>
+      <text class="ts" x="216" y="224">to Memory, not the session</text>
+      <text class="ts tmu" x="216" y="244">runs under an execution role</text>
+
+      <rect class="n-acc" x="500" y="20" width="304" height="42" rx="5"/><text class="tb" x="512" y="37">Gateway</text><text class="ts" x="512" y="54">tools as one MCP endpoint; Policy checks each call</text>
+      <path class="e" d="M447,180 C472,180 474,41 498,41" marker-end="url(#a)"/>
+      <rect class="n" x="500" y="70" width="304" height="42" rx="5"/><text class="tb" x="512" y="87">Identity</text><text class="ts" x="512" y="104">outbound tokens, for the user or the agent</text>
+      <path class="e" d="M447,180 C472,180 474,91 498,91" marker-end="url(#a)"/>
+      <rect class="n" x="500" y="120" width="304" height="42" rx="5"/><text class="tb" x="512" y="137">Memory</text><text class="ts" x="512" y="154">short- and long-term, kept per user</text>
+      <path class="e" d="M447,180 C472,180 474,141 498,141" marker-end="url(#a)"/>
+      <rect class="n" x="500" y="170" width="304" height="42" rx="5"/><text class="tb" x="512" y="187">Code Interpreter and Browser</text><text class="ts" x="512" y="204">sandboxes for code and for web pages</text>
+      <path class="e" d="M447,180 C472,180 474,191 498,191" marker-end="url(#a)"/>
+      <rect class="n" x="500" y="220" width="304" height="42" rx="5"/><text class="tb" x="512" y="237">Models</text><text class="ts" x="512" y="254">in Bedrock, or from other providers</text>
+      <path class="e" d="M447,180 C472,180 474,241 498,241" marker-end="url(#a)"/>
+
+      <rect class="n-soft" x="190" y="290" width="614" height="32" rx="5"/>
+      <text class="ts" x="204" y="311">Observability: OpenTelemetry traces of every step, to CloudWatch</text>
+      <rect class="zone" x="190" y="332" width="614" height="38" rx="6"/>
+      <text class="ts" x="204" y="356">VPC mode: network interfaces in your subnets, with your security groups; a public subnet gives no internet (use NAT)</text>
+    </svg>

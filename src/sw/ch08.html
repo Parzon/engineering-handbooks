@@ -3,7 +3,7 @@
     <span class="ch-num">8</span>
     <p class="eyebrow">Part IV · Identity and protection</p>
     <h2>Sign-in, sessions and roles</h2>
-    <p class="lede">Users sign in with the organization's identity provider through OpenID Connect, the server verifies the result and issues its own session, and every request is authorized from roles the provider asserts, so the application never handles a password and the browser never holds a token.</p>
+    <p class="lede">Users sign in with the organization's identity provider through OpenID Connect, the server verifies the result and issues its own session, and every request is authorized from roles the provider asserts, so the application never handles a password and the browser never holds an access token.</p>
   </header>
 
   <div class="glance">
@@ -24,7 +24,7 @@
       <tr><td data-label="Then">A users table with password hashes in every application</td><td>Single sign-on with the organization's identity provider over OIDC</td><td>One password, the organization's MFA, and access removed in one place when someone leaves.</td></tr>
       <tr><td data-label="Then">Access tokens stored in the browser's local storage</td><td>Tokens kept on the server; the browser holds only an HttpOnly cookie</td><td>A script injected into the page has nothing to steal.</td></tr>
       <tr><td data-label="Then">The implicit flow, tokens in the URL</td><td>The authorization code flow with PKCE</td><td>A stolen code is useless without the verifier only the server holds.</td></tr>
-      <tr><td data-label="Then">JWTs as sessions everywhere</td><td>Server-side sessions for web apps; JWTs for what they suit</td><td>Sessions can be revoked at once and carry current roles.</td></tr>
+      <tr><td data-label="Then">JWTs as sessions everywhere</td><td>Server-side sessions for web apps; JWTs for what they suit</td><td>Sessions can be revoked at once, which also makes a role change take effect at once.</td></tr>
       <tr><td data-label="Then">Roles maintained in the application's database by hand</td><td>Roles from the provider's groups, replaced at each sign-in</td><td>Access is managed where people are managed.</td></tr>
     </tbody>
   </table>
@@ -32,7 +32,7 @@
   <h3 id="ch8-flow">The sign-in flow</h3>
   <figure class="fig wide" id="fig-8-1">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 440" role="img" aria-label="OpenID Connect with PKCE, the api as a confidential client. The browser opens the api's login route. The api creates state, a nonce and a PKCE verifier, and redirects to the provider with the challenge. The person signs in at the provider, which the app never sees. The provider redirects the browser back to the callback with a one-time code and the state. The api checks the state, then exchanges the code, the verifier and its client secret for an ID token over its own back channel. It verifies the token, replaces the user's roles from the groups claim, stores the hash of a new session token and sets the cookie. The browser only ever holds the cookie.">
+    <svg viewBox="0 0 820 440" role="img" aria-label="OpenID Connect with PKCE, the api as a confidential client. The browser opens the api's login route. The api creates state, a nonce and a PKCE verifier, and redirects to the provider with the challenge. The person signs in at the provider, which the app never sees. The provider redirects the browser back to the callback with a one-time code and the state. The api checks the state, then exchanges the code, the verifier and its client secret for an ID token over its own back channel. It verifies the token, replaces the user's roles from the groups claim, stores the hash of a new session token and sets the cookie. After sign-in, the browser holds only the cookie, no token.">
       <rect class="n" x="20" y="14" width="130" height="40" rx="5"/><text class="tb" x="85" y="39" text-anchor="middle">Browser</text>
       <rect class="n-acc" x="330" y="14" width="160" height="40" rx="5"/><text class="tb" x="410" y="39" text-anchor="middle">api (confidential)</text>
       <rect class="n" x="650" y="14" width="150" height="40" rx="5"/><text class="tb" x="725" y="39" text-anchor="middle">Identity provider</text>
@@ -44,7 +44,7 @@
       <rect class="n-soft" x="420" y="88" width="290" height="36" rx="4"/><text class="ts" x="430" y="104">2  makes state, a nonce and a PKCE verifier;</text><text class="ts" x="430" y="118">keeps them for 10 minutes</text>
       <line class="e" x1="410" y1="138" x2="87" y2="138" marker-end="url(#a)"/><text class="ts" x="247" y="132" text-anchor="middle">redirect to the provider, with the challenge</text>
       <line class="e" x1="85" y1="160" x2="723" y2="160" marker-end="url(#a)"/><text class="ts" x="560" y="154" text-anchor="middle">3  the provider's sign-in page</text>
-      <rect class="n-soft" x="530" y="168" width="185" height="36" rx="4"/><text class="ts" x="540" y="184">password and MFA: the app</text><text class="ts" x="540" y="198">never sees either</text>
+      <rect class="n-soft" x="530" y="165" width="185" height="32" rx="4"/><text class="ts" x="540" y="179">password and MFA: the app</text><text class="ts" x="540" y="192">never sees either</text>
       <line class="e" x1="725" y1="218" x2="87" y2="218" marker-end="url(#a)"/><text class="ts" x="560" y="212" text-anchor="middle">4  redirect back: a one-time code, the state</text>
       <line class="e" x1="85" y1="240" x2="408" y2="240" marker-end="url(#a)"/><text class="ts" x="247" y="234" text-anchor="middle">GET /api/auth/callback?code=…&amp;state=…</text>
       <rect class="n-soft" x="200" y="248" width="200" height="22" rx="4"/><text class="ts" x="210" y="263">5  state matches the cookie?</text>
@@ -52,7 +52,7 @@
       <line class="e-acc dash" x1="725" y1="310" x2="412" y2="310" marker-end="url(#a-acc)"/><text class="ts" x="567" y="304" text-anchor="middle">7  ID token (the access token is dropped)</text>
       <rect class="n-acc" x="420" y="320" width="300" height="50" rx="4"/><text class="ts" x="430" y="338">8  verify: signature, issuer, audience,</text><text class="ts" x="430" y="352">expiry, nonce; replace roles from the</text><text class="ts" x="430" y="366">groups claim; store the session's hash</text>
       <line class="e-good" x1="410" y1="392" x2="87" y2="392" marker-end="url(#a-good)"/><text class="ts" x="247" y="386" text-anchor="middle">9  Set-Cookie: __Host-session (HttpOnly)</text>
-      <text class="ts tb" x="85" y="420">the browser holds only a cookie: never a token</text>
+      <text class="ts tb" x="85" y="420">after sign-in, the browser holds only a cookie</text>
     </svg>
     </div>
     <figcaption><span class="fig-n">Figure 8.1</span>The authorization code flow with PKCE, the server acting as a confidential client. The code is exchanged over the server's own connection to the provider, which the browser never sees; a stolen code is useless without the verifier and the client secret.</figcaption>
@@ -125,13 +125,13 @@
   <h3 id="ch8-sessions">Server sessions, not JWT sessions</h3>
   <figure class="fig wide" id="fig-8-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 250" role="img" aria-label="Left, a server-side session: the cookie holds 32 random bytes; the database stores only their SHA-256; each request costs one lookup, which also loads the user and teams; signing out or revoking is a DELETE, effective at once. Right, a JWT as the session: self-contained, but it cannot be ended before it expires unless you keep a revocation list, which is a session table again; it carries the roles it was issued with; anyone holding it can read its claims; and it adds a signing key to guard and rotate.">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Left, a server-side session: the cookie holds 32 random bytes; the database stores only their SHA-256; each request costs one lookup, which also loads the user and teams, with roles as of the last sign-in; signing out or revoking is a DELETE, effective at once. Right, a JWT as the session: self-contained, but it cannot be ended before it expires unless you keep a revocation list, which is a session table again; it carries the roles it was issued with; anyone holding it can read its claims; and it adds a signing key to guard and rotate.">
       <rect class="n-good" x="16" y="16" width="384" height="220" rx="6"/>
       <text class="tb" x="30" y="40">Server-side session (the reference)</text>
       <text class="ts" x="30" y="66">cookie: 32 random bytes, HttpOnly, Secure, SameSite=Lax</text>
       <text class="ts" x="30" y="86">database: only the token's SHA-256</text>
       <text class="ts" x="30" y="106">each request: one lookup, in the query it makes anyway</text>
-      <text class="ts" x="30" y="126">roles: current, read from the database</text>
+      <text class="ts" x="30" y="126">roles: as of the last sign-in, read per request</text>
       <text class="ts tg tb" x="30" y="152">sign-out or revoke: a DELETE, effective at once</text>
       <text class="ts" x="30" y="178">ends after 12 hours, or 2 idle hours</text>
       <text class="ts" x="30" y="198">no salt needed: 256 random bits have</text>
@@ -148,7 +148,7 @@
       <text class="ts" x="434" y="214">adds a signing key to guard and rotate</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 8.2</span>The reference service uses exactly one JWT: the provider's ID token, checked once at sign-in and never sent to the browser. Its own sessions are plain random tokens, which can be revoked with a single delete.</figcaption>
+    <figcaption><span class="fig-n">Figure 8.2</span>The reference service uses exactly one JWT: the provider's ID token, checked once at sign-in and kept on the server; the browser sees it only once, as the hint in the sign-out redirect. Its own sessions are plain random tokens, which can be revoked with a single delete.</figcaption>
   </figure>
 
   <p>The cookie uses the <code>__Host-</code> prefix, which makes the browser refuse it unless it is Secure, has path <code>/</code> and no domain, so no subdomain can set or overwrite it. <code>SameSite=Lax</code>, not <code>Strict</code>: the provider's redirect back to the callback is a cross-site navigation, and a Strict cookie would be left behind on it. Passwords never reach the application: the provider stores them salted and hashed. Salts protect secrets that people choose and attackers can guess; a 256-bit random session token has nothing to guess, so a plain SHA-256 is enough and a slow salted hash would only slow every request.</p>
@@ -219,13 +219,13 @@
       <dt>Problem</dt><dd>Anyone who reached the site saw every alert, and the assistant could be asked about all of them.</dd>
       <dt>Decision</dt><dd>OIDC code flow with PKCE, the api as a confidential client; server-side sessions in Postgres; the provider's groups claim as the source of truth; ranked roles per team; the same visibility query for the list and the assistant.</dd>
       <dt>See it in</dt><dd><a href="{{TA}}/apps/api/app/oidc.py">oidc.py</a> (the protocol), <a href="{{TA}}/apps/api/app/sessions.py">sessions.py</a> (cookie to user), <a href="{{TA}}/apps/api/app/access.py">access.py</a> (decisions).</dd>
-      <dt>Cost</dt><dd>Authentication first doubled the CPU of the cheapest request; folding the lookup into one query in the request's own transaction brought it back down.</dd>
+      <dt>Cost</dt><dd>Authentication roughly doubles the CPU of the cheapest read, an accepted cost that chat never shows. A first version, a query per table, collapsed at 1,000 requests a second (p95 1.07 s); one query in the request's own transaction brought p95 to 19.7 ms.</dd>
     </dl>
   </aside>
 
   <aside class="say">
     <span class="label">How to say it</span>
-    <p>"We use OIDC code flow with PKCE, the backend as a confidential client, so no token ever reaches the browser. Sessions are server-side and revocable; roles come from the provider's groups at every sign-in."</p>
+    <p>"We use OIDC code flow with PKCE, the backend as a confidential client, so no access token ever reaches the browser. Sessions are server-side and revocable; roles come from the provider's groups at every sign-in."</p>
     <p>"Anything you can't see is a 404, and Postgres enforces the same team rule underneath."</p>
   </aside>
 
@@ -243,7 +243,7 @@
         <tr><td data-label="Symptom">A client secret with <code>+</code> or <code>%</code> fails against strict providers</td><td data-label="Cause">The client id and secret must be form-encoded before base64 in basic authentication</td><td data-label="Fix">Encode them as the standard requires.</td></tr>
         <tr><td data-label="Symptom">Entra ID groups arrive as unreadable ids</td><td data-label="Cause">Its groups claim holds object ids, not names</td><td data-label="Fix">Use app roles for the claim; Google has no groups claim at all.</td></tr>
         <tr><td data-label="Symptom">A user's identity changed when their email changed</td><td data-label="Cause">Users were keyed by email</td><td data-label="Fix">Key users by issuer and subject.</td></tr>
-        <tr><td data-label="Symptom">Authentication doubled the cost of the cheapest request</td><td data-label="Cause">A query per table, each in its own transaction</td><td data-label="Fix">One query in the request's transaction: p95 from 1.07 s back to 19.7 ms at 1,000 requests a second.</td></tr>
+        <tr><td data-label="Symptom">With sign-in, the cheapest request collapsed at 1,000 requests a second</td><td data-label="Cause">A query per table, each in its own transaction</td><td data-label="Fix">One query in the request's transaction: p95 from 1.07 s to 19.7 ms at 1,000 requests a second. The CPU still doubles; that is the accepted cost of signing in.</td></tr>
       </tbody>
     </table>
   </div>
@@ -252,7 +252,7 @@
   <ol class="qs">
     <li>
       <p>In the code flow with a confidential client, what does the browser ever hold?</p>
-      <details class="ans"><summary>Answer</summary><p>A one-time authorization code on the way back from the provider, and then only the application's session cookie. The ID and access tokens stay on the server.</p></details>
+      <details class="ans"><summary>Answer</summary><p>A one-time authorization code on the way back from the provider, and then only the application's session cookie. The access token is dropped; the ID token stays on the server until sign-out, when it rides once in the provider's sign-out URL as <code>id_token_hint</code> (OIDC RP-Initiated Logout).</p></details>
     </li>
     <li>
       <p>What do <code>state</code>, the nonce and PKCE each protect against?</p>
@@ -260,7 +260,7 @@
     </li>
     <li>
       <p>Why does the reference service prefer server-side sessions to JWTs?</p>
-      <details class="ans"><summary>Answer</summary><p>A server session can be revoked with a delete and always reflects current roles. A JWT cannot be ended before it expires without a revocation list, carries stale roles, exposes its claims, and adds a key to manage.</p></details>
+      <details class="ans"><summary>Answer</summary><p>A server session can be revoked with a delete, which also makes a role change take effect at once; otherwise its roles are as of the last sign-in. A JWT cannot be ended before it expires without a revocation list, so its stale roles last until it expires; it also exposes its claims and adds a key to manage.</p></details>
     </li>
     <li>
       <p>When should a request answer 404 rather than 403?</p>

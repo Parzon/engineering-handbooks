@@ -74,12 +74,12 @@ g.ts text { font-size: 11.5px; }
       <text class="ts" x="60" y="205" text-anchor="middle">points to its parent</text>
 
       <text class="tb" x="580" y="40">Commit</text>
-      <text class="ts" x="580" y="58">a snapshot plus its parent; its ID is a</text>
-      <text class="ts" x="580" y="73">hash of both, so it never changes</text>
+      <text class="ts" x="580" y="58">a snapshot, parent, author and message;</text>
+      <text class="ts" x="580" y="73">its ID hashes all, so it never changes</text>
       <text class="tb" x="580" y="102">Branch</text>
       <text class="ts" x="580" y="120">a label that moves on each commit</text>
       <text class="tb" x="580" y="149">Tag</text>
-      <text class="ts" x="580" y="167">a label that never moves</text>
+      <text class="ts" x="580" y="167">a fixed label; only force can move it</text>
       <text class="tb" x="580" y="196">Remote-tracking label</text>
       <text class="ts" x="580" y="214">where main was at the last fetch</text>
     </svg>

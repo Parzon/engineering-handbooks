@@ -119,14 +119,14 @@
 
   <figure class="fig wide" id="fig-10-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="The event stream: a meta event first, with the request id and how many alerts were in context; token events with JSON deltas; comment heartbeats every 15 seconds of silence; a done event with usage and timings, or an error event. Errors before the stream starts are ordinary JSON errors. Stop: the button aborts the fetch, the connection closes, the server cancels its producer task, which closes the provider's stream, and billing stops.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="The event stream: a meta event first, with the request id and how many alerts were in context, sent before the api calls the model; token events with JSON deltas; comment heartbeats every 15 seconds of silence; a done event with usage and timings, or an error event. Errors before the stream starts are ordinary JSON errors. Stop: the button aborts the fetch, the connection closes, the server cancels its producer task, which closes the provider's stream, and billing stops.">
       <rect class="n" x="16" y="16" width="120" height="40" rx="5"/><text class="ts" x="76" y="41" text-anchor="middle">browser</text>
       <rect class="n-acc" x="350" y="16" width="120" height="40" rx="5"/><text class="ts" x="410" y="41" text-anchor="middle">api</text>
       <rect class="n" x="684" y="16" width="120" height="40" rx="5"/><text class="ts" x="744" y="41" text-anchor="middle">model</text>
       <line class="rule dash" x1="76" y1="56" x2="76" y2="204"/><line class="rule dash" x1="410" y1="56" x2="410" y2="204"/><line class="rule dash" x1="744" y1="56" x2="744" y2="204"/>
-      <line class="e" x1="76" y1="78" x2="408" y2="78" marker-end="url(#a)"/><text class="ts" x="242" y="72" text-anchor="middle">POST /chat/stream, the question in JSON</text>
-      <line class="e" x1="410" y1="92" x2="742" y2="92" marker-end="url(#a)"/><text class="ts" x="576" y="86" text-anchor="middle">streamed completion</text>
-      <line class="e-acc" x1="410" y1="112" x2="78" y2="112" marker-end="url(#a-acc)"/><text class="tm" x="242" y="106" text-anchor="middle">event: meta {request_id, alerts}</text>
+      <line class="e" x1="76" y1="72" x2="408" y2="72" marker-end="url(#a)"/><text class="ts" x="242" y="66" text-anchor="middle">POST /chat/stream, the question in JSON</text>
+      <line class="e-acc" x1="410" y1="94" x2="78" y2="94" marker-end="url(#a-acc)"/><text class="tm" x="242" y="88" text-anchor="middle">event: meta {request_id, alerts}</text>
+      <line class="e" x1="410" y1="112" x2="742" y2="112" marker-end="url(#a)"/><text class="ts" x="576" y="106" text-anchor="middle">then: streamed completion</text>
       <line class="rule-strong dash" x1="410" y1="132" x2="78" y2="132"/><text class="tm" x="242" y="128" text-anchor="middle">: keep-alive</text>
       <line class="e-acc" x1="410" y1="152" x2="78" y2="152" marker-end="url(#a-acc)"/><text class="tm" x="242" y="148" text-anchor="middle">event: token {"delta": "Check "}</text>
       <line class="e-acc" x1="410" y1="170" x2="78" y2="170" marker-end="url(#a-acc)"/><text class="tm" x="242" y="166" text-anchor="middle">event: token {"delta": "the disk"}</text>

@@ -31,19 +31,19 @@
   <h3 id="ch14-signals">Three signals, one id</h3>
   <figure class="fig wide" id="fig-14-1">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 260" role="img" aria-label="Metrics are numbers aggregated over time, scraped every 15 seconds: is the system healthy? Logs are one JSON line per event: what happened in this request? Traces are a tree of timed spans per request: where did this request's time go? A request id, stamped by the first proxy and carried in a context variable, appears on every log line, in the response header and error body, and on the trace, so a user's error message leads to all three.">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Metrics are numbers aggregated over time, scraped every 15 seconds: is the system healthy? Logs are one JSON line per event: what happened in this request? Traces are a tree of timed spans per request: where did this request's time go? A request id, stamped by nginx, or by the api when nothing in front did, and carried in a context variable, appears on every log line, in the response header and error body, and on the trace, so a user's error message leads to all three.">
       <rect class="n" x="16" y="16" width="250" height="132" rx="6"/><text class="tb" x="28" y="40">Metrics</text><text class="ts" x="28" y="62">numbers aggregated over time,</text><text class="ts" x="28" y="78">scraped every 15 seconds</text><text class="ts ta" x="28" y="106">"Is the system healthy?"</text><text class="ts tmu" x="28" y="132">Prometheus, Grafana</text>
       <rect class="n" x="285" y="16" width="250" height="132" rx="6"/><text class="tb" x="297" y="40">Logs</text><text class="ts" x="297" y="62">one JSON object per line,</text><text class="ts" x="297" y="78">on standard output</text><text class="ts ta" x="297" y="106">"What happened in this one?"</text><text class="ts tmu" x="297" y="132">docker logs, jq, a log store</text>
       <rect class="n" x="554" y="16" width="250" height="132" rx="6"/><text class="tb" x="566" y="40">Traces</text><text class="ts" x="566" y="62">a tree of timed spans per</text><text class="ts" x="566" y="78">request, across processes</text><text class="ts ta" x="566" y="106">"Where did its time go?"</text><text class="ts tmu" x="566" y="132">OpenTelemetry, Jaeger</text>
       <rect class="n-acc" x="16" y="186" width="788" height="56" rx="6"/>
-      <text class="tb" x="28" y="208">The request id</text><text class="ts" x="140" y="208">stamped by the first proxy, kept in a context variable, on every log line,</text>
+      <text class="tb" x="28" y="208">The request id</text><text class="ts" x="140" y="208">stamped by nginx, or by the api when nothing in front did; kept in a context variable, on every log line,</text>
       <text class="ts" x="140" y="228">in the response header and every error body, and on the request's span</text>
       <line class="e-acc" x1="141" y1="184" x2="141" y2="150" marker-end="url(#a-acc)"/>
       <line class="e-acc" x1="410" y1="184" x2="410" y2="150" marker-end="url(#a-acc)"/>
       <line class="e-acc" x1="679" y1="184" x2="679" y2="150" marker-end="url(#a-acc)"/>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 14.1</span>The three signals and what each answers. The support workflow follows from the id: a user pastes it from an error message, and the traceback is found in seconds, across the proxy, the api and the model call.</figcaption>
+    <figcaption><span class="fig-n">Figure 14.1</span>The three signals and what each answers. The support workflow follows from the id: a user pastes it from an error message, and the traceback is found in seconds, across the proxy, the api and the model call. An error the TLS edge answers itself, with nginx down, carries the edge's own id, found only in the edge's log.</figcaption>
   </figure>
 
   <figure class="fig wide" id="fig-14-2">

@@ -60,9 +60,9 @@
       <thead><tr><th>Choice</th><th>What it means</th><th>Use it for</th></tr></thead>
       <tbody>
         <tr><td data-label="Choice">Property graph</td><td data-label="Means">Nodes and edges with key-value properties; queried with Cypher, GQL or Gremlin</td><td data-label="Use">Application data (Neo4j, Amazon Neptune)</td></tr>
-        <tr><td data-label="Choice">RDF</td><td data-label="Means">Every fact a triple of URIs; queried with SPARQL</td><td data-label="Use">Ontologies and merging sources; publishers' taxonomies</td></tr>
+        <tr><td data-label="Choice">RDF</td><td data-label="Means">Every fact a triple: subject, predicate, object, named by URIs, the object often a literal value; queried with SPARQL</td><td data-label="Use">Ontologies and merging sources; publishers' taxonomies</td></tr>
         <tr><td data-label="Choice">Recursive SQL</td><td data-label="Means">A foreign key is already an edge; each hop is a join, variable depth is <code>WITH RECURSIVE</code></td><td data-label="Use">Shallow, occasional traversals; the place to start</td></tr>
-        <tr><td data-label="Choice">A graph extension in Postgres</td><td data-label="Means">Cypher queries over tables (Apache AGE)</td><td data-label="Use">Graph queries without a second database</td></tr>
+        <tr><td data-label="Choice">A graph extension in Postgres</td><td data-label="Means">Cypher over a graph kept in its own Postgres tables, loaded from your data rather than read in place (Apache AGE)</td><td data-label="Use">Graph queries without a second database</td></tr>
       </tbody>
     </table>
   </div>

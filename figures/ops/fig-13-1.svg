@@ -78,5 +78,5 @@ g.ts text { font-size: 11.5px; }
       <text class="ts" x="524" y="210">on for one tenant, then more</text>
       <text class="ts" x="424" y="236">catches: a feature that misbehaves in production</text>
       <text class="ts" x="424" y="252">costs: flags to remove later, or they become debt</text>
-      <text class="ts" x="16" y="288">On a platform: weighted target groups (ALB), revisions with traffic splitting (Cloud Run, Container Apps), Argo Rollouts (Kubernetes).</text>
+      <text class="ts" x="16" y="288">On a platform: ECS's built-in canary and blue/green, weighted revisions (Cloud Run, Container Apps), Argo Rollouts (Kubernetes).</text>
     </svg>

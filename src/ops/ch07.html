@@ -12,7 +12,7 @@
       <li>You declare the end state; the tool compares it with its record of what exists and makes only the calls that close the gap.</li>
       <li>Always look at the difference before applying it: <code>cdk diff</code> or <code>terraform plan</code>, ideally in the pull request.</li>
       <li>CDK writes AWS infrastructure in a real programming language and hands it to CloudFormation. Terraform uses its own language and reaches any cloud through providers.</li>
-      <li>A change made by hand in the console is <strong>drift</strong>: detect it, and fix it through the code, or the next deploy will silently undo it.</li>
+      <li>A change made by hand in the console is <strong>drift</strong>: detect it, and fix it through the code. A deploy that touches that resource will silently undo it; one that does not leaves it in place, unseen.</li>
       <li>Infrastructure changes go through pull requests, and CI applies them with keyless credentials.</li>
     </ul>
   </div>
@@ -139,7 +139,7 @@ db.node.add_dependency(owner.node.default_child)  # the secret only, not its att
   <p>The first attempt at that fix depended on the secret's whole construct, which includes an attachment that itself depends on the database: a cycle. It was caught when the template was synthesized, before anything was deployed, which is one reason to run <code>cdk synth</code> and a template linter in CI.</p>
 
   <h3 id="ch7-drift">Drift: when reality and the code disagree</h3>
-  <p>To test scaling, the reference ECS service was scaled from one task to two with a single command-line call: a change made outside the code. CloudFormation's drift detection reported it precisely. Left alone, the next deploy would have set the count back to one without anyone noticing.</p>
+  <p>To test scaling, the reference ECS service was scaled from one task to two with a single command-line call: a change made outside the code. CloudFormation's drift detection reported it precisely. Left alone, the next deploy, which updates the service with a new task definition every time, would have set the count back to one without anyone noticing.</p>
 
   <figure class="fig wide" id="fig-7-3">
     <div class="fig-scroll">
@@ -169,8 +169,10 @@ db.node.add_dependency(owner.node.default_child)  # the secret only, not its att
     <figcaption><span class="fig-n">Figure 7.3</span>Drift on the reference stack. The fix went the proper way: a pull request, green CI, a merge, and the deploy workflow applying it. Drift detection then reported the stack in sync.</figcaption>
   </figure>
 
+  <p>That reset depends on the deploy touching the drifted resource. A normal CloudFormation update compares the new template with the previous one, not with reality, so drift on a resource the update leaves alone stays in place, unseen until drift detection runs. Run detection regularly, and reconcile what it finds in code, or with a drift-aware change set (<code>--deployment-mode REVERT_DRIFT</code>), which compares with the actual state and brings drifted resources back. Terraform refreshes the real state before it plans, so its next plan shows the drift and applying it reverts the change.</p>
+
   <h3 id="ch7-boot">The last mile: first-boot scripts</h3>
-  <p>A virtual machine still needs something to run on its first boot. <strong>cloud-init</strong> (passed as <code>user_data</code> on AWS) runs once, at first boot: install the container runtime, log in to the registry with the machine's role, pull a specific version, run it with a restart policy, fetch secrets at runtime. It does not run again on later deploys. A new version either replaces instances (a new launch configuration in an Auto Scaling group) or runs a command on the existing ones through Run Command. The mature form bakes the runtime and agents into a golden image and keeps the first-boot script to "pull and run".</p>
+  <p>A virtual machine still needs something to run on its first boot. <strong>cloud-init</strong> (passed as <code>user_data</code> on AWS) runs once, at first boot: install the container runtime, log in to the registry with the machine's role, pull a specific version, run it with a restart policy, fetch secrets at runtime. It does not run again on later deploys. A new version either replaces instances (a new launch template version, rolled out by an Auto Scaling group's instance refresh) or runs a command on the existing ones through Run Command. The mature form bakes the runtime and agents into a golden image and keeps the first-boot script to "pull and run".</p>
 
   <h4>The same registry in Terraform, on three clouds</h4>
   <p>The language and the workflow carry over between clouds; the resources do not. An AWS container service has no Azure twin with the same fields, so it is rewritten. The image registry from this chapter's first stack, in Terraform on each cloud:</p>
@@ -227,7 +229,7 @@ resource "google_artifact_registry_repository" "images" {
     </li>
     <li>
       <p>What is drift, and why is it dangerous even when the manual change was correct?</p>
-      <details class="ans"><summary>Answer</summary><p>Drift is a difference between the real infrastructure and the code. The next deploy restores what the code says, so a correct manual change is silently undone, and nobody reviewing the code knows it ever existed.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Drift is a difference between the real infrastructure and the code. If the next deploy updates that resource, it restores what the code says, so a correct manual change is silently undone. If it does not, the change stays unseen, and nobody reviewing the code knows it exists. Either way the code no longer describes what is running.</p></details>
     </li>
     <li>
       <p>When would you choose Terraform over CDK?</p>

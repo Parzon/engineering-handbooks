@@ -28,7 +28,7 @@
   <ol>
     <li><a href="#how-to-read">How to read this handbook</a></li>
     <li><a href="#contents">Contents</a></li>
-    <li class="toc-part"><span class="label">Part I · What changed</span><ol><li><a href="#ch1">1 · From laptop to production</a></li><li class="toc-sub"><a href="#ch1-path">The path a change takes</a></li><li class="toc-sub"><a href="#ch1-proven">What the reference build proved</a></li><li class="toc-sub"><a href="#ch1-promote">One artifact</a></li><li class="toc-sub"><a href="#ch1-envs">The environments</a></li><li class="toc-sub"><a href="#ch1-sizes">The same service at three sizes</a></li><li class="toc-sub"><a href="#ch1-traps">Traps</a></li><li class="toc-sub"><a href="#ch1-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part II · Source and build</span><ol><li><a href="#ch2">2 · Git and the pull request</a></li><li class="toc-sub"><a href="#ch2-model">The model</a></li><li class="toc-sub"><a href="#ch2-places">Three places a file lives</a></li><li class="toc-sub"><a href="#ch2-integrate">Merge</a></li><li class="toc-sub"><a href="#ch2-trunk">Trunk-based development</a></li><li class="toc-sub"><a href="#ch2-pr">The pull request as a gate</a></li><li class="toc-sub"><a href="#ch2-traps">Traps</a></li><li class="toc-sub"><a href="#ch2-questions">Questions</a></li><li><a href="#ch3">3 · CI/CD and artifacts</a></li><li class="toc-sub"><a href="#ch3-ci">Continuous integration</a></li><li class="toc-sub"><a href="#ch3-cd">Continuous delivery</a></li><li class="toc-sub"><a href="#ch3-artifacts">Tags</a></li><li class="toc-sub"><a href="#ch3-traps">Traps</a></li><li class="toc-sub"><a href="#ch3-questions">Questions</a></li><li><a href="#ch4">4 · The software supply chain</a></li><li class="toc-sub"><a href="#ch4-layers">What you ship but did not write</a></li><li class="toc-sub"><a href="#ch4-pins">Pinning</a></li><li class="toc-sub"><a href="#ch4-scan">Scanning</a></li><li class="toc-sub"><a href="#ch4-traps">Traps</a></li><li class="toc-sub"><a href="#ch4-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part III · Identity</span><ol><li><a href="#ch5">5 · Identity without keys</a></li><li class="toc-sub"><a href="#ch5-routes">Three callers</a></li><li class="toc-sub"><a href="#ch5-people">People</a></li><li class="toc-sub"><a href="#ch5-oidc">Pipelines</a></li><li class="toc-sub"><a href="#ch5-roles">One role per job</a></li><li class="toc-sub"><a href="#ch5-workloads">Workloads</a></li><li class="toc-sub"><a href="#ch5-case">A case from the reference build</a></li><li class="toc-sub"><a href="#ch5-defaults">Defaults</a></li><li class="toc-sub"><a href="#ch5-traps">Traps</a></li><li class="toc-sub"><a href="#ch5-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part IV · Getting code onto servers</span><ol><li><a href="#ch6">6 · The deployment ladder, and one VM done properly</a></li><li class="toc-sub"><a href="#ch6-ladder">The ladder</a></li><li class="toc-sub"><a href="#ch6-vm">One VM</a></li><li class="toc-sub"><a href="#ch6-proper">The VM done properly</a></li><li class="toc-sub"><a href="#ch6-agents">Agents on hosts</a></li><li class="toc-sub"><a href="#ch6-move">When to climb the next rung</a></li><li class="toc-sub"><a href="#ch6-traps">Traps</a></li><li class="toc-sub"><a href="#ch6-questions">Questions</a></li><li><a href="#ch7">7 · Infrastructure as code</a></li><li class="toc-sub"><a href="#ch7-how">How the tools work</a></li><li class="toc-sub"><a href="#ch7-stacks">The reference infrastructure</a></li><li class="toc-sub"><a href="#ch7-drift">Drift</a></li><li class="toc-sub"><a href="#ch7-boot">The last mile</a></li><li class="toc-sub"><a href="#ch7-traps">Traps</a></li><li class="toc-sub"><a href="#ch7-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part V · Running on AWS</span><ol><li><a href="#ch8">8 · Networking on AWS</a></li><li class="toc-sub"><a href="#ch8-router">A home router</a></li><li class="toc-sub"><a href="#ch8-parts">The parts</a></li><li class="toc-sub"><a href="#ch8-reference">The reference network</a></li><li class="toc-sub"><a href="#ch8-cidr">Address ranges in CIDR notation</a></li><li class="toc-sub"><a href="#ch8-production">Toward a production network</a></li><li class="toc-sub"><a href="#ch8-traps">Traps</a></li><li class="toc-sub"><a href="#ch8-questions">Questions</a></li><li><a href="#ch9">9 · Containers on ECS Fargate</a></li><li class="toc-sub"><a href="#ch9-pieces">The pieces</a></li><li class="toc-sub"><a href="#ch9-rehearse">Rehearse the task locally first</a></li><li class="toc-sub"><a href="#ch9-start">How a task starts</a></li><li class="toc-sub"><a href="#ch9-deploy">A release on ECS</a></li><li class="toc-sub"><a href="#ch9-health">One health signal</a></li><li class="toc-sub"><a href="#ch9-scale">Scaling out</a></li><li class="toc-sub"><a href="#ch9-exec">Running a command in a task</a></li><li class="toc-sub"><a href="#ch9-traps">Traps</a></li><li class="toc-sub"><a href="#ch9-questions">Questions</a></li><li><a href="#ch10">10 · Kubernetes and EKS</a></li><li class="toc-sub"><a href="#ch10-model">The model</a></li><li class="toc-sub"><a href="#ch10-probes">Two probes</a></li><li class="toc-sub"><a href="#ch10-map">ECS and Kubernetes</a></li><li class="toc-sub"><a href="#ch10-why">Why orchestrators exist at all</a></li><li class="toc-sub"><a href="#ch10-traps">Traps</a></li><li class="toc-sub"><a href="#ch10-questions">Questions</a></li><li><a href="#ch11">11 · The same ideas on Azure and Google Cloud</a></li><li class="toc-sub"><a href="#ch11-map">The map</a></li><li class="toc-sub"><a href="#ch11-diff">Three differences worth knowing</a></li><li class="toc-sub"><a href="#ch11-terraform">Terraform across clouds</a></li><li class="toc-sub"><a href="#ch11-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VI · The reference build</span><ol><li><a href="#ch12">12 · The reference build, end to end</a></li><li class="toc-sub"><a href="#ch12-stages">The stages</a></li><li class="toc-sub"><a href="#ch12-change">One change</a></li><li class="toc-sub"><a href="#ch12-code">The infrastructure code</a></li><li class="toc-sub"><a href="#ch12-images">Images</a></li><li class="toc-sub"><a href="#ch12-firstdeploy">The first ECS deploy</a></li><li class="toc-sub"><a href="#ch12-false">An outage that never happened</a></li><li class="toc-sub"><a href="#ch12-loop">The whole loop</a></li><li class="toc-sub"><a href="#ch12-outages">Outage drills</a></li><li class="toc-sub"><a href="#ch12-obs">What the on-call looks at</a></li><li class="toc-sub"><a href="#ch12-review">A review against its own rules</a></li><li class="toc-sub"><a href="#ch12-traps">Traps</a></li><li class="toc-sub"><a href="#ch12-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VII · Operating it</span><ol><li><a href="#ch13">13 · Environments, releases and rollback</a></li><li class="toc-sub"><a href="#ch13-strategies">Four ways to move traffic</a></li><li class="toc-sub"><a href="#ch13-schema">Rollbacks roll back code</a></li><li class="toc-sub"><a href="#ch13-undo">One rollback per kind of change</a></li><li class="toc-sub"><a href="#ch13-handover">Handing a service to an…</a></li><li class="toc-sub"><a href="#ch13-road">The road to real users</a></li><li class="toc-sub"><a href="#ch13-traps">Traps</a></li><li class="toc-sub"><a href="#ch13-questions">Questions</a></li><li><a href="#ch14">14 · Cost, teardown and lessons learned</a></li><li class="toc-sub"><a href="#ch14-cost">What it cost</a></li><li class="toc-sub"><a href="#ch14-teardown">Teardown</a></li><li class="toc-sub"><a href="#ch14-lessons">Lessons from a real build</a></li><li class="toc-sub"><a href="#ch14-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Appendices</span><ol><li><a href="#app-a">A · Glossary</a></li><li><a href="#app-b">B · Decision index</a></li><li><a href="#app-c">C · Repository index</a></li><li><a href="#app-d">D · Trap index</a></li></ol></li>
+    <li class="toc-part"><span class="label">Part I · What changed</span><ol><li><a href="#ch1">1 · From laptop to production</a></li><li class="toc-sub"><a href="#ch1-path">The path a change takes</a></li><li class="toc-sub"><a href="#ch1-proven">What the reference build proved</a></li><li class="toc-sub"><a href="#ch1-promote">One artifact</a></li><li class="toc-sub"><a href="#ch1-envs">The environments</a></li><li class="toc-sub"><a href="#ch1-sizes">The same service at three sizes</a></li><li class="toc-sub"><a href="#ch1-traps">Traps</a></li><li class="toc-sub"><a href="#ch1-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part II · Source and build</span><ol><li><a href="#ch2">2 · Git and the pull request</a></li><li class="toc-sub"><a href="#ch2-model">The model</a></li><li class="toc-sub"><a href="#ch2-places">Three places a file lives</a></li><li class="toc-sub"><a href="#ch2-integrate">Merge</a></li><li class="toc-sub"><a href="#ch2-trunk">Trunk-based development</a></li><li class="toc-sub"><a href="#ch2-pr">The pull request as a gate</a></li><li class="toc-sub"><a href="#ch2-traps">Traps</a></li><li class="toc-sub"><a href="#ch2-questions">Questions</a></li><li><a href="#ch3">3 · CI/CD and artifacts</a></li><li class="toc-sub"><a href="#ch3-ci">Continuous integration</a></li><li class="toc-sub"><a href="#ch3-cd">Continuous delivery</a></li><li class="toc-sub"><a href="#ch3-artifacts">Tags</a></li><li class="toc-sub"><a href="#ch3-traps">Traps</a></li><li class="toc-sub"><a href="#ch3-questions">Questions</a></li><li><a href="#ch4">4 · The software supply chain</a></li><li class="toc-sub"><a href="#ch4-layers">What you ship but did not write</a></li><li class="toc-sub"><a href="#ch4-pins">Pinning</a></li><li class="toc-sub"><a href="#ch4-scan">Scanning</a></li><li class="toc-sub"><a href="#ch4-traps">Traps</a></li><li class="toc-sub"><a href="#ch4-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part III · Identity</span><ol><li><a href="#ch5">5 · Identity without keys</a></li><li class="toc-sub"><a href="#ch5-routes">Three callers</a></li><li class="toc-sub"><a href="#ch5-people">People</a></li><li class="toc-sub"><a href="#ch5-oidc">Pipelines</a></li><li class="toc-sub"><a href="#ch5-roles">One role per job</a></li><li class="toc-sub"><a href="#ch5-workloads">Workloads</a></li><li class="toc-sub"><a href="#ch5-case">A case from the reference build</a></li><li class="toc-sub"><a href="#ch5-defaults">Defaults</a></li><li class="toc-sub"><a href="#ch5-traps">Traps</a></li><li class="toc-sub"><a href="#ch5-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part IV · Getting code onto servers</span><ol><li><a href="#ch6">6 · The deployment ladder, and one VM done properly</a></li><li class="toc-sub"><a href="#ch6-ladder">The ladder</a></li><li class="toc-sub"><a href="#ch6-vm">One VM</a></li><li class="toc-sub"><a href="#ch6-proper">The VM done properly</a></li><li class="toc-sub"><a href="#ch6-agents">Agents on hosts</a></li><li class="toc-sub"><a href="#ch6-move">When to climb the next rung</a></li><li class="toc-sub"><a href="#ch6-traps">Traps</a></li><li class="toc-sub"><a href="#ch6-questions">Questions</a></li><li><a href="#ch7">7 · Infrastructure as code</a></li><li class="toc-sub"><a href="#ch7-how">How the tools work</a></li><li class="toc-sub"><a href="#ch7-stacks">The reference infrastructure</a></li><li class="toc-sub"><a href="#ch7-drift">Drift</a></li><li class="toc-sub"><a href="#ch7-boot">The last mile</a></li><li class="toc-sub"><a href="#ch7-traps">Traps</a></li><li class="toc-sub"><a href="#ch7-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part V · Running on AWS</span><ol><li><a href="#ch8">8 · Networking on AWS</a></li><li class="toc-sub"><a href="#ch8-router">A home router</a></li><li class="toc-sub"><a href="#ch8-parts">The parts</a></li><li class="toc-sub"><a href="#ch8-reference">The reference network</a></li><li class="toc-sub"><a href="#ch8-cidr">Address ranges in CIDR notation</a></li><li class="toc-sub"><a href="#ch8-production">Toward a production network</a></li><li class="toc-sub"><a href="#ch8-traps">Traps</a></li><li class="toc-sub"><a href="#ch8-questions">Questions</a></li><li><a href="#ch9">9 · Containers on ECS Fargate</a></li><li class="toc-sub"><a href="#ch9-pieces">The pieces</a></li><li class="toc-sub"><a href="#ch9-rehearse">Rehearse the task locally first</a></li><li class="toc-sub"><a href="#ch9-start">How a task starts</a></li><li class="toc-sub"><a href="#ch9-deploy">A release on ECS</a></li><li class="toc-sub"><a href="#ch9-health">No readiness-only signal</a></li><li class="toc-sub"><a href="#ch9-scale">Scaling out</a></li><li class="toc-sub"><a href="#ch9-exec">Running a command in a task</a></li><li class="toc-sub"><a href="#ch9-traps">Traps</a></li><li class="toc-sub"><a href="#ch9-questions">Questions</a></li><li><a href="#ch10">10 · Kubernetes and EKS</a></li><li class="toc-sub"><a href="#ch10-model">The model</a></li><li class="toc-sub"><a href="#ch10-probes">Two probes</a></li><li class="toc-sub"><a href="#ch10-map">ECS and Kubernetes</a></li><li class="toc-sub"><a href="#ch10-why">Why orchestrators exist at all</a></li><li class="toc-sub"><a href="#ch10-traps">Traps</a></li><li class="toc-sub"><a href="#ch10-questions">Questions</a></li><li><a href="#ch11">11 · The same ideas on Azure and Google Cloud</a></li><li class="toc-sub"><a href="#ch11-map">The map</a></li><li class="toc-sub"><a href="#ch11-diff">Three differences worth knowing</a></li><li class="toc-sub"><a href="#ch11-terraform">Terraform across clouds</a></li><li class="toc-sub"><a href="#ch11-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VI · The reference build</span><ol><li><a href="#ch12">12 · The reference build, end to end</a></li><li class="toc-sub"><a href="#ch12-stages">The stages</a></li><li class="toc-sub"><a href="#ch12-change">One change</a></li><li class="toc-sub"><a href="#ch12-code">The infrastructure code</a></li><li class="toc-sub"><a href="#ch12-images">Images</a></li><li class="toc-sub"><a href="#ch12-firstdeploy">The first ECS deploy</a></li><li class="toc-sub"><a href="#ch12-false">An outage that never happened</a></li><li class="toc-sub"><a href="#ch12-loop">The whole loop</a></li><li class="toc-sub"><a href="#ch12-outages">Outage drills</a></li><li class="toc-sub"><a href="#ch12-obs">What the on-call looks at</a></li><li class="toc-sub"><a href="#ch12-review">A review against its own rules</a></li><li class="toc-sub"><a href="#ch12-traps">Traps</a></li><li class="toc-sub"><a href="#ch12-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Part VII · Operating it</span><ol><li><a href="#ch13">13 · Environments, releases and rollback</a></li><li class="toc-sub"><a href="#ch13-strategies">Four ways to move traffic</a></li><li class="toc-sub"><a href="#ch13-schema">Rollbacks roll back code</a></li><li class="toc-sub"><a href="#ch13-undo">One rollback per kind of change</a></li><li class="toc-sub"><a href="#ch13-handover">Handing a service to an…</a></li><li class="toc-sub"><a href="#ch13-road">The road to real users</a></li><li class="toc-sub"><a href="#ch13-traps">Traps</a></li><li class="toc-sub"><a href="#ch13-questions">Questions</a></li><li><a href="#ch14">14 · Cost, teardown and lessons learned</a></li><li class="toc-sub"><a href="#ch14-cost">What it cost</a></li><li class="toc-sub"><a href="#ch14-teardown">Teardown</a></li><li class="toc-sub"><a href="#ch14-lessons">Lessons from a real build</a></li><li class="toc-sub"><a href="#ch14-questions">Questions</a></li></ol></li><li class="toc-part"><span class="label">Appendices</span><ol><li><a href="#app-a">A · Glossary</a></li><li><a href="#app-b">B · Decision index</a></li><li><a href="#app-c">C · Repository index</a></li><li><a href="#app-d">D · Trap index</a></li></ol></li>
   </ol>
 </nav>
 
@@ -49,7 +49,7 @@
   <div class="series-list">
     <a href="ai-engineering.html"><span class="n">1 · AI Engineering &amp; Architecture</span><span>The new layer: models, retrieval, agents, evaluation, safety.</span></a><a href="software-engineering.html"><span class="n">2 · Modern Software Engineering</span><span>Your skills, brought up to date: the service and its repository.</span></a><div class="here"><span class="n">3 · Cloud Delivery &amp; DevOps</span><span>From a laptop to production: pipelines, identity, the cloud.</span></div>
   </div>
-  <p class="edition">Edition 1 · Reference implementation: <code>triage-assistant</code> at <code>handbook-1 (0b81c10)</code></p>
+  <p class="edition">Edition 1 · Reference implementation: <code>triage-assistant</code> at <code>handbook-1 (3fc2c43)</code></p>
 </header>
 
 <section class="front" id="how-to-read">
@@ -126,7 +126,7 @@
 
   <figure class="fig wide" id="fig-1-1">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 330" role="img" aria-label="The delivery path in two rows. Top: developer, pull request, CI checks, protected main branch, version tag. Bottom, right to left: release builds and scans once, images in two registries, a deploy gated by a GitHub environment, a rolling update with a circuit breaker, and a smoke test through the load balancer. Rollback runs the same deploy with the previous tag.">
+    <svg viewBox="0 0 820 330" role="img" aria-label="The delivery path in two rows. Top: developer, pull request, CI checks, protected main branch, version tag. Bottom, right to left: release scans, then builds once for two architectures, images in two registries, a deploy gated by a GitHub environment, a rolling update with a circuit breaker, and a smoke test through the load balancer. Rollback runs the same deploy with the previous tag.">
       <rect class="n" x="16" y="34" width="136" height="64" rx="5"/>
       <text class="tb" x="84" y="60" text-anchor="middle">Developer</text>
       <text class="ts" x="84" y="78" text-anchor="middle">branch, commits</text>
@@ -152,8 +152,8 @@
       <path class="e-acc" d="M742,99 V150" marker-end="url(#a-acc)"/>
       <rect class="n" x="680" y="152" width="124" height="76" rx="5"/>
       <text class="tb" x="742" y="176" text-anchor="middle">Release</text>
-      <text class="ts" x="742" y="194" text-anchor="middle">build once, scan,</text>
-      <text class="ts" x="742" y="210" text-anchor="middle">amd64 and arm64</text>
+      <text class="ts" x="742" y="194" text-anchor="middle">scan; build once</text>
+      <text class="ts" x="742" y="210" text-anchor="middle">for amd64, arm64</text>
       <rect class="n" x="514" y="152" width="136" height="76" rx="5"/>
       <text class="tb" x="582" y="176" text-anchor="middle">Registries</text>
       <text class="ts" x="582" y="194" text-anchor="middle">GHCR, then ECR</text>
@@ -220,7 +220,7 @@
       <rect class="n-acc" x="16" y="88" width="214" height="88" rx="6"/>
       <text class="tl" x="30" y="110">ONE RELEASE IMAGE</text>
       <text class="tm tb" x="30" y="132">triage-assistant-api:0.8.2</text>
-      <text class="tm" x="30" y="152">sha256:fcbc59d1…</text>
+      <text class="tm" x="30" y="152">sha256:21115358…</text>
       <text class="ts" x="30" y="168">built once, never rebuilt</text>
 
       <rect class="n" x="320" y="18" width="214" height="58" rx="5"/>
@@ -350,7 +350,7 @@
         <tr><td data-label="Symptom">A rollback has nothing to go back to</td><td data-label="Cause">The service was deployed as <code>latest</code>, which names whatever was pushed last</td><td data-label="Fix">Deploy exact version tags, or digests, from a registry with immutable tags.</td></tr>
         <tr><td data-label="Symptom">Two servers on the same version behave differently</td><td data-label="Cause">Each built from source; a dependency or base image changed between builds</td><td data-label="Fix">Build once in CI; hosts only pull.</td></tr>
         <tr><td data-label="Symptom">Every release replaces a component that did not change</td><td data-label="Cause">Image layers record file times, and every CI checkout gets new ones, so no two builds are byte-identical</td><td data-label="Fix">Compare builds by a hash of their inputs, and replace a component only when its inputs changed.</td></tr>
-        <tr><td data-label="Symptom">An image tag now points at different code</td><td data-label="Cause">Anyone who can push a package can re-push a tag</td><td data-label="Fix">Make the release workflow the only pusher, use immutable tags, check build provenance, or deploy by digest.</td></tr>
+        <tr><td data-label="Symptom">An image tag now points at different code</td><td data-label="Cause">Anyone who can push a package can re-push a tag</td><td data-label="Fix">Make the release workflow the only pusher, use immutable tags, verify signed build provenance, or deploy by digest.</td></tr>
         <tr><td data-label="Symptom">Images from a public repository can be pulled by anyone</td><td data-label="Cause">Packages built by a public repository's workflow are public by default on GitHub's registry</td><td data-label="Fix">Expect it: never put a secret in an image.</td></tr>
       </tbody>
     </table>
@@ -411,7 +411,7 @@
   </table>
 
   <h3 id="ch2-model">The model: snapshots and labels</h3>
-  <p>Most confusion with Git disappears once the model is clear. A <strong>commit</strong> is a snapshot of the whole project plus a pointer to its parent commit. Its identifier is a hash of both, so a commit can never change: change anything and you have a different commit. A <strong>branch</strong> is a label pointing at one commit, which moves forward when you commit. A <strong>tag</strong> is a label that never moves. <strong>HEAD</strong> is where you are.</p>
+  <p>Most confusion with Git disappears once the model is clear. A <strong>commit</strong> is a snapshot of the whole project plus a pointer to its parent commit. Its identifier is a hash of the snapshot, the parent, the author, the time and the message, so a commit can never change: change anything, even the message, and you have a different commit. A <strong>branch</strong> is a label pointing at one commit, which moves forward when you commit. A <strong>tag</strong> is a label that stays put: committing does not move it, and by convention nobody does, though <code>git tag -f</code> and a force-push can unless a tag ruleset forbids it. <strong>HEAD</strong> is where you are.</p>
 
   <figure class="fig wide" id="fig-2-1">
     <div class="fig-scroll">
@@ -442,12 +442,12 @@
       <text class="ts" x="60" y="205" text-anchor="middle">points to its parent</text>
 
       <text class="tb" x="580" y="40">Commit</text>
-      <text class="ts" x="580" y="58">a snapshot plus its parent; its ID is a</text>
-      <text class="ts" x="580" y="73">hash of both, so it never changes</text>
+      <text class="ts" x="580" y="58">a snapshot, parent, author and message;</text>
+      <text class="ts" x="580" y="73">its ID hashes all, so it never changes</text>
       <text class="tb" x="580" y="102">Branch</text>
       <text class="ts" x="580" y="120">a label that moves on each commit</text>
       <text class="tb" x="580" y="149">Tag</text>
-      <text class="ts" x="580" y="167">a label that never moves</text>
+      <text class="ts" x="580" y="167">a fixed label; only force can move it</text>
       <text class="tb" x="580" y="196">Remote-tracking label</text>
       <text class="ts" x="580" y="214">where main was at the last fetch</text>
     </svg>
@@ -580,7 +580,7 @@
   <ul>
     <li>six green checks: <code>lint</code>, <code>test-api</code>, <code>build</code>, <code>security</code>, <code>web-build</code> and <code>e2e</code>, on a branch that is up to date with main;</li>
     <li>one approving review, including one from the code owners of every path touched, with approvals dismissed when new commits arrive;</li>
-    <li>a linear history, so every change lands as one squashed commit.</li>
+    <li>a linear history; with squash as the only merge method the repository allows, every change lands as one commit.</li>
   </ul>
   <p>Code owners say whose approval a path needs. The pull request template asks the author for the evidence a reviewer needs, so verification is written down rather than assumed.</p>
 
@@ -652,7 +652,7 @@
     <table class="grid traps stack">
       <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
       <tbody>
-        <tr><td data-label="Symptom">An undo of one experiment also lost other uncommitted work in the same file</td><td data-label="Cause"><code>git checkout &lt;file&gt;</code> (or <code>git restore</code>) discards every uncommitted change in that file</td><td data-label="Fix">Commit first, or undo the experiment with a reverse patch.</td></tr>
+        <tr><td data-label="Symptom">An undo of one experiment also lost other uncommitted work in the same file</td><td data-label="Cause"><code>git checkout &lt;file&gt;</code> (or <code>git restore</code>) discards every unstaged change in that file (staged changes are kept: the file is restored from the staging area)</td><td data-label="Fix">Commit first, or undo the experiment with a reverse patch.</td></tr>
         <tr><td data-label="Symptom">Teammates' branches no longer line up with yours after a rebase</td><td data-label="Cause">Rebasing commits others already have gives them new IDs</td><td data-label="Fix">Rebase only your own unpushed work; use <code>--force-with-lease</code> on your own branch, never on a shared one.</td></tr>
         <tr><td data-label="Symptom">A service restarted mid-merge runs conflict markers as code</td><td data-label="Cause">A running service reads the working tree, not Git</td><td data-label="Fix">Production is never a developer checkout; deploy built releases.</td></tr>
         <tr><td data-label="Symptom">A solo owner cannot merge their own pull request</td><td data-label="Cause">GitHub never lets an author approve their own pull request</td><td data-label="Fix">Until a second reviewer exists, merge with the admin bypass, deliberately and noted in the description.</td></tr>
@@ -679,7 +679,7 @@
   <ol class="qs">
     <li>
       <p>Why can a commit never change, while a branch changes all the time?</p>
-      <details class="ans"><summary>Answer</summary><p>A commit's ID is a hash of its snapshot and its parent, so any change makes a different commit. A branch is only a label pointing at a commit, and it moves forward with each new commit.</p></details>
+      <details class="ans"><summary>Answer</summary><p>A commit's ID is a hash of its snapshot, its parent, its author and time, and its message, so any change makes a different commit. A branch is only a label pointing at a commit, and it moves forward with each new commit.</p></details>
     </li>
     <li>
       <p>When is rebasing safe, and when is it not?</p>
@@ -728,19 +728,21 @@
       <tr><td data-label="Then">Nightly builds that tell you tomorrow what broke today</td><td>Checks on every pull request, before the merge</td><td>A failure is caught on the change that caused it.</td></tr>
       <tr><td data-label="Then">Build outputs copied to a shared drive or server</td><td>Images in a registry, named by version, verified by content digest</td><td>Every environment fetches the same bytes, and can prove it.</td></tr>
       <tr><td data-label="Then">One processor type for every server</td><td>One version tag pointing at images for amd64 and arm64</td><td>Arm servers, such as AWS Graviton, cost about a fifth less, and laptops run on Arm too.</td></tr>
-      <tr><td data-label="Then">Trust that the build server built what you think</td><td>Build provenance and a software bill of materials attached to each image</td><td>You can show which commit and workflow produced an image, and what is inside it.</td></tr>
+      <tr><td data-label="Then">Trust that the build server built what you think</td><td>Build provenance and a software bill of materials attached to each image</td><td>You can look up which commit and workflow produced an image, and what is inside it; signing the record makes it proof.</td></tr>
     </tbody>
   </table>
 
   <h3 id="ch3-ci">Continuous integration: the merge gate</h3>
-  <p>On every pull request, the reference service runs six jobs in parallel on fresh machines. All six are required by branch protection (Chapter 2), so a pull request cannot merge until they pass. Each job is the same command a developer can run locally, which keeps "it passed on my machine" and "it passed in CI" the same statement.</p>
+  <p>On every pull request, the reference service runs six jobs on fresh machines: five in parallel, and the image build once lint has passed. All six are required by branch protection (Chapter 2), so a pull request cannot merge until they pass. Each job is the same command a developer can run locally, which keeps "it passed on my machine" and "it passed in CI" the same statement.</p>
 
   <figure class="fig wide" id="fig-3-1">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 312" role="img" aria-label="A pull request fans out to six parallel jobs: lint, test-api, build, security, web-build and e2e. All six are required checks; when they are green and the review is approved, the merge is allowed.">
+    <svg viewBox="0 0 820 312" role="img" aria-label="A pull request starts six jobs: lint, test-api, security, web-build and e2e at once, and build after lint passes. All six are required checks; when they are green and the review is approved, the merge is allowed.">
       <rect class="n-acc" x="16" y="118" width="128" height="64" rx="6"/>
       <text class="tb" x="80" y="146" text-anchor="middle">Pull request</text>
       <text class="ts" x="80" y="164" text-anchor="middle">every push to it</text>
+      <text class="ts" x="80" y="214" text-anchor="middle">dashed: build</text>
+      <text class="ts" x="80" y="230" text-anchor="middle">waits for lint</text>
 
       <rect class="n" x="214" y="12" width="300" height="38" rx="5"/>
       <text class="tm tb" x="226" y="36">lint</text><text class="ts" x="276" y="36">ruff, mypy, alert rules, shell, settings</text>
@@ -757,7 +759,7 @@
 
       <path class="e" d="M145,150 C180,150 180,31 212,31" marker-end="url(#a)"/>
       <path class="e" d="M145,150 C180,150 180,77 212,77" marker-end="url(#a)"/>
-      <path class="e" d="M145,150 C180,150 180,123 212,123" marker-end="url(#a)"/>
+      <path class="e dash" d="M145,150 C180,150 180,123 212,123" marker-end="url(#a)"/>
       <path class="e" d="M145,150 C180,150 180,169 212,169" marker-end="url(#a)"/>
       <path class="e" d="M145,150 C180,150 180,215 212,215" marker-end="url(#a)"/>
       <path class="e" d="M145,150 C180,150 180,261 212,261" marker-end="url(#a)"/>
@@ -819,7 +821,7 @@ permissions:
 </code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path=".github/workflows/ci.yml" data-lines="49-57"><code class="language-yaml">test-api:
+          <pre class="code" data-repo="triage-assistant" data-path=".github/workflows/ci.yml" data-lines="51-59"><code class="language-yaml">test-api:
   runs-on: ubuntu-24.04
   steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -834,14 +836,14 @@ permissions:
   </section>
 
   <h4>Where CI runs, and what it costs</h4>
-  <p>GitHub Actions runs each job on a fresh, GitHub-hosted virtual machine, billed by the minute. Three habits keep the bill and the wait down: cache dependency downloads keyed on the lockfile, run expensive workflows only when their inputs change (path filters), and cancel superseded runs. A <strong>self-hosted runner</strong> executes whatever a workflow tells it to. Never attach one to a public repository that accepts pull requests from outside: a stranger's pull request would run code on your machine.</p>
+  <p>GitHub Actions runs each job on a fresh, GitHub-hosted virtual machine. Standard runners are free for public repositories, such as the reference one; a private repository gets a monthly quota of minutes and is billed by the minute beyond it, and larger runners are always billed. Three habits keep the bill and the wait down: cache dependency downloads keyed on the lockfile, run expensive workflows only when their inputs change (path filters), and cancel superseded runs. A <strong>self-hosted runner</strong> executes whatever a workflow tells it to. Never attach one to a public repository that accepts pull requests from outside: a stranger's pull request would run code on your machine.</p>
 
   <h3 id="ch3-cd">Continuous delivery: a tag becomes a release</h3>
   <p>A release starts when someone pushes a version tag, such as <code>v0.8.2</code>, to a commit on main. Versions follow <strong>semantic versioning</strong>: <code>MAJOR.MINOR.PATCH</code>, where the major number changes for a breaking change, the minor for a compatible feature, and the patch for a fix. Teams choose between deploying every merge to main (continuous deployment) and deploying on a tag (continuous delivery). The reference service deploys on a tag.</p>
 
   <figure class="fig wide" id="fig-3-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="The release workflow: verify the tag is on main and scan; build three images on two architectures natively, each pushed by digest with provenance and an SBOM; merge the digests under one set of tags per image; smoke-test the published images on both architectures; copy to ECR; then deploy.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="The release workflow: verify the tag is on main and scan an amd64 build of it; build three images on two architectures natively, each pushed by digest with provenance and an SBOM; merge the digests under one set of tags per image; smoke-test the published images on both architectures and, once they pass, copy them to ECR; the deploy starts only if the whole release succeeded.">
       <rect class="n-acc" x="16" y="116" width="110" height="64" rx="6"/>
       <text class="tb" x="71" y="144" text-anchor="middle">Tag pushed</text>
       <text class="tm" x="71" y="164" text-anchor="middle">v0.8.2</text>
@@ -850,7 +852,7 @@ permissions:
       <text class="tb" x="214" y="124" text-anchor="middle">Verify</text>
       <text class="ts" x="214" y="144" text-anchor="middle">tag is on main</text>
       <text class="ts" x="214" y="160" text-anchor="middle">image check</text>
-      <text class="ts" x="214" y="176" text-anchor="middle">scan again</text>
+      <text class="ts" x="214" y="176" text-anchor="middle">scan an amd64 build</text>
 
       <text class="tl" x="378" y="22" text-anchor="middle">SIX NATIVE BUILDS</text>
       <rect class="n" x="302" y="34" width="72" height="34" rx="4"/><text class="tm" x="338" y="56" text-anchor="middle">api</text>
@@ -883,15 +885,16 @@ permissions:
       <line class="e" x1="279" y1="148" x2="300" y2="135" marker-end="url(#a)"/>
       <line class="e" x1="455" y1="135" x2="476" y2="148" marker-end="url(#a)"/>
       <path class="e" d="M597,135 C610,135 605,75 618,75" marker-end="url(#a)"/>
-      <path class="e" d="M597,160 C610,160 605,221 618,221" marker-end="url(#a)"/>
-      <text class="ts" x="600" y="286" text-anchor="middle">then the deploy workflow starts (Chapter 13)</text>
+      <line class="e" x1="713" y1="111" x2="713" y2="183" marker-end="url(#a)"/>
+      <text class="ts" x="721" y="152">once it passes</text>
+      <text class="ts" x="600" y="286" text-anchor="middle">when the whole release succeeds, the deploy workflow starts (Chapter 13)</text>
       <line class="e-acc" x1="713" y1="257" x2="713" y2="270" marker-end="url(#a-acc)"/>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 3.2</span>The release workflow. It builds each image once per processor type, joins them under the release tags, and then tests what it published, not what it built. Only after that are the images copied onward and deployed.</figcaption>
+    <figcaption><span class="fig-n">Figure 3.2</span>The release workflow. It builds each image once per processor type, joins them under the release tags, and then tests what it published, not what it built. The copy to ECR waits for the smoke test, because ECR tags are immutable: an image that failed it must never land there. The deploy starts only if the whole release succeeded.</figcaption>
   </figure>
 
-  <p>Each step guards against a specific failure. Checking that the tag points at a commit on main stops anyone releasing code that never passed review. Scanning again at release catches vulnerabilities published after the merge. Testing the published images, rather than the build outputs, proves the registry holds what the team thinks it holds.</p>
+  <p>Each step guards against a specific failure. Checking that the tag points at a commit on main stops anyone releasing code that never passed review. Scanning again at release catches vulnerabilities published after the merge. Testing the published images, rather than the build outputs, proves the registry holds what the team thinks it holds. Two gaps remain. The release-time scan and image check run on images the verify job builds for them on its amd64 machine, from the same commit: neither the arm64 images nor the exact published bytes are scanned. Scanning the pushed index by digest, once per architecture, would close that gap. And the copy to ECR does not wait for the smoke test, so a release that fails it still lands in ECR under a tag that can never be re-pushed. Only the deploy waits. Making the copy depend on the smoke test would close the gap.</p>
 
   <section class="repo">
     <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/release.yml#L57-L66">.github/workflows/release.yml</a><span class="lines">the release's guards and its build outputs</span></header>
@@ -900,7 +903,7 @@ permissions:
         <p>Two parts of the release workflow carry most of its guarantees.</p>
         <ul class="notice">
           <li><code>git merge-base --is-ancestor</code> fails unless the tagged commit is already on main.</li>
-          <li>The image check and the vulnerability scan run again at release time.</li>
+          <li>The image check and the vulnerability scan run again at release time, on an amd64 build of the tagged commit made for them, not on the images that are published.</li>
           <li>A tag push publishes each build by digest; a pull request only builds, to a cache.</li>
           <li><code>provenance</code> and <code>sbom</code> store, next to the image in the registry, which commit and workflow built it and what it contains.</li>
         </ul>
@@ -931,7 +934,7 @@ sbom: ${{ github.event_name == 'push' }}</code></pre>
   </section>
 
   <h3 id="ch3-artifacts">Tags, digests and multi-architecture images</h3>
-  <p>An image is the immutable build output, identified by a <strong>digest</strong>: a hash of its content, such as <code>sha256:fcbc59d1…</code>. A <strong>tag</strong> is a movable label, like a Git branch. The release workflow moves <code>0.8</code> on every 0.8.x release on purpose; a re-push can move any tag unless the registry forbids it. So deploy an exact version from a registry with immutable tags, or deploy by digest, and never deploy <code>latest</code> or a moving tag such as <code>0.8</code>.</p>
+  <p>An image is the immutable build output, identified by a <strong>digest</strong>: a hash of its content, such as <code>sha256:21115358…</code>. A <strong>tag</strong> is a movable label, like a Git branch. The release workflow moves <code>0.8</code> on every 0.8.x release on purpose; a re-push can move any tag unless the registry forbids it. So deploy an exact version from a registry with immutable tags, or deploy by digest, and never deploy <code>latest</code> or a moving tag such as <code>0.8</code>.</p>
 
   <figure class="fig wide" id="fig-3-3">
     <div class="fig-scroll">
@@ -943,7 +946,7 @@ sbom: ${{ github.event_name == 'push' }}</code></pre>
 
       <rect class="n-acc" x="180" y="78" width="210" height="92" rx="6"/>
       <text class="tl" x="196" y="100">INDEX (A DIGEST)</text>
-      <text class="tm" x="196" y="122">sha256:fcbc59d1…</text>
+      <text class="tm" x="196" y="122">sha256:21115358…</text>
       <text class="ts" x="196" y="142">lists one image per</text>
       <text class="ts" x="196" y="158">processor type</text>
 
@@ -1016,7 +1019,7 @@ sbom: ${{ github.event_name == 'push' }}</code></pre>
     </li>
     <li>
       <p>What does build provenance answer that a version number does not?</p>
-      <details class="ans"><summary>Answer</summary><p>Which commit and which workflow run produced this exact image. A version number is only a label someone chose; provenance is a signed record stored with the image.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Which commit and which workflow run produced this exact image. A version number is only a label someone chose; provenance is a record the build wrote and stored with the image. It proves the answer only when it is signed and the signature is checked; the reference release's is not signed.</p></details>
     </li>
   </ol>
 </section>
@@ -1037,7 +1040,7 @@ sbom: ${{ github.event_name == 'push' }}</code></pre>
       <li>Pin by content, not by name: lockfiles with hashes, base images by digest, CI actions by commit SHA. Names can be moved; content hashes cannot.</li>
       <li>Updates arrive as pull requests from a bot and pass the same checks as any change.</li>
       <li>Scan for known vulnerabilities and leaked secrets on every pull request, again at release, and weekly.</li>
-      <li>Block what can be fixed. Accept the rest explicitly, with an expiry that forces the question again.</li>
+      <li>Block what has a fix. When the fix cannot be taken yet, accept the risk explicitly, with an expiry that forces the question again. Findings with no fix at all are hidden, so review them separately.</li>
     </ul>
   </div>
 
@@ -1094,7 +1097,7 @@ sbom: ${{ github.event_name == 'push' }}</code></pre>
     <figcaption><span class="fig-n">Figure 4.1</span>The layers of a container image, from the code you wrote down to the tools that check it. Every control on the right does the same thing: it names content by its hash rather than by a name someone else can move.</figcaption>
   </figure>
 
-  <p>The bottom layer is easy to forget. A scanner runs with access to your CI environment, so a compromised scanner is a compromised pipeline. This has happened: Trivy's own release binaries and almost every tag of its GitHub Action were replaced by code that stole CI credentials (CVE-2026-33634). Teams that ran it from an image pinned by digest were not affected. The reference service runs its scanners that way, from the same commands locally and in CI, with no access to the Docker socket.</p>
+  <p>The bottom layer is easy to forget. A scanner runs with access to your CI environment, so a compromised scanner is a compromised pipeline. This has happened: attackers published a Trivy release, binaries and container image alike, and moved almost every tag of its GitHub Action, all to code that stole CI credentials (CVE-2026-33634). Teams that ran a scanner image pinned to a digest from before the attack, and did not take the new release, were not affected. A digest pin stops a tag from being re-pointed; a reviewed bump is the chance to catch a bad new release. The reference service runs its scanners that way, from the same commands locally and in CI, with no access to the Docker socket.</p>
 
   <h3 id="ch4-pins">Pinning, and taking updates</h3>
   <p>Pinning alone would freeze a service with every vulnerability it ever had. The other half is a bot, Dependabot here, that opens pull requests to move the pins: grouped monthly for packages and actions, weekly for base images, and immediately for a known vulnerability. Each is an ordinary pull request, so CI and review decide whether it merges. A major version gets read like any other change.</p>
@@ -1133,11 +1136,11 @@ FROM python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa
   </section>
 
   <h3 id="ch4-scan">Scanning, and what to do with a finding</h3>
-  <p>Two kinds of scan run in the reference pipeline. <strong>Vulnerability scanning</strong> (Trivy) compares the packages inside each production image, and the web app's runtime dependencies, with databases of known vulnerabilities. <strong>Secret scanning</strong> (gitleaks) reads every commit in the history for things that look like keys and passwords. Both run on every pull request; the vulnerability scan runs again at release and weekly, because new advisories are published for images nobody changed.</p>
+  <p>Two kinds of scan run in the reference pipeline. <strong>Vulnerability scanning</strong> (Trivy) compares the packages inside each production image, and the web app's runtime dependencies, with databases of known vulnerabilities. <strong>Secret scanning</strong> (gitleaks) reads every commit in the history for things that look like keys and passwords. Both run on every pull request; the vulnerability scan runs again at release and weekly, because new advisories are published for images nobody changed. Each of those runs builds the images itself on an amd64 machine, so it checks the same source, not the exact published bytes, and not the arm64 images.</p>
 
   <figure class="fig wide" id="fig-4-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="A finding is checked: is it HIGH or CRITICAL, and does a fixed version exist? If fixable, the build fails until the dependency or base image is bumped. If not fixable yet, a person accepts the risk in the accepted-risks file with a reason and an expiry at most 90 days out; code owners approve; at expiry the scan fails again. Findings in third-party images the team does not build are reported, not failed.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="A HIGH or CRITICAL finding is checked: does a fixed version exist? If not, the scan does not report it at all, so nothing records it and it needs a separate review. If one exists, the build fails. When the fix can be taken, the dependency or base image is bumped, usually by the bot's pull request. When it cannot be taken yet, for example because no rebuilt base image exists, a person accepts the risk in the accepted-risks file with a reason and an expiry at most 90 days out; code owners approve; at expiry the scan fails again. Findings in third-party images the team does not build are reported, not failed.">
       <rect class="n-acc" x="16" y="120" width="140" height="58" rx="6"/>
       <text class="tb" x="86" y="145" text-anchor="middle">A finding</text>
       <text class="ts" x="86" y="163" text-anchor="middle">HIGH or CRITICAL</text>
@@ -1152,7 +1155,7 @@ FROM python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa
       <text class="ts" x="505" y="74" text-anchor="middle">merge and release blocked</text>
       <rect class="n-good" x="640" y="28" width="166" height="64" rx="6"/>
       <text class="tb" x="723" y="54" text-anchor="middle">Bump it</text>
-      <text class="ts" x="723" y="74" text-anchor="middle">usually the bot's PR</text>
+      <text class="ts" x="723" y="74" text-anchor="middle">fix usable: the bot's PR</text>
       <path class="e-bad" d="M275,119 V60 H408" marker-end="url(#a-bad)"/>
       <text class="ts" x="300" y="52">yes</text>
       <line class="e" x1="601" y1="60" x2="638" y2="60" marker-end="url(#a)"/>
@@ -1165,8 +1168,16 @@ FROM python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa
       <text class="tb" x="723" y="184" text-anchor="middle">Code owners</text>
       <text class="ts" x="723" y="202" text-anchor="middle">approve the change</text>
       <text class="ts" x="723" y="218" text-anchor="middle">to the risk file</text>
-      <path class="e" d="M275,179 V199 H408" marker-end="url(#a)"/>
-      <text class="ts" x="300" y="216">not yet</text>
+      <line class="e" x1="505" y1="93" x2="505" y2="158" marker-end="url(#a)"/>
+      <text class="ts" x="515" y="122">fix not yet usable,</text>
+      <text class="ts" x="515" y="138">e.g. no new base yet</text>
+
+      <rect class="n-soft" x="200" y="214" width="150" height="70" rx="6"/>
+      <text class="tb" x="275" y="238" text-anchor="middle">Not reported</text>
+      <text class="ts" x="275" y="256" text-anchor="middle">hidden, with no record;</text>
+      <text class="ts" x="275" y="272" text-anchor="middle">review them separately</text>
+      <line class="e" x1="275" y1="179" x2="275" y2="212" marker-end="url(#a)"/>
+      <text class="ts" x="284" y="200">no</text>
       <line class="e" x1="601" y1="199" x2="638" y2="199" marker-end="url(#a)"/>
       <path class="e dash" d="M723,239 V268 H505 V240" marker-end="url(#a)"/>
       <text class="ts" x="614" y="286" text-anchor="middle">at expiry the scan fails again, and someone decides again</text>
@@ -1176,10 +1187,10 @@ FROM python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa
       <text class="ts" x="16" y="264">reported, never failed</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 4.2</span>The policy for a vulnerability. Blocking only on findings that can be fixed keeps the check meaningful: a check that is red for reasons nobody can act on teaches people to ignore red.</figcaption>
+    <figcaption><span class="fig-n">Figure 4.2</span>The policy for a vulnerability. Blocking only on findings that can be fixed keeps the check meaningful: a check that is red for reasons nobody can act on teaches people to ignore red. The price is the bottom branch: the scan runs with <code>--ignore-unfixed</code>, so a finding with no fix anywhere is never shown, and nobody records or revisits it unless the team looks for it.</figcaption>
   </figure>
 
-  <p>The last line of the figure is a lesson learned. The weekly scan of the third-party images the stack merely runs, such as Keycloak, Grafana and pgvector, first found 336 findings in 12 of 14 images, nearly all waiting on releases from those projects. A job that fails every Monday for things the team cannot change is an email nobody reads, so that scan now reports instead of failing, and is read when those images are upgraded. The service's own images still fail on any fixable finding.</p>
+  <p>The note at the bottom left of the figure is a lesson learned. The weekly scan of the third-party images the stack merely runs, such as Keycloak, Grafana and pgvector, first found 336 findings in 12 of 14 images, nearly all waiting on releases from those projects. A job that fails every Monday for things the team cannot change is an email nobody reads, so that scan now reports instead of failing, and is read when those images are upgraded. The service's own images still fail on any fixable finding.</p>
   <p>The first scan also changed the images themselves. Two vulnerabilities lived inside <code>pip</code>, which the production image never used, so pip was removed and the image check now refuses an image that contains it. Another lived in nginx's optional modules, so the image moved to nginx's slim variant. Removing what you do not need is often a better fix than patching it.</p>
 
   <section class="repo">
@@ -1223,9 +1234,9 @@ reason. Run by `make scan` and `make scan-compose`.
     <p class="adr-title">Scan images and commits; pin base images and scanners by digest</p>
     <dl>
       <dt>Problem</dt><dd>Nothing said whether what shipped had a known vulnerability, or whether a commit carried a secret. The first scan found 20 fixable HIGH vulnerabilities, none in the team's own code.</dd>
-      <dt>Decision</dt><dd>Scan on every pull request, before release and weekly; block fixable HIGH and CRITICAL findings; accept the rest with a reason and an expiry; pin base images and scanners by digest.</dd>
+      <dt>Decision</dt><dd>Scan on every pull request, before release and weekly; block HIGH and CRITICAL findings that have a fix; when the fix cannot be taken yet, accept the risk with a reason and an expiry; pin base images and scanners by digest.</dd>
       <dt>Later</dt><dd>ADR-0026 made the third-party image scan report instead of fail, and moved base-image updates to weekly.</dd>
-      <dt>See it in</dt><dd><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/scan.yml">scan.yml</a>, <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.trivyignore.yaml">.trivyignore.yaml</a>, and the <code>security</code> job in <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/ci.yml#L83-L96">ci.yml</a>.</dd>
+      <dt>See it in</dt><dd><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/scan.yml">scan.yml</a>, <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.trivyignore.yaml">.trivyignore.yaml</a>, and the <code>security</code> job in <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/ci.yml#L85-L98">ci.yml</a>.</dd>
     </dl>
   </aside>
   <p data-adr="ADR-0026">A secret found in a commit is handled in a fixed order: rotate it first, because once pushed it may already be copied, and only then remove it. A fake credential in a test is allowed only by its exact fingerprint, with the value shown to be fake. GitHub's push protection adds a second layer by refusing the push itself.</p>
@@ -1233,7 +1244,7 @@ reason. Run by `make scan` and `make scan-compose`.
   <aside class="say">
     <span class="label">How to say it</span>
     <p>"Everything we depend on is pinned by content hash, and updates arrive as reviewed pull requests from a bot."</p>
-    <p>"We block fixable high and critical findings on every pull request and at release. Anything we can't fix yet is accepted in writing, with an owner and an expiry."</p>
+    <p>"We block fixable high and critical findings on every pull request and at release. When a fix exists but we can't take it yet, the risk is accepted in writing, with an owner and an expiry. Findings with no fix anywhere don't fail the build."</p>
   </aside>
 
   <h3 id="ch4-traps">Traps</h3>
@@ -1244,7 +1255,7 @@ reason. Run by `make scan` and `make scan-compose`.
         <tr><td data-label="Symptom">A trusted CI action starts exfiltrating secrets</td><td data-label="Cause">It was referenced by tag, and the tag was moved to malicious code</td><td data-label="Fix">Pin every third-party action to a full commit SHA.</td></tr>
         <tr><td data-label="Symptom">The scanner itself is the attack</td><td data-label="Cause">It ran from a third-party action or a mutable download</td><td data-label="Fix">Run scanners from images pinned by digest, with no Docker socket.</td></tr>
         <tr><td data-label="Symptom">Builds differ depending on the day they ran</td><td data-label="Cause"><code>apt-get upgrade</code> or unpinned installs inside the Dockerfile</td><td data-label="Fix">Pin the base by digest and take fixes as a reviewed digest bump.</td></tr>
-        <tr><td data-label="Symptom">Everyone ignores the red security check</td><td data-label="Cause">It fails on findings nobody can fix</td><td data-label="Fix">Block only fixable findings; accept the rest with an expiry; report third-party images.</td></tr>
+        <tr><td data-label="Symptom">Everyone ignores the red security check</td><td data-label="Cause">It fails on findings nobody can fix</td><td data-label="Fix">Block only findings with a fix; accept a fix you cannot take yet, with an expiry; report third-party images.</td></tr>
         <tr><td data-label="Symptom">A pull request goes red for a vulnerability it did not introduce</td><td data-label="Cause">A new advisory for the base image</td><td data-label="Fix">Take the bot's digest bump, or accept the risk with an expiry.</td></tr>
         <tr><td data-label="Symptom">The secret-scanning action fails for an organization</td><td data-label="Cause">The gitleaks GitHub Action needs a license for organizations</td><td data-label="Fix">Run its command-line tool instead.</td></tr>
         <tr><td data-label="Symptom">A leaked key was deleted from the repository, but it is still abused</td><td data-label="Cause">Deleting it does not unpublish it</td><td data-label="Fix">Rotate first, then remove.</td></tr>
@@ -1255,7 +1266,7 @@ reason. Run by `make scan` and `make scan-compose`.
   <details class="deep">
     <summary><span class="label">Going deeper</span> Provenance, bills of materials, and checking a new dependency</summary>
     <div class="deep-body">
-      <p><strong>Provenance</strong> is a signed record of how an artifact was built: which source commit, which workflow, which builder. A <strong>software bill of materials (SBOM)</strong> lists the packages inside it. The reference release stores both next to each image in the registry, so a question such as "which of our images contain this library version?" can be answered from the registry, without rebuilding anything. Frameworks such as SLSA grade how strongly a pipeline can prove these claims.</p>
+      <p><strong>Provenance</strong> is a record of how an artifact was built: which source commit, which workflow, which builder. A <strong>software bill of materials (SBOM)</strong> lists the packages inside it. The reference release stores both next to each image in the registry, so a question such as "which of our images contain this library version?" can be answered from the registry, without rebuilding anything. The reference release's records are BuildKit attestations, and they are not signed: anyone who can push the package could push different ones, so they describe a build without proving it. To make provenance verifiable, sign it, for example with <code>actions/attest-build-provenance</code> (checked with <code>gh attestation verify</code>) or Sigstore's <code>cosign</code>, and verify the signature before deploying. Frameworks such as SLSA grade how strongly a pipeline can prove these claims.</p>
       <p>Before adding a dependency at all, the reference team checks five things: its license (Redis and Docker Desktop both changed theirs, and Terraform moved to the Business Source License), that it is maintained and has a reasonable security record, that it publishes builds for both processor types, its size, and that it can be pinned and covered by the scans and the update bot. The pull request then says, in one line, why it is needed.</p>
     </div>
   </details>
@@ -1268,7 +1279,7 @@ reason. Run by `make scan` and `make scan-compose`.
     </li>
     <li>
       <p>Why does the policy block only findings that have a fixed version?</p>
-      <details class="ans"><summary>Answer</summary><p>A finding with no fix leaves nothing to do but wait. Blocking on it keeps the check permanently red, and people learn to ignore it. Unfixable findings are accepted in writing with an expiry instead, which forces a fresh decision later.</p></details>
+      <details class="ans"><summary>Answer</summary><p>A finding with no fix leaves nothing to do but wait. Blocking on it keeps the check permanently red, and people learn to ignore it. With <code>--ignore-unfixed</code> the scan does not even report them, so nothing records them either; a periodic report-only scan without that flag keeps them in sight. The accepted-risks file, with a reason and an expiry that forces a fresh decision, is for the other case: a fix exists upstream but cannot be taken yet.</p></details>
     </li>
     <li>
       <p>Why scan again at release and weekly if every pull request is scanned?</p>
@@ -1308,7 +1319,7 @@ reason. Run by `make scan` and `make scan-compose`.
       <tr><td data-label="Then">An IAM user per developer, with access keys in <code>~/.aws/credentials</code></td><td>Single sign-on behind the company identity provider, with role sessions that expire</td><td>A key on a laptop leaks with the laptop. A session dies on its own.</td></tr>
       <tr><td data-label="Then">Access keys stored as CI secrets</td><td>OIDC federation: the job's signed token is exchanged for one-hour credentials</td><td>Stored CI keys are the classic leak, and someone has to rotate them.</td></tr>
       <tr><td data-label="Then">Keys in a config file or baked into a server image</td><td>A role attached to the VM or container; credentials served by the platform and rotated</td><td>A server that holds no secret cannot leak one.</td></tr>
-      <tr><td data-label="Then">SSH keys and port 22 for operators</td><td>Session Manager and Run Command, authorized by IAM and recorded</td><td>No open port, and every command is attributed to a person.</td></tr>
+      <tr><td data-label="Then">SSH keys and port 22 for operators</td><td>Session Manager and Run Command, authorized by IAM and recorded</td><td>No open port, and every session or command sent is attributed to a person; session logging keeps what was typed.</td></tr>
       <tr><td data-label="Then">A shared admin account for deploys</td><td>Pipelines deploy; people are read-only in production and request elevated access when needed</td><td>Every production change goes through a reviewed, recorded path.</td></tr>
     </tbody>
   </table>
@@ -1381,7 +1392,7 @@ reason. Run by `make scan` and `make scan-compose`.
       <line class="e-acc" x1="573" y1="251" x2="628" y2="251" marker-end="url(#a-acc)"/>
       <text class="ts" x="601" y="244" text-anchor="middle">issues</text>
 
-      <text class="ts" x="400" y="310" text-anchor="middle">Every call made with these credentials is recorded in CloudTrail under the caller's identity.</text>
+      <text class="ts" x="400" y="310" text-anchor="middle">Calls made with these credentials are recorded in CloudTrail under the caller's identity (management calls by default).</text>
     </svg>
     </div>
     <figcaption><span class="fig-n">Figure 5.1</span>Three kinds of caller, three routes to the same result: credentials that expire on their own. No route stores a permanent key.</figcaption>
@@ -1451,7 +1462,7 @@ reason. Run by `make scan` and `make scan-compose`.
   <p>Four pieces make it work:</p>
   <ol>
     <li><strong>The job asks for a token.</strong> GitHub signs a JSON Web Token (JWT) for each job that has <code>permissions: id-token: write</code>. Without that line, no token is issued.</li>
-    <li><strong>The token describes the job.</strong> Its <code>iss</code> (issuer) is GitHub's token service, its <code>aud</code> (audience) is <code>sts.amazonaws.com</code>, and its <code>sub</code> (subject) names the repository and either the git ref that triggered the job or the GitHub environment the job runs in.</li>
+    <li><strong>The token describes the job.</strong> Its <code>iss</code> (issuer) is GitHub's token service. Its <code>aud</code> (audience) is whatever the job asks for: the AWS login action, <code>aws-actions/configure-aws-credentials</code>, asks for <code>sts.amazonaws.com</code>, while a token fetched without an audience carries the repository owner's URL and fails the trust policy. Its <code>sub</code> (subject) names the repository and either the git ref that triggered the job or the GitHub environment the job runs in.</li>
     <li><strong>AWS trusts the issuer once per account.</strong> An IAM OIDC provider entry tells AWS to accept tokens signed by GitHub's published keys.</li>
     <li><strong>A role decides which jobs it will serve.</strong> Its trust policy allows <code>sts:AssumeRoleWithWebIdentity</code> only when <code>aud</code> and <code>sub</code> match. A different repository, branch, tag or environment is refused.</li>
   </ol>
@@ -1476,6 +1487,7 @@ reason. Run by `make scan` and `make scan-compose`.
       <text class="tb" x="20" y="116">Audience</text>
       <text class="ts" x="130" y="112">token</text>
       <text class="tm" x="180" y="112">sts.amazonaws.com</text>
+      <text class="ts" x="330" y="112">requested by the AWS login action</text>
       <text class="ts" x="130" y="134">policy</text>
       <text class="tm" x="180" y="134">StringEquals  aud = sts.amazonaws.com</text>
       <rect class="n-good" x="716" y="106" width="84" height="22" rx="11"/>
@@ -1487,8 +1499,8 @@ reason. Run by `make scan` and `make scan-compose`.
       <text class="tm" x="180" y="174">repo:Parzon@124113141/triage-assistant@1381921470:ref:refs/tags/v0.8.2</text>
       <text class="ts" x="130" y="196">policy</text>
       <text class="tm" x="180" y="196">StringLike    sub = repo:Parzon@124113141/triage-assistant@1381921470:ref:refs/tags/v*</text>
-      <rect class="n-good" x="716" y="168" width="84" height="22" rx="11"/>
-      <text class="ts tg tb" x="758" y="183" text-anchor="middle">match</text>
+      <rect class="n-good" x="716" y="208" width="84" height="22" rx="11"/>
+      <text class="ts tg tb" x="758" y="223" text-anchor="middle">match</text>
       <line class="rule" x1="20" y1="240" x2="800" y2="240"/>
 
       <text class="tb tr" x="20" y="268">Subject</text>
@@ -1695,7 +1707,7 @@ deploy.add_to_policy(
 
   <figure class="fig wide" id="fig-5-5">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="Left: on ECS, the execution role lets ECS pull the image from ECR and inject secrets from Secrets Manager at task start; the task role is what the code calls AWS with. Right: on EC2, the instance profile lets the ECR credential helper pull images without a password, and operators reach the VM through Session Manager rather than SSH; port 22 is closed.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Left: on ECS, the execution role lets ECS pull the image from ECR and inject secrets from Secrets Manager at task start; the task role is what the code calls AWS with. Right: on EC2, the instance profile lets the ECR credential helper pull images without a password, and operators reach the VM through Session Manager rather than SSH; port 22 is closed. CloudTrail records who opened a session or sent a command.">
       <text class="tl" x="20" y="18">ECS TASK ON FARGATE</text>
       <text class="tl" x="440" y="18">EC2 VIRTUAL MACHINE</text>
       <line class="rule" x1="420" y1="10" x2="420" y2="290"/>
@@ -1744,16 +1756,16 @@ deploy.add_to_policy(
       <rect class="n-bad" x="640" y="196" width="160" height="40" rx="5"/>
       <text class="tb tr" x="720" y="214" text-anchor="middle">SSH, port 22</text>
       <text class="ts" x="720" y="229" text-anchor="middle">closed; no key exists</text>
-      <text class="ts" x="440" y="270">Every operator command is recorded in CloudTrail.</text>
+      <text class="ts" x="440" y="270">CloudTrail records who opened a session or sent a command.</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 5.5</span>Workload identity on the two AWS compute types used in the reference build. Neither holds a key: the role is attached to the compute, and the platform supplies the credentials.</figcaption>
+    <figcaption><span class="fig-n">Figure 5.5</span>Workload identity on the two AWS compute types used in the reference build. Neither holds a key: the role is attached to the compute, and the platform supplies the credentials. CloudTrail records the session and command API calls, not what is typed inside a session; keeping that needs Session Manager session logging.</figcaption>
   </figure>
 
   <p>Application secrets that are not AWS credentials, such as a database password or a model provider's API key, follow the same principle. They are generated by Secrets Manager, read by ECS when the task starts, and handed to the container as environment variables. They never appear in the image, the task definition, the CloudFormation template or the repository.</p>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L87-L106">infra/aws/service.py</a><span class="lines">and</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/vm.py#L1-L10">infra/aws/vm.py</a></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L87-L106">infra/aws/service.py</a><span class="lines">and</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/vm.py#L1-L11">infra/aws/vm.py</a></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>Two helpers in the ECS stack: one asks Secrets Manager to generate a secret, the other tells ECS to inject a field of it into a container at start. The VM stack's docstring lists what makes a single VM acceptable to a platform team.</p>
@@ -1762,6 +1774,7 @@ deploy.add_to_policy(
           <li>The comment on <code>exclude_punctuation</code> records a real constraint: the api builds a database URL from the password.</li>
           <li>In this throwaway account a secret is deleted with the stack; the <code>production:</code> comment says to keep it (<code>RETAIN</code>), since the database it opens may outlive the stack.</li>
           <li>The VM has no SSH key and no port 22. Images come from ECR through the instance role, so no registry password exists anywhere.</li>
+          <li>CloudTrail records who opened a session or sent a command, to which instance, and when, as the docstring says. It does not record the commands typed inside a session, and it hides a Run Command's parameters. Keeping those needs Session Manager session logging and Run Command output sent to S3 or CloudWatch Logs, which this stack does not configure.</li>
         </ul>
       </div>
       <div class="repo-codes">
@@ -1788,11 +1801,12 @@ def secret(s: sm.ISecret, field: str) -&gt; ecs.Secret:
     return ecs.Secret.from_secrets_manager(s, field)</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="1-10"><code class="language-python">"""Stage 3: the one-VM deployment, done the way a platform team would accept it.
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="1-11"><code class="language-python">"""Stage 3: the one-VM deployment, done the way a platform team would accept it.
 
 Compared with a hand-built VM:
 - no SSH key and no port 22: operators use SSM Session Manager / Run Command, which the
-  instance role allows and CloudTrail records (who ran what, when);
+  instance role allows; CloudTrail records who started a session or sent a command, and
+  when (what ran inside a session needs session logging, not set up here);
 - images come from ECR, authenticated by the instance role through the ECR credential helper,
   so no registry password exists anywhere;
 - IMDSv2 only, encrypted disk, a security group that admits HTTP and nothing else;
@@ -1907,7 +1921,7 @@ Compared with a hand-built VM:
   <details class="deep">
     <summary><span class="label">Going deeper</span> What a trust policy can and cannot see</summary>
     <div class="deep-body">
-      <p>GitHub's token carries many claims: the repository and its owner, the ref, the commit, the workflow file, the environment, the event that triggered the run. AWS IAM can write conditions on only a few of them, chiefly <code>aud</code> and <code>sub</code>. That is why the subject's format matters so much, and why GitHub lets a repository or organization customize which claims are combined into the subject. Including the workflow file in the subject, for example, lets a role trust one specific workflow rather than any job in the repository.</p>
+      <p>GitHub's token carries many claims: the repository and its owner, the ref, the commit, the workflow file, the environment, the event that triggered the run. A trust policy can always test <code>aud</code> and <code>sub</code>, and AWS STS now also accepts several of GitHub's own claims as condition keys, among them <code>repository_id</code>, <code>repository_owner_id</code>, <code>ref</code>, <code>environment</code> and <code>job_workflow_ref</code>. A role can then trust one workflow file directly. AWS advises the immutable IDs over names, because a renamed or deleted repository's name can be claimed by someone else. The subject still matters most, because every cloud's trust policy can match it, and GitHub lets a repository or organization customize which claims are combined into it. Including the workflow file in the subject, for example, is the portable way to let a role trust one specific workflow rather than any job in the repository.</p>
       <p>The same customization setting is what produced the immutable form seen in the case above. Reading it, rather than assuming the default, is the reliable way to know what the policy must match.</p>
       <p><code>StringLike</code> allows the wildcards <code>*</code> and <code>?</code>; <code>StringEquals</code> does not. Use the exact form wherever there is nothing variable to allow, as the deploy role does, so a typo cannot widen the trust.</p>
       <p>One OIDC provider entry per issuer is allowed in each account. Several roles can trust the same provider, each with its own conditions, which is how one account serves several repositories and environments.</p>
@@ -1934,7 +1948,7 @@ Compared with a hand-built VM:
     </li>
     <li>
       <p>Why is removing SSH access a security improvement rather than only an inconvenience?</p>
-      <details class="ans"><summary>Answer</summary><p>There is no key to leak, no open port to attack, and every command run through Session Manager or Run Command is authorized by IAM and recorded in CloudTrail against a named person.</p></details>
+      <details class="ans"><summary>Answer</summary><p>There is no key to leak, no open port to attack, and every session or command is authorized by IAM, and CloudTrail records who opened or sent it, to which instance and when. To keep the commands themselves, turn on Session Manager session logging and Run Command output to S3 or CloudWatch Logs.</p></details>
     </li>
     <li>
       <p>Which permission in the image-push role cannot be limited to the three repositories, and how is that handled?</p>
@@ -1969,7 +1983,7 @@ Compared with a hand-built VM:
     <tbody>
       <tr><td data-label="Then"><code>git pull</code> and a restart on the server</td><td>The server pulls a released image by version and rolls it in</td><td>A checkout can carry uncommitted edits; an image is exactly what was tested.</td></tr>
       <tr><td data-label="Then">Servers set up by hand and patched in place</td><td>Servers built from code at first boot, and replaced rather than repaired</td><td>A server you can rebuild in minutes is one you never have to nurse.</td></tr>
-      <tr><td data-label="Then">SSH keys for every operator, port 22 open</td><td>Session Manager and Run Command, authorized and recorded</td><td>No key to leak, no port to attack, every command attributed.</td></tr>
+      <tr><td data-label="Then">SSH keys for every operator, port 22 open</td><td>Session Manager and Run Command, authorized and recorded</td><td>No key to leak, no port to attack, every session attributed to a person.</td></tr>
       <tr><td data-label="Then">A maintenance window for each release</td><td>Rolling deploys that keep serving, even on one host</td><td>Users expect the service to stay up during a release.</td></tr>
       <tr><td data-label="Then">Logs read on the box</td><td>Logs shipped off the box by the container runtime or an agent</td><td>A replaced or broken host takes its local logs with it.</td></tr>
     </tbody>
@@ -2020,13 +2034,13 @@ Compared with a hand-built VM:
   <ul>
     <li><strong>The image goes to a registry, not to Git.</strong> The VM pulls it by version, authenticated by its own role on AWS, and never builds anything.</li>
     <li><strong>The deploy definition matches the version.</strong> The compose file and deploy script must match the images, so they come from the same release: shipped by CI with each deploy, or checked out at the release tag. Never a working copy someone edited.</li>
-    <li><strong>The deploy script does five things:</strong> record the version, pull it, run migrations as a one-off container, start the new version, check its health and go back to the previous version if it fails.</li>
+    <li><strong>The deploy script never stops what works:</strong> it pulls the version, runs migrations as a one-off container, starts the new api beside the old one and waits for it to be healthy, drains the old one, and only then records the version, so later commands run it too. If the new api never becomes healthy, the script removes it and stops; the old one was never stopped.</li>
     <li><strong>Rollback is the same script with the previous version.</strong></li>
   </ul>
 
   <figure class="fig wide" id="fig-6-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 292" role="img" aria-label="Two timelines. A plain recreate stops the old container first, so new requests are refused during the drain: 6.7 seconds of 502 errors, and as long as the longest stream. The rolling deploy runs migrations, starts the new api beside the old, waits until it is healthy and resolved by nginx, then drains the old api; only replacing nginx leaves a gap of about 0.3 seconds.">
+    <svg viewBox="0 0 820 292" role="img" aria-label="Two timelines. A plain recreate stops the old container first, so new requests are refused during the drain: 6.7 seconds of 502 errors, and as long as the longest stream. The rolling deploy runs migrations, starts the new api beside the old, waits until it is healthy and resolved by nginx, then drains the old api; only replacing nginx leaves a gap of about 0.3 seconds when nginx owns the port. Behind the TLS edge that swap fails no request.">
       <text class="tb" x="16" y="30">Plain recreate</text>
       <text class="ts" x="16" y="48">compose up replaces a container by stopping it first</text>
       <rect class="n" x="16" y="62" width="180" height="30" rx="3"/><text class="ts" x="106" y="82" text-anchor="middle">old api serving</text>
@@ -2050,25 +2064,27 @@ Compared with a hand-built VM:
       <rect class="n-warn" x="620" y="192" width="12" height="30" rx="2"/>
       <text class="ts tw" x="640" y="204">nginx replaced:</text>
       <text class="ts tw" x="640" y="219">about 0.3 s gap</text>
+      <text class="ts" x="640" y="234">(none behind the edge)</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 6.2</span>Why "recreate" is downtime. The rolling deploy failed no request during the api swap, with every in-flight stream finished. The one remaining gap is the single proxy that owns the port, which only a load balancer in front can remove.</figcaption>
+    <figcaption><span class="fig-n">Figure 6.2</span>Why "recreate" is downtime. The rolling deploy failed no request during the api swap, with every in-flight stream finished. The one remaining gap is replacing the single proxy that owns the port: about 0.3 s when nginx owns it, as on the AWS VM. Behind the reference TLS edge, nginx swaps with no failed request, and the gap moves to replacing the edge itself, about 2 s, which the script does only when the edge changed. Only a load balancer in front of two hosts removes it.</figcaption>
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/scripts/deploy.sh#L1-L20">scripts/deploy.sh</a><span class="lines">the rolling deploy for one host</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/scripts/deploy.sh#L1-L21">scripts/deploy.sh</a><span class="lines">the rolling deploy for one host</span></header>
     <div class="repo-body">
       <div class="repo-text">
-        <p>The deploy script opens with its own design: why the obvious command is not used, and the five steps that replace it. It is about 90 lines of Bash, checked by a linter in CI, and its behavior is measured by a failure drill.</p>
+        <p>The deploy script opens with its own design: why the obvious command is not used, and the five steps that replace it. It is about 190 lines of Bash, checked by a linter in CI, and its behavior is measured by a failure drill.</p>
         <ul class="notice">
           <li>Migrations run while the old version still serves, which is why they must be backward compatible.</li>
           <li>The new api is started beside the old one, and nginx must resolve it before the old one stops.</li>
           <li>Rollback is the same script with the previous version, and the schema is never reversed.</li>
+          <li>Step 5's comment describes nginx owning the port. Further down, the script notes that the edge holds requests while nginx restarts (no request failed), and that it replaces the edge, about 2 s of refused connections, only when the edge's build inputs changed.</li>
         </ul>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="scripts/deploy.sh" data-lines="1-20"><code class="language-bash">#!/usr/bin/env bash
+          <pre class="code" data-repo="triage-assistant" data-path="scripts/deploy.sh" data-lines="1-21"><code class="language-bash">#!/usr/bin/env bash
 # Deploy a release to this host without refusing requests.
 #
 #   make deploy tag=1.4.0          images from $IMAGE_PREFIX (ghcr.io/..., see .env)
@@ -2083,8 +2099,9 @@ Compared with a hand-built VM:
 #   3. wait for nginx to resolve it (resolver valid=10s in default.conf)
 #   4. stop the old api: it finishes its in-flight requests (streams
 #      included, up to graceful_timeout) while nginx sends new ones to the new
-#   5. replace nginx itself - the one step with a gap: one container owns the
-#      published port (measured below; zero only behind a load balancer)
+#   5. replace nginx: behind the TLS edge no request fails (the edge retries);
+#      where nginx publishes the port itself, ~0.3 s of refused connections;
+#      then the edge, only if its image changed (~2 s of refused connections)
 # Rollback = deploy the previous tag. The database stays as it is (the
 # code rolls back, the schema does not), so the previous tag must be able to
 # run on it: the expand/contract rule.</code></pre>
@@ -2096,14 +2113,14 @@ Compared with a hand-built VM:
   <h3 id="ch6-proper">The VM done properly</h3>
   <p>The reference build ran the same stack on an EC2 virtual machine defined in CDK. What makes it acceptable to a platform team, compared with a hand-built server:</p>
   <ul>
-    <li><strong>No SSH key and no port 22.</strong> Operators use Session Manager and Run Command, which the instance's role allows and CloudTrail records.</li>
+    <li><strong>No SSH key and no port 22.</strong> Operators use Session Manager and Run Command, which the instance's role allows. CloudTrail records who opened a session or sent a command; what was typed is kept only with session logging, which this stack does not turn on.</li>
     <li><strong>No registry password.</strong> A credential helper gets ECR credentials from the instance's role.</li>
     <li><strong>Built from code.</strong> cloud-init installs Docker, creates the deploy user, clones the repository for its compose files and scripts, and generates the <code>.env</code> with random passwords at first boot. Because cloud-init runs only once, a changed recipe replaces the VM rather than editing it.</li>
     <li><strong>Small surface.</strong> The metadata service accepts only its token-based version (IMDSv2), the disk is encrypted, and the security group admits HTTP and nothing else.</li>
   </ul>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/vm.py#L78-L90">infra/aws/vm.py</a><span class="lines">the VM's role and its single open port</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/vm.py#L79-L91">infra/aws/vm.py</a><span class="lines">the VM's role and its single open port</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The VM's identity and its network surface, in fifteen lines of CDK.</p>
@@ -2115,7 +2132,7 @@ Compared with a hand-built VM:
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="78-90"><code class="language-python">role = iam.Role(
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="79-91"><code class="language-python">role = iam.Role(
     self,
     "Role",
     assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"),
@@ -2196,7 +2213,7 @@ sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80), "the app")</code></pr
     </li>
     <li>
       <p>What makes the reference VM acceptable to a platform team?</p>
-      <details class="ans"><summary>Answer</summary><p>No SSH key or open port 22, access through recorded Session Manager commands, images pulled with the instance's own role, a single open port, IMDSv2 and an encrypted disk, and a host rebuilt from code at first boot.</p></details>
+      <details class="ans"><summary>Answer</summary><p>No SSH key or open port 22, access through Session Manager, with every session recorded in CloudTrail, images pulled with the instance's own role, a single open port, IMDSv2 and an encrypted disk, and a host rebuilt from code at first boot.</p></details>
     </li>
     <li>
       <p>When is it time to move from one VM to a managed container platform?</p>
@@ -2220,7 +2237,7 @@ sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80), "the app")</code></pr
       <li>You declare the end state; the tool compares it with its record of what exists and makes only the calls that close the gap.</li>
       <li>Always look at the difference before applying it: <code>cdk diff</code> or <code>terraform plan</code>, ideally in the pull request.</li>
       <li>CDK writes AWS infrastructure in a real programming language and hands it to CloudFormation. Terraform uses its own language and reaches any cloud through providers.</li>
-      <li>A change made by hand in the console is <strong>drift</strong>: detect it, and fix it through the code, or the next deploy will silently undo it.</li>
+      <li>A change made by hand in the console is <strong>drift</strong>: detect it, and fix it through the code. A deploy that touches that resource will silently undo it; one that does not leaves it in place, unseen.</li>
       <li>Infrastructure changes go through pull requests, and CI applies them with keyless credentials.</li>
     </ul>
   </div>
@@ -2347,7 +2364,7 @@ db.node.add_dependency(owner.node.default_child)  # the secret only, not its att
   <p>The first attempt at that fix depended on the secret's whole construct, which includes an attachment that itself depends on the database: a cycle. It was caught when the template was synthesized, before anything was deployed, which is one reason to run <code>cdk synth</code> and a template linter in CI.</p>
 
   <h3 id="ch7-drift">Drift: when reality and the code disagree</h3>
-  <p>To test scaling, the reference ECS service was scaled from one task to two with a single command-line call: a change made outside the code. CloudFormation's drift detection reported it precisely. Left alone, the next deploy would have set the count back to one without anyone noticing.</p>
+  <p>To test scaling, the reference ECS service was scaled from one task to two with a single command-line call: a change made outside the code. CloudFormation's drift detection reported it precisely. Left alone, the next deploy, which updates the service with a new task definition every time, would have set the count back to one without anyone noticing.</p>
 
   <figure class="fig wide" id="fig-7-3">
     <div class="fig-scroll">
@@ -2377,8 +2394,10 @@ db.node.add_dependency(owner.node.default_child)  # the secret only, not its att
     <figcaption><span class="fig-n">Figure 7.3</span>Drift on the reference stack. The fix went the proper way: a pull request, green CI, a merge, and the deploy workflow applying it. Drift detection then reported the stack in sync.</figcaption>
   </figure>
 
+  <p>That reset depends on the deploy touching the drifted resource. A normal CloudFormation update compares the new template with the previous one, not with reality, so drift on a resource the update leaves alone stays in place, unseen until drift detection runs. Run detection regularly, and reconcile what it finds in code, or with a drift-aware change set (<code>--deployment-mode REVERT_DRIFT</code>), which compares with the actual state and brings drifted resources back. Terraform refreshes the real state before it plans, so its next plan shows the drift and applying it reverts the change.</p>
+
   <h3 id="ch7-boot">The last mile: first-boot scripts</h3>
-  <p>A virtual machine still needs something to run on its first boot. <strong>cloud-init</strong> (passed as <code>user_data</code> on AWS) runs once, at first boot: install the container runtime, log in to the registry with the machine's role, pull a specific version, run it with a restart policy, fetch secrets at runtime. It does not run again on later deploys. A new version either replaces instances (a new launch configuration in an Auto Scaling group) or runs a command on the existing ones through Run Command. The mature form bakes the runtime and agents into a golden image and keeps the first-boot script to "pull and run".</p>
+  <p>A virtual machine still needs something to run on its first boot. <strong>cloud-init</strong> (passed as <code>user_data</code> on AWS) runs once, at first boot: install the container runtime, log in to the registry with the machine's role, pull a specific version, run it with a restart policy, fetch secrets at runtime. It does not run again on later deploys. A new version either replaces instances (a new launch template version, rolled out by an Auto Scaling group's instance refresh) or runs a command on the existing ones through Run Command. The mature form bakes the runtime and agents into a golden image and keeps the first-boot script to "pull and run".</p>
 
   <h4>The same registry in Terraform, on three clouds</h4>
   <p>The language and the workflow carry over between clouds; the resources do not. An AWS container service has no Azure twin with the same fields, so it is rewritten. The image registry from this chapter's first stack, in Terraform on each cloud:</p>
@@ -2435,7 +2454,7 @@ resource "google_artifact_registry_repository" "images" {
     </li>
     <li>
       <p>What is drift, and why is it dangerous even when the manual change was correct?</p>
-      <details class="ans"><summary>Answer</summary><p>Drift is a difference between the real infrastructure and the code. The next deploy restores what the code says, so a correct manual change is silently undone, and nobody reviewing the code knows it ever existed.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Drift is a difference between the real infrastructure and the code. If the next deploy updates that resource, it restores what the code says, so a correct manual change is silently undone. If it does not, the change stays unseen, and nobody reviewing the code knows it exists. Either way the code no longer describes what is running.</p></details>
     </li>
     <li>
       <p>When would you choose Terraform over CDK?</p>
@@ -2714,7 +2733,7 @@ class NetworkStack(Stack):
       <li>A <strong>task definition</strong> is a versioned description of containers: image, CPU and memory, environment, secrets, logs, health check. A <strong>service</strong> keeps N copies running.</li>
       <li>A release registers a new task definition revision and updates the service: new tasks start beside the old ones, and the old ones stop once the new are healthy.</li>
       <li>The deployment circuit breaker rolls a release back by itself when its tasks keep failing to start.</li>
-      <li>ECS has <strong>one</strong> health signal, the load balancer's check, and acts on it like a liveness check. Point it at a shallow endpoint.</li>
+      <li>ECS has <strong>no readiness-only</strong> health signal: the container's own check and the load balancer's check both end in a replaced task. Point both at a shallow endpoint.</li>
       <li>Anything that must be counted once across copies, such as rate limits or sessions, needs a shared store. A sidecar in each task counts on its own.</li>
     </ul>
   </div>
@@ -2914,8 +2933,8 @@ api.add_container_dependencies(
 
   <p>Measured on the reference service, with a probe sending requests twice a second: a forward deploy took 3 minutes 17 seconds with 352 requests and none failed, and the deliberate bad release was rolled back in under 8 minutes while the old tasks kept serving. ECS Exec gives a shell into a running task, without SSH, for the rare case that needs one.</p>
 
-  <h3 id="ch9-health">One health signal</h3>
-  <p>The reference api follows the Kubernetes convention of two health endpoints. <code>/health</code> answers "is the process alive?" and checks nothing external. <code>/ready</code> answers "should traffic come here?" and requires the database. On Kubernetes they feed two separate probes. <strong>ECS has one signal</strong>, the load balancer's target health check, and it replaces any task that check calls unhealthy. So a deep check behaves like a liveness check, and a database outage turns into task churn. A drill showed exactly that:</p>
+  <h3 id="ch9-health">No readiness-only signal</h3>
+  <p>The reference api follows the Kubernetes convention of two health endpoints. <code>/health</code> answers "is the process alive?" and checks nothing external. <code>/ready</code> answers "should traffic come here?" and requires the database. On Kubernetes they feed two separate probes, and only the liveness probe restarts anything. <strong>ECS has no readiness-only signal.</strong> It acts on two checks, and both end in a replaced task: the container health check in the task definition (the reference api's calls <code>/health</code>), and the load balancer's target health check. So a deep check behaves like a liveness check wherever it sits, and a database outage turns into task churn. A drill on the load balancer's check showed exactly that:</p>
   <div class="table-wrap">
     <table class="grid stack">
       <thead><tr><th>Database stopped for 7 minutes</th><th>Load balancer checks <code>/ready</code> (deep)</th><th>Load balancer checks <code>/health</code> (shallow)</th></tr></thead>
@@ -2930,14 +2949,14 @@ api.add_container_dependencies(
   <p>The rule on ECS: point the load balancer at a shallow check; rely on the init containers for readiness at start (migrations succeed only if the database answers); and detect outages with an alarm on 5xx responses. The api reconnected four seconds after the database returned, with no restart.</p>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L466-L528">infra/aws/service.py</a><span class="lines">the service's deployment settings and the api's health check</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L466-L529">infra/aws/service.py</a><span class="lines">the service's deployment settings and the api's health check</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The service definition and the api target group's health check, each with its reasoning beside it.</p>
         <ul class="notice">
           <li><code>min_healthy_percent=100</code> and <code>max_healthy_percent=150</code>: start one new task before stopping an old one, one at a time.</li>
           <li>The circuit breaker is enabled with rollback.</li>
-          <li>The health check path is <code>/health</code>, and the comment explains why <code>/ready</code> would turn an outage into churn.</li>
+          <li>The health check path is <code>/health</code>, and the comment explains why <code>/ready</code> would turn an outage into churn. ECS has no readiness-only signal: the api's container health check, in the task definition, also calls <code>/health</code>, and ECS replaces the task when either one fails.</li>
           <li>The deregistration delay covers the longest answer. ECS takes a task out of the load balancer before it sends SIGTERM, and the balancer drops whatever is still in flight when the delay ends: at 30 seconds, long answers were cut during deploys.</li>
         </ul>
       </div>
@@ -2966,10 +2985,11 @@ api.add_container_dependencies(
     # IAM to the on-call role, with session logging.</code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="514-528"><code class="language-python"># Liveness, not readiness. ECS replaces any task its load balancer calls unhealthy,
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="514-529"><code class="language-python"># Liveness, not readiness. ECS replaces any task its load balancer calls unhealthy,
 # so a deep check (/ready: the database) turns a database outage into task churn:
 # measured, every api task marked unhealthy and replacements stuck in dbinit. Kubernetes
-# separates the two (readinessProbe /ready, livenessProbe /health); ECS has one signal.
+# separates the two (readinessProbe /ready, livenessProbe /health); ECS has no
+# readiness-only signal: this check and the container health check both replace tasks.
 # Readiness at start is covered by the init containers: migrate succeeds only if the
 # database answers. A database outage still shows: /api/ready 503 and the 5xx alarm.
 health_check=elbv2.HealthCheck(
@@ -3016,7 +3036,7 @@ deregistration_delay=Duration.seconds(130),</code></pre>
   <aside class="say">
     <span class="label">How to say it</span>
     <p>"The api runs as an ECS service on Fargate: two tasks across two zones, autoscaling to four, rolling deploys with the circuit breaker on, so a release that can't start rolls itself back."</p>
-    <p>"ECS has one health signal, so the load balancer checks a shallow endpoint; readiness at start comes from the init containers, and outages show up in the 5xx alarm."</p>
+    <p>"ECS has no readiness-only signal: both its health checks replace tasks, so both check a shallow endpoint; readiness at start comes from the init containers, and outages show up in the 5xx alarm."</p>
   </aside>
 
   <h3 id="ch9-exec">Running a command in a task</h3>
@@ -3059,9 +3079,9 @@ deregistration_delay=Duration.seconds(130),</code></pre>
         <tr><td data-label="Symptom">A database outage makes ECS replace healthy api tasks</td><td data-label="Cause">The load balancer checks a deep readiness endpoint, and ECS treats it as liveness</td><td data-label="Fix">Check a shallow endpoint; detect outages with a 5xx alarm.</td></tr>
         <tr><td data-label="Symptom">A task sits in PENDING for many minutes, billed</td><td data-label="Cause">Init containers in a chain: one failed fast, the next never ran, the essential container waits</td><td data-label="Fix">Make the essential container depend directly on every init container, each with a start timeout.</td></tr>
         <tr><td data-label="Symptom">Rate limits are higher than configured after scaling out</td><td data-label="Cause">Each task counts in its own sidecar store</td><td data-label="Fix">A shared store for anything that must be counted once.</td></tr>
-        <tr><td data-label="Symptom">Two new tasks run migrations at the same moment</td><td data-label="Cause">Every task migrates in an init container, and the deploy starts several at once</td><td data-label="Fix">Start one new task at a time, or run migrations as a one-off task before the deploy.</td></tr>
-        <tr><td data-label="Symptom">The web container's proxy returns 502 for every api call on Fargate</td><td data-label="Cause">It resolves the api through Docker's internal DNS, which Fargate does not have</td><td data-label="Fix">Route <code>/api</code> at the load balancer, or use Service Connect for names.</td></tr>
-        <tr><td data-label="Symptom">Streams are cut during a deploy</td><td data-label="Cause">The container's stop timeout is shorter than the longest answer</td><td data-label="Fix">Raise the stop timeout (Fargate allows up to two minutes) and let the server drain.</td></tr>
+        <tr><td data-label="Symptom">Two new tasks run migrations at the same moment</td><td data-label="Cause">Every task migrates in an init container, and the deploy starts several at once</td><td data-label="Fix">Make each run take a lock (a Postgres session advisory lock) so concurrent runs take turns, or run migrations as a one-off task before the deploy. Starting one new task at a time is not enough: the first deploy and a scale-out still start several.</td></tr>
+        <tr><td data-label="Symptom">The web container's proxy returns 502 for every api call on Fargate</td><td data-label="Cause">It resolves the api through Docker's internal DNS, which Fargate does not have</td><td data-label="Fix">Route <code>/api</code> at the load balancer. Service Connect alone does not help this nginx: it publishes names in <code>/etc/hosts</code>, which nginx's runtime resolver never reads.</td></tr>
+        <tr><td data-label="Symptom">Streams are cut during a deploy</td><td data-label="Cause">The target group's deregistration delay (300 seconds by default; 30 here) is shorter than the longest answer: ECS sends SIGTERM only after it ends, and the load balancer drops what is still in flight</td><td data-label="Fix">Set the deregistration delay above the longest answer, then the stop timeout (Fargate allows up to two minutes) above the server's graceful drain.</td></tr>
         <tr><td data-label="Symptom">A short spike overwhelms the service before autoscaling reacts</td><td data-label="Cause">Scaling takes several minutes from load to capacity</td><td data-label="Fix">Size the minimum task count for spikes; scale on a leading metric.</td></tr>
         <tr><td data-label="Symptom">An outage is reported that the load balancer never saw</td><td data-label="Cause">The client's own network (DNS timeouts, lost packets) failed, not the service</td><td data-label="Fix">Judge outages from server-side metrics, and run synthetic checks from inside the cloud.</td></tr>
       </tbody>
@@ -3076,7 +3096,7 @@ deregistration_delay=Duration.seconds(130),</code></pre>
     </li>
     <li>
       <p>Why should the load balancer's health check on ECS be shallow?</p>
-      <details class="ans"><summary>Answer</summary><p>ECS replaces any task the load balancer calls unhealthy. If the check depends on the database, a database outage makes every task "unhealthy", and ECS churns tasks that cannot help. A shallow check keeps the tasks; the outage is detected by the 5xx alarm instead.</p></details>
+      <details class="ans"><summary>Answer</summary><p>ECS replaces any task the load balancer calls unhealthy. If the check depends on the database, a database outage makes every task "unhealthy", and ECS churns tasks that cannot help. A shallow check keeps the tasks; the outage is detected by the 5xx alarm instead. The same holds for the container health check in the task definition, which also ends in a replaced task.</p></details>
     </li>
     <li>
       <p>What do <code>min_healthy_percent=100</code> and <code>max_healthy_percent=150</code> mean for a service of two tasks?</p>
@@ -3107,7 +3127,7 @@ deregistration_delay=Duration.seconds(130),</code></pre>
     <ul>
       <li>You declare objects (a Deployment of three replicas of an image); controllers continuously reconcile reality toward them.</li>
       <li>The control plane (API server, etcd, scheduler, controllers) decides; the nodes run pods. Managed offerings such as EKS, GKE and AKS run the control plane for you.</li>
-      <li>Readiness and liveness are separate probes: one controls traffic, the other restarts containers. ECS has only one signal.</li>
+      <li>Readiness and liveness are separate probes: one controls traffic, the other restarts containers. On ECS both health checks replace the task; neither only withholds traffic.</li>
       <li>Every pod gets a routable IP and services get DNS names, so containers on different hosts find each other the way Compose services do on one host.</li>
       <li>Pick ECS for a few AWS-only services and a small team; pick Kubernetes for many services, a platform team, portability, or its ecosystem.</li>
     </ul>
@@ -3181,7 +3201,7 @@ deregistration_delay=Duration.seconds(130),</code></pre>
 
   <figure class="fig wide" id="fig-10-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 250" role="img" aria-label="During a database outage on Kubernetes, the readiness probe at /ready fails, so the pod stops receiving traffic but keeps running; the liveness probe at /health passes, so nothing restarts. On ECS, a single load balancer check acts on both questions at once, so a deep check restarts tasks.">
+    <svg viewBox="0 0 820 250" role="img" aria-label="During a database outage on Kubernetes, the readiness probe at /ready fails, so the pod stops receiving traffic but keeps running; the liveness probe at /health passes, so nothing restarts. On ECS, both the container health check and the load balancer's check end in a replaced task, so neither can act as readiness, and a deep check in either restarts tasks.">
       <text class="tb" x="16" y="26">Kubernetes: the database is down</text>
       <rect class="n" x="16" y="42" width="160" height="84" rx="6"/>
       <text class="tb" x="96" y="70" text-anchor="middle">api pod</text>
@@ -3197,17 +3217,17 @@ deregistration_delay=Duration.seconds(130),</code></pre>
       <text class="ts" x="512" y="112">no restart: it reconnects when the database is back</text>
 
       <line class="rule" x1="16" y1="148" x2="804" y2="148"/>
-      <text class="tb" x="16" y="174">ECS: one signal for both questions</text>
+      <text class="tb" x="16" y="174">ECS: no readiness-only signal</text>
       <rect class="n" x="16" y="186" width="160" height="50" rx="6"/>
       <text class="tb" x="96" y="216" text-anchor="middle">api task</text>
       <rect class="n-bad" x="236" y="192" width="250" height="38" rx="5"/>
-      <text class="ts" x="250" y="216">load balancer check: one path</text>
+      <text class="ts" x="250" y="216">container check, load balancer check</text>
       <line class="e" x1="177" y1="211" x2="234" y2="211" marker-end="url(#a)"/>
-      <text class="ts" x="512" y="204">deep path: tasks replaced during an outage</text>
-      <text class="ts" x="512" y="222">so on ECS it must be the shallow one (Chapter 9)</text>
+      <text class="ts" x="512" y="204">either one deep: tasks replaced in an outage</text>
+      <text class="ts" x="512" y="222">so on ECS both must be shallow (Chapter 9)</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 10.2</span>Readiness and liveness. Kubernetes lets an unready pod sit out of rotation without being restarted. ECS cannot express that, which is why the reference service's load balancer checks only the shallow endpoint there.</figcaption>
+    <figcaption><span class="fig-n">Figure 10.2</span>Readiness and liveness. Kubernetes lets an unready pod sit out of rotation without being restarted. ECS cannot express that: both its checks end in a replaced task, which is why the reference service's container check and load balancer check both use the shallow endpoint there.</figcaption>
   </figure>
 
   <section class="repo">
@@ -3276,9 +3296,9 @@ async def ready(request: Request) -&gt; JSONResponse:
         <tr><td data-label="Concern">Unit</td><td data-label="ECS">Task definition (containers sharing localhost)</td><td data-label="Kubernetes">Pod spec</td></tr>
         <tr><td data-label="Concern">Keep N running</td><td data-label="ECS">Service</td><td data-label="Kubernetes">Deployment (with a ReplicaSet)</td></tr>
         <tr><td data-label="Concern">Init work</td><td data-label="ECS">Non-essential containers with <code>dependsOn: SUCCESS</code> and a start timeout</td><td data-label="Kubernetes"><code>initContainers</code>, sequential, built in</td></tr>
-        <tr><td data-label="Concern">Readiness and liveness</td><td data-label="ECS">One signal: the load balancer's check</td><td data-label="Kubernetes">Separate readiness and liveness probes</td></tr>
+        <tr><td data-label="Concern">Readiness and liveness</td><td data-label="ECS">No readiness-only signal: the container check and the load balancer's check both replace the task</td><td data-label="Kubernetes">Separate readiness and liveness probes</td></tr>
         <tr><td data-label="Concern">Routing</td><td data-label="ECS">Load balancer listener rules, URL rewrite</td><td data-label="Kubernetes">Ingress or the Gateway API; on AWS the Load Balancer Controller creates the ALB</td></tr>
-        <tr><td data-label="Concern">Finding services</td><td data-label="ECS">Load balancer, Service Connect, Cloud Map</td><td data-label="Kubernetes">Service and cluster DNS: <code>api:8010</code> works, as in Compose</td></tr>
+        <tr><td data-label="Concern">Finding services</td><td data-label="ECS">Load balancer, Service Connect, Cloud Map</td><td data-label="Kubernetes">Service and cluster DNS: <code>api:8010</code> resolves through the pod's resolver, as in Compose</td></tr>
         <tr><td data-label="Concern">Configuration and secrets</td><td data-label="ECS">Environment plus Secrets Manager injection</td><td data-label="Kubernetes">ConfigMap and Secret, plus External Secrets Operator or a CSI driver</td></tr>
         <tr><td data-label="Concern">AWS permissions</td><td data-label="ECS">Task role</td><td data-label="Kubernetes">IRSA or EKS Pod Identity</td></tr>
         <tr><td data-label="Concern">Rollout safety</td><td data-label="ECS">Min and max percent, circuit breaker with automatic rollback</td><td data-label="Kubernetes"><code>maxSurge</code>, <code>maxUnavailable</code>, a progress deadline; rollback by hand or with Argo Rollouts</td></tr>
@@ -3288,7 +3308,7 @@ async def ready(request: Request) -&gt; JSONResponse:
       </tbody>
     </table>
   </div>
-  <p>Both difficulties the reference build met on ECS are things Kubernetes handles natively: the web image's nginx would have found <code>api:8010</code> through cluster DNS, and the api's readiness and liveness split would have worked as designed. The same images could run on EKS Auto Mode in about an hour.</p>
+  <p>Of the two difficulties the reference build met on ECS, Kubernetes handles one natively: the api's readiness and liveness split would have worked as designed. The other only half. Cluster DNS does answer for the name <code>api</code>, but the web image's nginx asks Docker's DNS address, <code>127.0.0.11</code>, which a pod does not have either, so that image would first need its resolver made configurable, read from <code>/etc/resolv.conf</code> at start. The problem is in the image's configuration, not in ECS. With that change, the same images could run on EKS Auto Mode in about an hour.</p>
 
   <h3 id="ch10-why">Why orchestrators exist at all</h3>
   <p>Container networking on one host is easy: Compose creates a private network and its service names resolve. Across hosts, that stops. You need IP connectivity between machines and an orchestration layer on top: Kubernetes gives every pod a routable IP through a CNI plugin, and gives services stable names. Placement, health, rescheduling after a node failure, and rolling updates across many hosts are the other jobs a single host never needed.</p>
@@ -3356,7 +3376,7 @@ async def ready(request: Request) -&gt; JSONResponse:
     <span class="label">At a glance</span>
     <ul>
       <li>The concepts transfer: build once, promote, configuration from the environment, identities instead of keys, infrastructure as code.</li>
-      <li>The names change, and so do a few defaults: Cloud Run and Container Apps give each service an HTTPS URL, revisions with traffic splitting, and scale to zero.</li>
+      <li>The names change, and so do a few defaults: Cloud Run and Container Apps give each service an HTTPS URL, immutable revisions, and scale to zero. Cloud Run splits traffic between revisions out of the box; Container Apps does once switched to multiple revision mode.</li>
       <li>Environments are separated by AWS accounts, Azure subscriptions and resource groups, or Google Cloud projects.</li>
       <li>Terraform works on all three with the same workflow, but resources are not portable: each cloud's resource is written for that cloud.</li>
     </ul>
@@ -3389,7 +3409,7 @@ async def ready(request: Request) -&gt; JSONResponse:
 
   <h3 id="ch11-diff">Three differences worth knowing</h3>
   <h4>Revisions and traffic splitting</h4>
-  <p>On Cloud Run and Container Apps, every deploy creates an immutable <strong>revision</strong>, and traffic is split between revisions by percentage. A canary (5% to the new revision) or a rollback (100% back to the old one) is a setting, not a redeploy. On ECS the equivalent is a rolling deployment with its circuit breaker, or blue/green deployments through CodeDeploy.</p>
+  <p>On Cloud Run and Container Apps, every deploy of a new image or new container settings creates an immutable <strong>revision</strong>, and traffic can be split between revisions by percentage. On Container Apps that takes multiple revision mode: the default, single revision mode, moves all traffic to the new revision once it is ready and retires the old one. Container Apps also keeps secret values and ingress settings app-wide, outside revisions, so changing them creates no revision, and moving traffic cannot roll them back. With splitting on, a canary (5% to the new revision) or a rollback (100% back to the old one) is a setting, not a redeploy. On ECS the equivalent is a rolling deployment with its circuit breaker, or the service's built-in blue/green, canary and linear strategies, which shift traffic between revisions behind a load balancer and roll back on an alarm. CodeDeploy is the older route to the same.</p>
 
   <figure class="fig wide" id="fig-11-1">
     <div class="fig-scroll">
@@ -3407,7 +3427,7 @@ async def ready(request: Request) -&gt; JSONResponse:
       <text class="ts" x="190" y="222">Each revision is immutable, so going back means pointing traffic at it again.</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 11.1</span>Revisions and traffic splitting on Cloud Run and Container Apps. A canary and a rollback are both changes of percentages, which makes them quick and cheap to rehearse.</figcaption>
+    <figcaption><span class="fig-n">Figure 11.1</span>Revisions and traffic splitting on Cloud Run, and on Container Apps in multiple revision mode. A canary and a rollback are both changes of percentages, which makes them quick and cheap to rehearse.</figcaption>
   </figure>
 
   <h4>HTTPS out of the box</h4>
@@ -3428,7 +3448,7 @@ async def ready(request: Request) -&gt; JSONResponse:
   <ol class="qs">
     <li>
       <p>How do Cloud Run and Container Apps make a rollback cheaper than a redeploy?</p>
-      <details class="ans"><summary>Answer</summary><p>Every deploy is an immutable revision, and traffic is split between revisions by configuration. A rollback sets 100% of traffic back on the previous revision, without building or deploying anything.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Every deploy of a new image or container settings is an immutable revision, and traffic is split between revisions by configuration (on Container Apps, in multiple revision mode). A rollback sets 100% of traffic back on the previous revision, without building or deploying anything. Settings kept outside revisions, such as Container Apps' secrets and ingress, are not rolled back this way.</p></details>
     </li>
     <li>
       <p>Why did the reference AWS build run over plain HTTP, when the same service on Cloud Run would not have?</p>
@@ -3460,7 +3480,7 @@ async def ready(request: Request) -&gt; JSONResponse:
       <li>A client-side probe reported an outage that never happened: judge availability from server-side metrics.</li>
       <li>The finished loop: one version tag, and the release is live on ECS 8 minutes 37 seconds later, with no failed requests.</li>
       <li>A last stage held the code to its own written rules and found eight gaps on the path to AWS; each was fixed and shown before and after. Testing the running system end to end then found four more.</li>
-      <li>The whole reference deployment, VM and ECS stacks included, cost about sixty cents of cloud time, because everything billed by the hour was torn down after each session.</li>
+      <li>The first full build, VM and ECS stacks included, cost about sixty cents of cloud time, and each later session cents more, because everything billed by the hour was torn down after each session.</li>
     </ul>
   </div>
 
@@ -3497,7 +3517,7 @@ async def ready(request: Request) -&gt; JSONResponse:
         <tr><td data-label="Step">5 · CI</td><td data-label="What happens">Six jobs: lint, the api tests on a real stack, the production image, the security scans, the web build and the browser tests. Five start at once; the image waits for lint. All six are required, on a branch up to date with main. About three minutes.</td><td data-label="Held by"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/ci.yml">ci.yml</a>; branch protection on main</td></tr>
         <tr><td data-label="Step">6 · Merge</td><td data-label="What happens">One approval from a code owner, then a squash merge: one commit per change on a linear main. <code>Closes #N</code> closes the issue. GitHub never lets authors approve their own pull requests, so a solo owner merges with the administrator bypass, deliberately (Chapter 2).</td><td data-label="Held by">branch protection; the repository allows squash merges only</td></tr>
         <tr><td data-label="Step">7 · Tag</td><td data-label="What happens"><code>git tag -a vX.Y.Z</code> on main, then push the tag. Only that pattern starts a release; any other tag starts nothing. Only admins may create one, because a tag runs the workflow of the commit it points at.</td><td data-label="Held by">the release workflow's trigger; a tag ruleset</td></tr>
-        <tr><td data-label="Step">8 · Release</td><td data-label="What happens">Checks that the tag is on main, scans again, builds each image natively for two processor types, publishes them to GitHub's registry, smoke-tests what it published, copies it to ECR through OIDC, and writes the release notes: the merged pull requests, after upgrade notes that list the settings added or removed since the last release. About four minutes.</td><td data-label="Held by"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/release.yml">release.yml</a></td></tr>
+        <tr><td data-label="Step">8 · Release</td><td data-label="What happens">Checks that the tag is on main, scans again, builds each image natively for two processor types, publishes them to GitHub's registry, smoke-tests what it published while copying it to ECR through OIDC, and writes the release notes: the merged pull requests, after upgrade notes that list the settings added or removed since the last release. About four minutes.</td><td data-label="Held by"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/release.yml">release.yml</a></td></tr>
         <tr><td data-label="Step">9 · Deploy</td><td data-label="What happens">Starts when the release succeeds, waits for the reviewer the <code>aws-demo</code> environment requires, assumes the deploy role through OIDC, and runs <code>cdk deploy</code> with the new version: a rolling update with the circuit breaker armed, then a smoke test through the load balancer. About nine and a half minutes when the deploy created the stack from nothing; about four for an update.</td><td data-label="Held by"><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/.github/workflows/deploy.yml">deploy.yml</a>, <a href="https://github.com/Parzon/triage-assistant/tree/handbook-1/infra/aws">infra/aws</a></td></tr>
         <tr><td data-label="Step">10 · Rollback</td><td data-label="What happens">The same deploy, started by hand with the previous version. The infrastructure stays; the image changes.</td><td data-label="Held by">the deploy workflow's manual trigger</td></tr>
       </tbody>
@@ -3784,7 +3804,7 @@ exec gunicorn app.asgi:app -c gunicorn.conf.py</code></pre>
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L530-L560">infra/aws/service.py</a><span class="lines">routing at the load balancer</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L531-L561">infra/aws/service.py</a><span class="lines">routing at the load balancer</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>Two listener rules and a default carry the routing the edge does in compose, checked in priority order.</p>
@@ -3797,7 +3817,7 @@ exec gunicorn app.asgi:app -c gunicorn.conf.py</code></pre>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="530-560"><code class="language-python">elbv2.ApplicationListenerRule(
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="531-561"><code class="language-python">elbv2.ApplicationListenerRule(
     self,
     "Internal",
     listener=listener,
@@ -3834,7 +3854,7 @@ api_rule.node.default_child.add_property_override(
   </section>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L562-L595">infra/aws/service.py</a><span class="lines">scaling and alarms</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/service.py#L563-L596">infra/aws/service.py</a><span class="lines">scaling and alarms</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The service grows with its load and reports when it is unwell.</p>
@@ -3846,7 +3866,7 @@ api_rule.node.default_child.add_property_override(
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="562-595"><code class="language-python"># --- autoscaling: more api tasks while each serves over 1,000 requests a minute --------
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="563-596"><code class="language-python"># --- autoscaling: more api tasks while each serves over 1,000 requests a minute --------
 # Bounded by the database: 4 tasks x 1 worker x DB_POOL_SIZE 10 = 40 connections, inside
 # a db.t4g.micro's ~80. Scale-in waits longer than scale-out, so it does not flap.
 scaling = api_svc.auto_scale_task_count(min_capacity=2, max_capacity=4)
@@ -3977,7 +3997,7 @@ cw.Alarm(
   </figure>
 
   <h3 id="ch12-loop">The whole loop, with no human step</h3>
-  <p>With the deploy workflow in place, the only human action was pushing a version tag (the environment has since gained a required reviewer, so a release now also waits for one approval). Everything after it ran on its own: the release built, scanned, published and smoke-tested the images and copied them to ECR; the deploy workflow then ran in the gated environment, applied the infrastructure code with the new version, waited for ECS to be stable, and smoke-tested through the load balancer.</p>
+  <p>With the deploy workflow in place, the only human action was pushing a version tag (the environment has since gained a required reviewer, so a release now also waits for one approval). Everything after it ran on its own: the release built, scanned and published the images, then smoke-tested them while copying them to ECR; the deploy workflow then ran in the gated environment, applied the infrastructure code with the new version, waited for ECS to be stable, and smoke-tested through the load balancer.</p>
 
   <figure class="fig wide" id="fig-12-5">
     <div class="fig-scroll">
@@ -4182,52 +4202,61 @@ cw.Alarm(
       <text class="ts" x="524" y="210">on for one tenant, then more</text>
       <text class="ts" x="424" y="236">catches: a feature that misbehaves in production</text>
       <text class="ts" x="424" y="252">costs: flags to remove later, or they become debt</text>
-      <text class="ts" x="16" y="288">On a platform: weighted target groups (ALB), revisions with traffic splitting (Cloud Run, Container Apps), Argo Rollouts (Kubernetes).</text>
+      <text class="ts" x="16" y="288">On a platform: ECS's built-in canary and blue/green, weighted revisions (Cloud Run, Container Apps), Argo Rollouts (Kubernetes).</text>
     </svg>
     </div>
     <figcaption><span class="fig-n">Figure 13.1</span>Release strategies, and what each protects against. A rolling deploy is safe against crashes because readiness gates it, but it moves all traffic within seconds, so it cannot catch a regression that only shows in the numbers. That is the canary's job.</figcaption>
   </figure>
 
-  <p>The reference service uses rolling deploys everywhere, and for subtle regressions it currently relies on "deploy, watch the dashboard for half an hour, roll back if needed", which works because rollbacks are cheap and cross migrations. The next steps, in order of effort, are a canary on one host (a second api service and a weighted upstream in nginx), then the platform's own traffic splitting with automatic analysis against the service's objectives.</p>
+  <p>The reference service uses rolling deploys everywhere, and for subtle regressions it currently relies on "deploy, watch the dashboard for half an hour, roll back if needed", which works because rollbacks are cheap and cross migrations. The next steps, in order of effort, are a canary on one host (a second api service and a weighted upstream in nginx), then the platform's own traffic splitting (on ECS, its built-in canary strategy) with automatic analysis against the service's objectives.</p>
 
   <h3 id="ch13-schema">Rollbacks roll back code, never the schema</h3>
   <p>During a rolling deploy, the old and new versions run at the same time against the same database. So a schema change cannot break either of them, and it is done in steps that each leave both versions working. This is the <strong>expand and contract</strong> pattern.</p>
 
   <figure class="fig wide" id="fig-13-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 260" role="img" aria-label="Expand and contract across four releases. Release 1 expands: adds a nullable column; old code ignores it. Release 2 writes both old and new; a backfill fills history. Release 3 reads and writes only the new. Release 4 contracts: removes the old column. Rolling back is safe between adjacent releases up to the one before a contract; skipping from release 1 straight to release 4 is not.">
-      <text class="tl" x="16" y="18">FOUR RELEASES, ONE SCHEMA CHANGE</text>
-      <rect class="n-acc" x="16" y="30" width="186" height="96" rx="6"/>
-      <text class="tb" x="30" y="54">1  Expand</text>
-      <text class="ts" x="30" y="74">add the new column,</text>
-      <text class="ts" x="30" y="90">nullable; old code</text>
-      <text class="ts" x="30" y="106">simply ignores it</text>
-      <rect class="n" x="218" y="30" width="186" height="96" rx="6"/>
-      <text class="tb" x="232" y="54">2  Write both</text>
-      <text class="ts" x="232" y="74">code writes old and new;</text>
-      <text class="ts" x="232" y="90">a backfill fills history</text>
-      <text class="ts" x="232" y="106">in batches</text>
-      <rect class="n" x="420" y="30" width="186" height="96" rx="6"/>
-      <text class="tb" x="434" y="54">3  Use only the new</text>
-      <text class="ts" x="434" y="74">code reads and writes</text>
-      <text class="ts" x="434" y="90">only the new column</text>
-      <rect class="n-warn" x="622" y="30" width="182" height="96" rx="6"/>
-      <text class="tb" x="636" y="54">4  Contract</text>
-      <text class="ts" x="636" y="74">remove the old column,</text>
-      <text class="ts" x="636" y="90">in a later release</text>
-      <line class="e" x1="203" y1="78" x2="216" y2="78" marker-end="url(#a)"/>
-      <line class="e" x1="405" y1="78" x2="418" y2="78" marker-end="url(#a)"/>
-      <line class="e" x1="607" y1="78" x2="620" y2="78" marker-end="url(#a)"/>
+    <svg viewBox="0 0 820 272" role="img" aria-label="Expand and contract across five releases. Release 1 expands: adds a nullable column; old code ignores it. Release 2 writes both old and new and still reads the old; a backfill fills history. Release 3 reads the new column and still writes both. Release 4 writes only the new; the old column is no longer used. Release 5 contracts: removes the old column. Each release can be rolled back to the one before it. Skipping from release 1 straight to release 5 is not safe, and from release 4 or 5 only a one-release rollback is: the old column is stale after release 4 and gone after release 5.">
+      <text class="tl" x="16" y="18">FIVE RELEASES, ONE SCHEMA CHANGE</text>
+      <rect class="n-acc" x="16" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="28" y="54">1  Expand</text>
+      <text class="ts" x="28" y="74">add the new column,</text>
+      <text class="ts" x="28" y="90">nullable; old code</text>
+      <text class="ts" x="28" y="106">simply ignores it</text>
+      <rect class="n" x="174" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="186" y="54">2  Write both</text>
+      <text class="ts" x="186" y="74">write old and new,</text>
+      <text class="ts" x="186" y="90">still read the old;</text>
+      <text class="ts" x="186" y="106">backfill the history</text>
+      <rect class="n" x="332" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="344" y="54">3  Read the new</text>
+      <text class="ts" x="344" y="74">read the new column,</text>
+      <text class="ts" x="344" y="90">still write both</text>
+      <rect class="n" x="490" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="502" y="54">4  Write only new</text>
+      <text class="ts" x="502" y="74">the old column is</text>
+      <text class="ts" x="502" y="90">no longer used</text>
+      <rect class="n-warn" x="648" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="660" y="54">5  Contract</text>
+      <text class="ts" x="660" y="74">remove the old column,</text>
+      <text class="ts" x="660" y="90">in a later release</text>
+      <line class="e" x1="163" y1="80" x2="172" y2="80" marker-end="url(#a)"/>
+      <line class="e" x1="321" y1="80" x2="330" y2="80" marker-end="url(#a)"/>
+      <line class="e" x1="479" y1="80" x2="488" y2="80" marker-end="url(#a)"/>
+      <line class="e" x1="637" y1="80" x2="646" y2="80" marker-end="url(#a)"/>
 
-      <path class="e-good" d="M300,140 C300,170 110,170 110,132" marker-end="url(#a-good)"/>
-      <text class="ts tg" x="205" y="150" text-anchor="middle">roll 2 back to 1: safe</text>
-      <path class="e-good" d="M510,140 C510,170 310,170 310,132" marker-end="url(#a-good)"/>
-      <text class="ts tg" x="410" y="150" text-anchor="middle">roll 3 back to 2: safe</text>
-      <path class="e-bad" d="M713,140 C713,222 110,222 110,134" marker-end="url(#a-bad)"/>
-      <text class="ts tr" x="410" y="248" text-anchor="middle">never skip from 1 to 4, or roll 4 back past 3: the old code needs the column that was removed</text>
+      <path class="e-good" d="M239,144 C239,174 97,174 97,136" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="168" y="154" text-anchor="middle">roll 2 back to 1: safe</text>
+      <path class="e-good" d="M397,144 C397,174 255,174 255,136" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="326" y="154" text-anchor="middle">roll 3 back to 2: safe</text>
+      <path class="e-good" d="M555,144 C555,174 413,174 413,136" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="484" y="154" text-anchor="middle">roll 4 back to 3: safe</text>
+      <path class="e-good" d="M713,144 C713,174 571,174 571,136" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="642" y="154" text-anchor="middle">roll 5 back to 4: safe</text>
+      <path class="e-bad" d="M729,144 C729,234 81,234 81,138" marker-end="url(#a-bad)"/>
+      <text class="ts tr" x="410" y="258" text-anchor="middle">never skip from 1 to 5; from 4 or 5, roll back one release only: the old column is stale after 4, gone after 5</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 13.2</span>Expand and contract. Each release can run on the next release's schema, because it will, on the day it is rolled back to. Never rename in place: a rename is an expand, a backfill and a contract.</figcaption>
+    <figcaption><span class="fig-n">Figure 13.2</span>Expand and contract. Each release can run on the next release's schema, because it will, on the day it is rolled back to. Writes to the old column stop only after reads have moved to the new one, so a rollback to the release before never reads a stale column. Never rename in place: a rename is an expand, a backfill and a contract.</figcaption>
   </figure>
 
   <p>The rule produced one of the reference service's decision records, after a rollback failed. The procedure had been "deploy the previous tag", and the previous tag's migration tool had never heard of the revision the newer release applied. The deploy stopped before touching anything, so it failed safely, but rollback was impossible across any migration: exactly when a rollback is most likely needed.</p>
@@ -4239,7 +4268,7 @@ cw.Alarm(
       <dt>Problem</dt><dd>Rolling a release back to one with fewer migrations failed: the older migration tool could not find the database's current revision.</dd>
       <dt>Decision</dt><dd>A deploy never reverses a migration. When the database is ahead of the image, it skips migrating, says so, and rolls out the older code on the newer schema. Reversing a migration is a separate, deliberate step, decided by a person, run with the newer image.</dd>
       <dt>Rejected</dt><dd>Automatic downgrades: the least-tested code in any project, able to lose data, and run under pressure.</dd>
-      <dt>See it in</dt><dd><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/container/migrate.sh">infra/aws/container/migrate.sh</a> on ECS, and <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/scripts/deploy.sh#L87-L113">scripts/deploy.sh</a> on a VM.</dd>
+      <dt>See it in</dt><dd><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/container/migrate.sh">infra/aws/container/migrate.sh</a> on ECS, and <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/scripts/deploy.sh#L88-L114">scripts/deploy.sh</a> on a VM.</dd>
     </dl>
   </aside>
 
@@ -4358,7 +4387,7 @@ exec alembic upgrade head</code></pre>
     </li>
     <li>
       <p>Why is a column rename done across several releases?</p>
-      <details class="ans"><summary>Answer</summary><p>Because during a rolling deploy the old code still runs against the database. Adding the new column, writing both, backfilling, switching reads, and only later dropping the old column keeps every running version working at every step.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Because during a rolling deploy the old code still runs against the database. Adding the new column, writing both, backfilling, switching reads while still writing both, then stopping writes to the old column, and only later dropping it keeps every running version working, and every rollback to the release before correct, at every step.</p></details>
     </li>
     <li>
       <p>What should a deploy do when the database is ahead of the image it is deploying?</p>
@@ -4414,12 +4443,12 @@ exec alembic upgrade head</code></pre>
     <figcaption><span class="fig-n">Figure 14.1</span>Where the money went, per hour, in the region used. Public IPv4 addresses, which many people assume are free, were the second-largest item: one reason production networks keep tasks on private addresses.</figcaption>
   </figure>
 
-  <p>Two numbers put this in perspective. The whole reference deployment, a VM for about 45 minutes and the ECS stack for about three hours, came to roughly sixty cents. And the permanent parts (image repositories holding about 1.3 GB, the CI roles, the network) cost cents a month, so they stay, and the pipeline keeps copying each release into the registry.</p>
+  <p>Two numbers put this in perspective. The first full build of the reference deployment, a VM for about 45 minutes and the ECS stack for about three hours, came to roughly sixty cents; each later session on the ECS stack added cents more, about thirteen for the end-to-end test. And the permanent parts (image repositories holding about 1.3 GB, the CI roles, the network) cost cents a month, so they stay, and the pipeline keeps copying each release into the registry.</p>
 
   <h3 id="ch14-teardown">Teardown, in order</h3>
   <figure class="fig wide" id="fig-14-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 220" role="img" aria-label="Teardown in three steps: first delete the repository secret that lets the deploy workflow run, otherwise the next release tag recreates the database, cache and load balancer; then destroy the application stack; then list leftovers that still cost money: instances, databases, clusters, load balancers, NAT gateways, addresses, volumes. Kept: the registry, the CI roles, the network, the CDK bootstrap resources.">
+    <svg viewBox="0 0 820 220" role="img" aria-label="Teardown in three steps: first delete the repository secret that lets the deploy workflow run, otherwise the next release tag recreates the database, cache and load balancer; then destroy the application stack; then list leftovers that still cost money: instances, databases, clusters, load balancers, NAT gateways, addresses, volumes, caches. Kept: the registry, the CI roles, the network, the CDK bootstrap resources.">
       <rect class="n-warn" x="16" y="30" width="240" height="96" rx="6"/>
       <text class="tb" x="30" y="54">1  Stop auto-recreation</text>
       <text class="ts" x="30" y="74">delete the secret that lets</text>
@@ -4434,7 +4463,7 @@ exec alembic upgrade head</code></pre>
       <text class="tb" x="578" y="54">3  Check for leftovers</text>
       <text class="ts" x="578" y="74">instances, databases, clusters,</text>
       <text class="ts" x="578" y="90">load balancers, NAT, addresses,</text>
-      <text class="ts" x="578" y="106">volumes: all empty</text>
+      <text class="ts" x="578" y="106">volumes, caches: all empty</text>
       <line class="e" x1="257" y1="78" x2="288" y2="78" marker-end="url(#a)"/>
       <line class="e" x1="531" y1="78" x2="562" y2="78" marker-end="url(#a)"/>
       <rect class="n-soft" x="16" y="152" width="788" height="52" rx="6"/>
@@ -4446,32 +4475,35 @@ exec alembic upgrade head</code></pre>
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/ops.sh#L63-L71">infra/aws/ops.sh</a><span class="lines">the leftovers check</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/ops.sh#L63-L74">infra/aws/ops.sh</a><span class="lines">the leftovers check</span></header>
     <div class="repo-body">
       <div class="repo-text">
-        <p>A small operator script holds the commands people need under time pressure. Its <code>leftovers</code> command lists everything that could still be billing after a teardown, one resource type per line, so an empty list means an empty bill.</p>
+        <p>A small operator script holds the commands people need under time pressure. Its <code>leftovers</code> command lists what could still be billing after a teardown, one resource type per line: instances, databases, caches, clusters, load balancers, NAT gateways, addresses, volumes, secrets and stacks. It does not cover everything an account can hold, such as database snapshots, so an empty list means this stack left nothing behind, not that the account is empty.</p>
         <ul class="notice">
           <li>It checks stopped instances too: a stopped VM still pays for its disk.</li>
-          <li>It lists stacks in every non-deleted state, so a half-failed delete shows up.</li>
+          <li>It lists stacks in every state but deleted. A stack in <code>DELETE_FAILED</code>, the failure described below, still holds what it could not delete. The first version listed only completed stacks and missed the cache; a review of the script found both.</li>
         </ul>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/ops.sh" data-lines="63-71"><code class="language-bash">leftovers)
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/ops.sh" data-lines="63-74"><code class="language-bash">leftovers)
   echo "EC2:";  aws ec2 describe-instances --filters Name=instance-state-name,Values=pending,running,stopping,stopped --query 'Reservations[].Instances[].[InstanceId,InstanceType,State.Name]' --output text
   echo "RDS:";  aws rds describe-db-instances --query 'DBInstances[].[DBInstanceIdentifier,DBInstanceStatus]' --output text
+  echo "ElastiCache:"; aws elasticache describe-replication-groups --query 'ReplicationGroups[].[ReplicationGroupId,Status]' --output text
   echo "ECS:";  aws ecs list-clusters --query clusterArns --output text
   echo "ALB:";  aws elbv2 describe-load-balancers --query 'LoadBalancers[].LoadBalancerName' --output text
   echo "NAT:";  aws ec2 describe-nat-gateways --filter Name=state,Values=available,pending --query 'NatGateways[].NatGatewayId' --output text
   echo "EIP:";  aws ec2 describe-addresses --query 'Addresses[].PublicIp' --output text
   echo "EBS:";  aws ec2 describe-volumes --query 'Volumes[].[VolumeId,Size,State]' --output text
-  echo "Stacks:"; aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE UPDATE_ROLLBACK_COMPLETE ROLLBACK_COMPLETE --query 'StackSummaries[].StackName' --output text ;;</code></pre>
+  echo "Secrets:"; aws secretsmanager list-secrets --query 'SecretList[].Name' --output text
+  # Every state but deleted: a stack stuck in DELETE_FAILED still holds what it could not delete.
+  echo "Stacks:"; aws cloudformation list-stacks --query 'StackSummaries[?StackStatus!=`DELETE_COMPLETE`].[StackName,StackStatus]' --output text ;;</code></pre>
         </div>
       </div>
     </div>
   </section>
 
-  <p>The teardown failed once. CloudFormation deleted the database and its password secret within two seconds of each other, because the template referred to the secret only inside a dynamic reference, which does not order deletes. The database was already gone, but its delete handler could not read the password, so the stack ended in <code>DELETE_FAILED</code>. It was finished by deleting the stack again while retaining the resources that no longer existed, and fixed in code with an explicit dependency (Chapter 7). A full check afterwards found nothing left: no instances, databases, clusters, load balancers, addresses, volumes, caches, alarms, secrets or snapshots.</p>
+  <p>The teardown failed once. CloudFormation deleted the database and its password secret within two seconds of each other, because the template referred to the secret only inside a dynamic reference, which does not order deletes. The database was already gone, but its delete handler could not read the password, so the stack ended in <code>DELETE_FAILED</code>. It was finished by deleting the stack again while retaining the resources that no longer existed, and fixed in code with an explicit dependency (Chapter 7). A fuller check afterwards, beyond what the script covers, found nothing left: no instances, databases, clusters, load balancers, addresses, volumes, caches, alarms, secrets or snapshots.</p>
 
   <h3 id="ch14-lessons">Lessons from a real build</h3>
   <p>None of these is dramatic. Together they cost more time than any of the cloud's own surprises.</p>
@@ -4607,7 +4639,7 @@ exec alembic upgrade head</code></pre>
   <dt>VPC</dt>
   <dd>A virtual private cloud: an isolated network in an AWS account, divided into subnets. <a class="see" href="#ch8">Chapter 8</a></dd>
   <dt>VPC endpoint</dt>
-  <dd>A private connection from a VPC to an AWS service, avoiding the NAT gateway and the internet. <a class="see" href="#ch9">Chapter 9</a></dd>
+  <dd>A private connection from a VPC to an AWS service, avoiding the NAT gateway and the internet. <a class="see" href="#ch8">Chapter 8</a></dd>
 </dl>
 
   
@@ -4667,7 +4699,7 @@ exec alembic upgrade head</code></pre>
 <tr><td data-label="Symptom">A rollback has nothing to go back to</td><td data-label="Fix">Deploy exact version tags, or digests, from a registry with immutable tags.</td><td data-label="Chapter"><a href="#ch1">1 · From laptop to production</a></td></tr>
 <tr><td data-label="Symptom">Two servers on the same version behave differently</td><td data-label="Fix">Build once in CI; hosts only pull.</td><td data-label="Chapter"><a href="#ch1">1 · From laptop to production</a></td></tr>
 <tr><td data-label="Symptom">Every release replaces a component that did not change</td><td data-label="Fix">Compare builds by a hash of their inputs, and replace a component only when its inputs changed.</td><td data-label="Chapter"><a href="#ch1">1 · From laptop to production</a></td></tr>
-<tr><td data-label="Symptom">An image tag now points at different code</td><td data-label="Fix">Make the release workflow the only pusher, use immutable tags, check build provenance, or deploy by digest.</td><td data-label="Chapter"><a href="#ch1">1 · From laptop to production</a></td></tr>
+<tr><td data-label="Symptom">An image tag now points at different code</td><td data-label="Fix">Make the release workflow the only pusher, use immutable tags, verify signed build provenance, or deploy by digest.</td><td data-label="Chapter"><a href="#ch1">1 · From laptop to production</a></td></tr>
 <tr><td data-label="Symptom">Images from a public repository can be pulled by anyone</td><td data-label="Fix">Expect it: never put a secret in an image.</td><td data-label="Chapter"><a href="#ch1">1 · From laptop to production</a></td></tr>
 <tr><td data-label="Symptom">An undo of one experiment also lost other uncommitted work in the same file</td><td data-label="Fix">Commit first, or undo the experiment with a reverse patch.</td><td data-label="Chapter"><a href="#ch2">2 · Git and the pull request</a></td></tr>
 <tr><td data-label="Symptom">Teammates' branches no longer line up with yours after a rebase</td><td data-label="Fix">Rebase only your own unpushed work; use <code>--force-with-lease</code> on your own branch, never on a shared one.</td><td data-label="Chapter"><a href="#ch2">2 · Git and the pull request</a></td></tr>
@@ -4688,7 +4720,7 @@ exec alembic upgrade head</code></pre>
 <tr><td data-label="Symptom">A trusted CI action starts exfiltrating secrets</td><td data-label="Fix">Pin every third-party action to a full commit SHA.</td><td data-label="Chapter"><a href="#ch4">4 · The software supply chain</a></td></tr>
 <tr><td data-label="Symptom">The scanner itself is the attack</td><td data-label="Fix">Run scanners from images pinned by digest, with no Docker socket.</td><td data-label="Chapter"><a href="#ch4">4 · The software supply chain</a></td></tr>
 <tr><td data-label="Symptom">Builds differ depending on the day they ran</td><td data-label="Fix">Pin the base by digest and take fixes as a reviewed digest bump.</td><td data-label="Chapter"><a href="#ch4">4 · The software supply chain</a></td></tr>
-<tr><td data-label="Symptom">Everyone ignores the red security check</td><td data-label="Fix">Block only fixable findings; accept the rest with an expiry; report third-party images.</td><td data-label="Chapter"><a href="#ch4">4 · The software supply chain</a></td></tr>
+<tr><td data-label="Symptom">Everyone ignores the red security check</td><td data-label="Fix">Block only findings with a fix; accept a fix you cannot take yet, with an expiry; report third-party images.</td><td data-label="Chapter"><a href="#ch4">4 · The software supply chain</a></td></tr>
 <tr><td data-label="Symptom">A pull request goes red for a vulnerability it did not introduce</td><td data-label="Fix">Take the bot's digest bump, or accept the risk with an expiry.</td><td data-label="Chapter"><a href="#ch4">4 · The software supply chain</a></td></tr>
 <tr><td data-label="Symptom">The secret-scanning action fails for an organization</td><td data-label="Fix">Run its command-line tool instead.</td><td data-label="Chapter"><a href="#ch4">4 · The software supply chain</a></td></tr>
 <tr><td data-label="Symptom">A leaked key was deleted from the repository, but it is still abused</td><td data-label="Fix">Rotate first, then remove.</td><td data-label="Chapter"><a href="#ch4">4 · The software supply chain</a></td></tr>
@@ -4726,9 +4758,9 @@ exec alembic upgrade head</code></pre>
 <tr><td data-label="Symptom">A database outage makes ECS replace healthy api tasks</td><td data-label="Fix">Check a shallow endpoint; detect outages with a 5xx alarm.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
 <tr><td data-label="Symptom">A task sits in PENDING for many minutes, billed</td><td data-label="Fix">Make the essential container depend directly on every init container, each with a start timeout.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
 <tr><td data-label="Symptom">Rate limits are higher than configured after scaling out</td><td data-label="Fix">A shared store for anything that must be counted once.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
-<tr><td data-label="Symptom">Two new tasks run migrations at the same moment</td><td data-label="Fix">Start one new task at a time, or run migrations as a one-off task before the deploy.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
-<tr><td data-label="Symptom">The web container's proxy returns 502 for every api call on Fargate</td><td data-label="Fix">Route <code>/api</code> at the load balancer, or use Service Connect for names.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
-<tr><td data-label="Symptom">Streams are cut during a deploy</td><td data-label="Fix">Raise the stop timeout (Fargate allows up to two minutes) and let the server drain.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
+<tr><td data-label="Symptom">Two new tasks run migrations at the same moment</td><td data-label="Fix">Make each run take a lock (a Postgres session advisory lock) so concurrent runs take turns, or run migrations as a one-off task before the deploy. Starting one new task at a time is not enough: the first deploy and a scale-out still start several.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
+<tr><td data-label="Symptom">The web container's proxy returns 502 for every api call on Fargate</td><td data-label="Fix">Route <code>/api</code> at the load balancer. Service Connect alone does not help this nginx: it publishes names in <code>/etc/hosts</code>, which nginx's runtime resolver never reads.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
+<tr><td data-label="Symptom">Streams are cut during a deploy</td><td data-label="Fix">Set the deregistration delay above the longest answer, then the stop timeout (Fargate allows up to two minutes) above the server's graceful drain.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
 <tr><td data-label="Symptom">A short spike overwhelms the service before autoscaling reacts</td><td data-label="Fix">Size the minimum task count for spikes; scale on a leading metric.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
 <tr><td data-label="Symptom">An outage is reported that the load balancer never saw</td><td data-label="Fix">Judge outages from server-side metrics, and run synthetic checks from inside the cloud.</td><td data-label="Chapter"><a href="#ch9">9 · Containers on ECS Fargate</a></td></tr>
 <tr><td data-label="Symptom">A database outage restarts every pod at once</td><td data-label="Fix">Liveness checks only the process; readiness checks hard dependencies.</td><td data-label="Chapter"><a href="#ch10">10 · Kubernetes and EKS</a></td></tr>
@@ -4759,7 +4791,7 @@ exec alembic upgrade head</code></pre>
 
 <footer class="series-foot">
   <p>Engineering Handbooks · Handbook 3 of 3 · Cloud Delivery &amp; DevOps · Edition 1</p>
-  <p>Reference implementation: <a href="https://github.com/Parzon/triage-assistant">triage-assistant</a> at <code>handbook-1 (0b81c10)</code>.</p>
+  <p>Reference implementation: <a href="https://github.com/Parzon/triage-assistant">triage-assistant</a> at <code>handbook-1 (3fc2c43)</code>.</p>
 </footer>
 </main>
 </div>

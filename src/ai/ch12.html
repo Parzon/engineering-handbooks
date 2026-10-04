@@ -109,7 +109,7 @@
       <text class="ts tmu" x="16" y="214">Schema rollbacks and the deploy ladder: Handbook 3, Chapter 13. The off switch: Handbook 2, Chapter 17.</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 12.3</span>The rollback for each kind of change in an AI service. Each is decided before the change ships, and practiced; the fastest for a misbehaving AI feature is a switch that takes effect in seconds without a deploy.</figcaption>
+    <figcaption><span class="fig-n">Figure 12.3</span>The rollback for each kind of change in an AI service. Each is decided before the change ships, and practiced; the fastest for a misbehaving AI feature is a switch that takes effect in seconds without a deploy. The reference service has two of these switches, not all: its prompt is code, pinned by a test, so a prompt rolls back with the previous tag, and only the model is configuration; and it re-embeds in place, so there is no old index to switch back to, and stale sections are found by keyword only until the re-embed finishes. A prompt read from configuration and an index built beside the old one are what the other two switches would take.</figcaption>
   </figure>
 
   <h3 id="ch12-slo">Service levels for an AI feature</h3>
@@ -141,7 +141,7 @@
   <aside class="say">
     <span class="label">How to say it</span>
     <p>"We pin exact model versions, version the prompt with a hash, and record both on every answer, so a change in answers lines up with a change in what runs."</p>
-    <p>"Each kind of change has its rollback: a tag, a config switch for the prompt or model, a flag, the old index, and fix-forward for the schema. AI incidents can show no errors, so we watch quality indicators too."</p>
+    <p>"Each kind of change has its rollback: a tag for code, and for a prompt that lives in code; a config switch for the model; a flag; the old index, if we kept it beside the new one; and fix-forward for the schema. AI incidents can show no errors, so we watch quality indicators too."</p>
   </aside>
 
   <h3 id="ch12-traps">Traps</h3>
@@ -167,7 +167,7 @@
     </li>
     <li>
       <p>What is the rollback for a prompt change, a new feature, a re-embedding and a schema change?</p>
-      <details class="ans"><summary>Answer</summary><p>Prompt: switch the version back in configuration. Feature: its flag (or, for the AI itself, the off switch). Re-embedding: switch back to the old index kept beside the new one. Schema: do not roll back; roll the code back alone and fix forward.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Prompt: switch the version back in configuration if prompts are configuration; if the prompt is code, as in the reference service, redeploy the previous tag. Feature: its flag (or, for the AI itself, the off switch). Re-embedding: switch back to the old index kept beside the new one; a re-embed in place, as in the reference service, has no switch back, only keyword search for the stale sections until it finishes. Schema: do not roll back; roll the code back alone and fix forward.</p></details>
     </li>
     <li>
       <p>What quality indicators would you add to the service levels of an AI feature?</p>

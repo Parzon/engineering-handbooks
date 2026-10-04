@@ -55,7 +55,7 @@
 
   <figure class="fig wide" id="fig-13-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 320" role="img" aria-label="Which layer caught which bug. Integration tests: a pooler that could not authenticate to Postgres while its health check stayed green; a migration that logged success and was rolled back. Image checks: a production image that could not start because a runtime dependency was installed only for development. End-to-end tests: Stop re-submitting the question, which the component test passed before and after the fix. Load tests: a missing index, p95 7 seconds at 40 requests per second, under 152 milliseconds alone; a sign-in design that collapsed at 1,000 requests per second. Failure drills: leaked connections after Postgres froze under load; an identity-provider outage invisible to every request. Repeated evals: a prompt that printed its own instructions 5 times in 200 runs.">
+    <svg viewBox="0 0 820 320" role="img" aria-label="Which layer caught which bug. Integration tests: a pooler that could not authenticate to Postgres while its health check stayed green; a migration that logged success and was rolled back. Image checks: a production image that could not start because a runtime dependency was installed only for development. End-to-end tests: Stop re-submitting the question, which the component test passed before and after the fix. Load tests: a missing index, p95 7 seconds at 40 requests per second, under 152 milliseconds alone; a first sign-in design, a query per table, that collapsed at 1,000 requests per second. Failure drills: leaked connections after Postgres froze under load; an identity-provider outage invisible to every request. Repeated evals: a prompt that printed its own instructions 5 times in 200 runs.">
       <text class="tl" x="16" y="22">LAYER</text><text class="tl" x="200" y="22">A BUG ONLY IT CAUGHT</text>
       <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
       <text class="tb" x="16" y="54">Integration</text><text class="ts" x="200" y="54">the pooler could not authenticate to Postgres; its own health check stayed green</text>
@@ -65,7 +65,7 @@
       <text class="tb" x="16" y="130">End to end</text><text class="ts" x="200" y="130">Stop re-submitted the question; the component test passed before and after the fix</text>
       <line class="rule" x1="16" y1="144" x2="804" y2="144"/>
       <text class="tb" x="16" y="168">Load test</text><text class="ts" x="200" y="168">a missing index: p95 7 s at 40 requests per second, 43–152 ms when tested alone</text>
-      <text class="ts" x="200" y="186">a sign-in design that doubled CPU per request and collapsed at 1,000 per second</text>
+      <text class="ts" x="200" y="186">a first sign-in design, a query per table, that collapsed at 1,000 per second</text>
       <line class="rule" x1="16" y1="200" x2="804" y2="200"/>
       <text class="tb" x="16" y="224">Failure drill</text><text class="ts" x="200" y="224">13 of 40 pool slots leaked forever after Postgres froze under load</text>
       <text class="ts" x="200" y="242">an identity-provider outage that no request noticed (metadata was cached)</text>

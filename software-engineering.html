@@ -49,7 +49,7 @@
   <div class="series-list">
     <a href="ai-engineering.html"><span class="n">1 · AI Engineering &amp; Architecture</span><span>The new layer: models, retrieval, agents, evaluation, safety.</span></a><div class="here"><span class="n">2 · Modern Software Engineering</span><span>Your skills, brought up to date: the service and its repository.</span></div><a href="cloud-delivery.html"><span class="n">3 · Cloud Delivery &amp; DevOps</span><span>From a laptop to production: pipelines, identity, the cloud.</span></a>
   </div>
-  <p class="edition">Edition 1 · Reference implementation: <code>triage-assistant</code> at <code>handbook-1 (0b81c10)</code></p>
+  <p class="edition">Edition 1 · Reference implementation: <code>triage-assistant</code> at <code>handbook-1 (3fc2c43)</code></p>
 </header>
 
 <section class="front" id="how-to-read">
@@ -309,13 +309,13 @@
     <dl>
       <dt>Context</dt><dd>"Deploy the previous tag" failed across a migration: the older image's migration tool had never heard of the newer revision.</dd>
       <dt>Decision</dt><dd>A deploy never reverses a migration. A database ahead of the image means a code-only rollback. Reversing a migration is a deliberate, separate step.</dd>
-      <dt>See it in</dt><dd><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/scripts/deploy.sh#L87-L113">scripts/deploy.sh</a>, quoted below, and its ECS twin <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/container/migrate.sh">migrate.sh</a>.</dd>
-      <dt>Result</dt><dd>Rolled back under steady signed-in load with no request failing during the swap.</dd>
+      <dt>See it in</dt><dd><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/scripts/deploy.sh#L88-L114">scripts/deploy.sh</a>, quoted below, and its ECS twin <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/infra/aws/container/migrate.sh">migrate.sh</a>.</dd>
+      <dt>Result</dt><dd>Rolled back under steady signed-in load with no request failing during the api and nginx swaps. Only the TLS edge's replacement refused connections, for about 2 to 3 s; a deploy now replaces the edge only when it changed.</dd>
     </dl>
   </aside>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/scripts/deploy.sh#L87-L113">scripts/deploy.sh</a><span class="lines">the decision, carried out on a single host</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/scripts/deploy.sh#L88-L114">scripts/deploy.sh</a><span class="lines">the decision, carried out on a single host</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The comment restates the decision record in the place a future editor will read it. The code asks the database which revision it is on, then asks this release's migration tool whether it knows that revision.</p>
@@ -327,7 +327,7 @@
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="scripts/deploy.sh" data-lines="87-113"><code class="language-bash"># A rollback: the database already carries a newer release's migrations,
+          <pre class="code" data-repo="triage-assistant" data-path="scripts/deploy.sh" data-lines="88-114"><code class="language-bash"># A rollback: the database already carries a newer release's migrations,
 # which this image's Alembic has never heard of ("Can't locate revision").
 # Run this release's code on the newer schema, without migrating. That is
 # safe only if this release can run on it - down to the release before a
@@ -737,7 +737,7 @@ messages = build_messages(payload.message, alerts, sections)</code></pre>
   </figure>
 
   <h3 id="ch2-monolith">A modular monolith, on purpose</h3>
-  <p>The api is one process type, one deploy and one database, with visible internal boundaries: the AI logic is two files, identity is three (one speaks the protocol, one turns a cookie into a user, one decides what that user may do), and the rest is the standard scaffold every service from the template shares. The web app is a separate artifact because it has a different toolchain and runtime, not because it is a microservice.</p>
+  <p>The api is one process type, one deploy and one database, with visible internal boundaries: the AI logic sits behind one seam (<code>llm.py</code>), with the prompt in <code>triage.py</code>, retrieval in <code>runbooks.py</code> and the agent in <code>agent.py</code> and <code>tools.py</code>; identity is three files (one speaks the protocol, one turns a cookie into a user, one decides what that user may do), and the rest is the standard scaffold every service from the template shares. The web app is a separate artifact because it has a different toolchain and runtime, not because it is a microservice.</p>
   <p>Splitting was considered and measured against. Every network call between services can hang, time out, or succeed after the caller gave up, and making a single dependency (Postgres through the pooler) fail cleanly took a whole decision record's worth of work. Latency adds up hop by hop, each service needs its own pipeline, dashboards and runbook, and data that used to join becomes an API call or a copy that drifts. Splitting pays off with several teams or a component with a very different load profile, and neither is true yet. Complexity should follow measured pain.</p>
 
   <div class="table-wrap">
@@ -825,7 +825,7 @@ messages = build_messages(payload.message, alerts, sections)</code></pre>
   </table>
 
   <h3 id="ch3-exit">Exit codes and signals</h3>
-  <p>A process's exit code is the first clue in any container post-mortem, and the important ones are few. Codes from 128 upwards are not chosen by the program at all: the shell reports 128 plus the number of the signal that killed it.</p>
+  <p>A process's exit code is the first clue in any container post-mortem, and the important ones are few. Codes above 128 are normally not chosen by the program: the shell, or the container runtime, reports 128 plus the number of the signal that killed it. A program can still exit with such a code itself, so it is a strong clue, not proof.</p>
 
   <figure class="fig wide" id="fig-3-1">
     <div class="fig-scroll">
@@ -898,25 +898,27 @@ messages = build_messages(payload.message, alerts, sections)</code></pre>
   <p>Three more silent failures of memory limits are worth knowing. An out-of-memory kill of one <em>worker</em> inside a container leaves the container "healthy": only a log line from the parent, a cgroup counter and an alert record it. Docker's own <code>OOMKilled</code> flag can read <code>false</code> even after the main process was killed; the kernel's log (<code>journalctl -k</code>) is the authority. And lowering a live container's limit kills processes even when swap is allowed.</p>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/gunicorn.conf.py#L15-L29">apps/api/gunicorn.conf.py</a><span class="lines">counting the CPUs a container may really use</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/gunicorn.conf.py#L15-L31">apps/api/gunicorn.conf.py</a><span class="lines">counting the CPUs a container may really use</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The server sizes its worker pool from the CPUs it may use. Python's <code>os.cpu_count()</code> reports the host's cores even inside a limited container, so the configuration reads the cgroup's CPU quota directly.</p>
         <ul class="notice">
           <li><code>/sys/fs/cgroup/cpu.max</code> holds "quota period", or "max period" when unlimited; quota divided by period, rounded up, is the usable CPU count.</li>
-          <li>The same file is written by a Compose <code>cpus:</code> limit, an ECS task's CPU, or a Kubernetes limit, so one image sizes itself correctly everywhere.</li>
+          <li>The same file is written by a Compose <code>cpus:</code> limit or a Kubernetes CPU limit, so one image sizes itself on both. ECS is the exception, although the comment names it: a container's <code>cpu</code> there is only a relative share, and the task's hard limit applies to the task as a whole, so the container's own file may read "max". The reference ECS stack therefore sets <code>WEB_CONCURRENCY</code> explicitly.</li>
           <li>Pinning to specific cores is covered by the CPU affinity call.</li>
         </ul>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="apps/api/gunicorn.conf.py" data-lines="15-29"><code class="language-python">def available_cpus(cpu_max: Path = Path("/sys/fs/cgroup/cpu.max")) -&gt; int:
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/gunicorn.conf.py" data-lines="15-31"><code class="language-python">def available_cpus(cpu_max: Path = Path("/sys/fs/cgroup/cpu.max")) -&gt; int:
     """CPUs this container may actually use.
 
     os.cpu_count() reports the host's cores even inside a CPU-limited
-    container. A `--cpus` / compose `cpus:` / ECS / Kubernetes CPU limit is
-    the cgroup v2 quota in cpu.max: "&lt;quota&gt; &lt;period&gt;", or "max &lt;period&gt;"
-    when unlimited. sched_getaffinity() covers `--cpuset-cpus`.
+    container. A `--cpus` / compose `cpus:` / Kubernetes CPU limit is the
+    cgroup v2 quota in cpu.max: "&lt;quota&gt; &lt;period&gt;", or "max &lt;period&gt;" when
+    unlimited. sched_getaffinity() covers `--cpuset-cpus`. An ECS
+    container's `cpu` is a relative share, not a quota: set WEB_CONCURRENCY
+    there (infra/aws/service.py does).
     """
     try:
         quota, period = cpu_max.read_text().split()
@@ -944,7 +946,7 @@ messages = build_messages(payload.message, alerts, sections)</code></pre>
       </tbody>
     </table>
   </div>
-  <p>A distribution is the kernel plus the userland, a package manager and defaults. For Python services, the choice of base image matters more than it looks: most compiled Python packages ship wheels built for glibc, and Alpine's musl library cannot use them, so installs either fail or compile from source. A slim Debian image is the usual default.</p>
+  <p>A distribution is the kernel plus the userland, a package manager and defaults. For Python services, the choice of base image matters more than it looks: wheels built for glibc (tagged <code>manylinux</code>) do not run on Alpine's musl library. Many popular packages now also publish <code>musllinux</code> wheels, but any package that does not is compiled from source, or fails to install. A slim Debian image is the safer default.</p>
 
   <h3 id="ch3-debug">Debugging at the kernel boundary</h3>
   <ul>
@@ -968,7 +970,7 @@ messages = build_messages(payload.message, alerts, sections)</code></pre>
         <tr><td data-label="Symptom">A container dies with exit 137 and no error in its log</td><td data-label="Cause">The OOM killer sent SIGKILL</td><td data-label="Fix">Read the kernel log and the cgroup's OOM counter; raise the limit or fix the leak.</td></tr>
         <tr><td data-label="Symptom">Memory grows past the limit without any kill</td><td data-label="Cause">Swap is allowed: the default is as much again</td><td data-label="Fix">Set the swap limit equal to the memory limit.</td></tr>
         <tr><td data-label="Symptom">A stopped-on-purpose container stays down after a "crash test"</td><td data-label="Cause"><code>docker kill</code> counts as a manual stop, so the restart policy ignores it</td><td data-label="Fix">Simulate crashes with SIGKILL from the host's process namespace.</td></tr>
-        <tr><td data-label="Symptom">An unhealthy container is never restarted</td><td data-label="Cause">Docker's restart policies act on exit only; "unhealthy" matters to orchestrators and dependencies</td><td data-label="Fix">Let an orchestrator act on health, or make the process exit.</td></tr>
+        <tr><td data-label="Symptom">An unhealthy container is never restarted</td><td data-label="Cause">Docker's restart policies act on exit only; "unhealthy" matters to dependencies, and orchestrators run their own checks</td><td data-label="Fix">Define the check where the orchestrator reads it (Kubernetes probes, an ECS task-definition check), or make the process exit.</td></tr>
         <tr><td data-label="Symptom">A worker pool is far too large inside a container</td><td data-label="Cause"><code>os.cpu_count()</code> reports the host's cores</td><td data-label="Fix">Read the cgroup's CPU quota.</td></tr>
         <tr><td data-label="Symptom">A wait loop never ends, or a kill loop kills itself</td><td data-label="Cause"><code>pgrep -f</code> or <code>pkill -f</code> matches the shell running it</td><td data-label="Fix">Track and kill by process ID.</td></tr>
         <tr><td data-label="Symptom">A script carries on after a failed command</td><td data-label="Cause"><code>! cmd</code> is exempt from <code>set -e</code></td><td data-label="Fix">Test the condition explicitly with <code>if</code>.</td></tr>
@@ -994,7 +996,7 @@ messages = build_messages(payload.message, alerts, sections)</code></pre>
     </li>
     <li>
       <p>Why might a Python service fail to install its dependencies on an Alpine base image?</p>
-      <details class="ans"><summary>Answer</summary><p>Alpine uses the musl C library, and most precompiled Python wheels target glibc. Installs fall back to compiling from source, which needs compilers and headers, or fail.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Alpine uses the musl C library, and wheels built for glibc (<code>manylinux</code>) do not run on it. A package without a <code>musllinux</code> wheel falls back to compiling from source, which needs compilers and headers, or fails.</p></details>
     </li>
   </ol>
 </section>
@@ -1053,7 +1055,7 @@ messages = build_messages(payload.message, alerts, sections)</code></pre>
 
   <figure class="fig wide" id="fig-4-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 400" role="img" aria-label="The first request to a site. DNS: the client asks its resolver, which asks a root server, the top-level-domain server, and the domain's authoritative server, then caches the answer for its TTL. TCP: SYN, SYN-ACK, ACK. TLS: ClientHello with the hostname in plain text (SNI); the server picks the certificate for that name and signs the handshake; the client checks the chain, the name and the expiry; both derive a session key with ephemeral Diffie-Hellman. HTTP: the encrypted request and response.">
+    <svg viewBox="0 0 820 400" role="img" aria-label="The first request to a site. DNS: the client asks its resolver, which asks a root server, the top-level-domain server, and the domain's authoritative server, then caches the answer for its TTL. TCP: SYN, SYN-ACK, ACK. TLS 1.3: ClientHello with a key share and the hostname in plain text (SNI); ServerHello with the server's key share; both derive the same keys with ephemeral Diffie-Hellman; then, already encrypted, the certificate for that name, the server's signature over the handshake and its Finished message; the client checks the chain, the name and the expiry, and sends its own encrypted Finished. HTTP: the encrypted request and response.">
       <rect class="n" x="20" y="14" width="120" height="40" rx="5"/><text class="tb" x="80" y="39" text-anchor="middle">Client</text>
       <rect class="n" x="250" y="14" width="140" height="40" rx="5"/><text class="tb" x="320" y="39" text-anchor="middle">DNS resolver</text>
       <rect class="n" x="560" y="14" width="140" height="40" rx="5"/><text class="tb" x="630" y="39" text-anchor="middle">Server</text>
@@ -1071,20 +1073,20 @@ messages = build_messages(payload.message, alerts, sections)</code></pre>
       <line class="e" x1="630" y1="160" x2="82" y2="160" marker-end="url(#a)"/><text class="ts" x="355" y="154" text-anchor="middle">SYN-ACK</text>
       <line class="e" x1="80" y1="178" x2="628" y2="178" marker-end="url(#a)"/><text class="ts" x="355" y="172" text-anchor="middle">ACK</text>
 
-      <text class="tl" x="700" y="230">TLS</text>
-      <line class="e" x1="80" y1="210" x2="628" y2="210" marker-end="url(#a)"/><text class="ts" x="355" y="204" text-anchor="middle">ClientHello: ciphers, and the hostname in plain text (SNI)</text>
-      <line class="e" x1="630" y1="236" x2="82" y2="236" marker-end="url(#a)"/><text class="ts" x="355" y="230" text-anchor="middle">certificate for that name; handshake signed with the private key</text>
-      <rect class="n-soft" x="92" y="246" width="250" height="30" rx="4"/><text class="ts" x="102" y="265">client checks: chain to a trusted root, name, expiry</text>
-      <line class="e-acc" x1="80" y1="290" x2="628" y2="290" marker-end="url(#a-acc)"/>
-      <line class="e-acc" x1="630" y1="300" x2="82" y2="300" marker-end="url(#a-acc)"/>
-      <text class="ts" x="355" y="318" text-anchor="middle">both derive the same session key (ephemeral Diffie-Hellman); it is never sent</text>
+      <text class="tl" x="700" y="266">TLS</text>
+      <line class="e" x1="80" y1="210" x2="628" y2="210" marker-end="url(#a)"/><text class="ts" x="355" y="204" text-anchor="middle">ClientHello: ciphers, a key share, and the hostname in plain text (SNI)</text>
+      <line class="e" x1="630" y1="234" x2="82" y2="234" marker-end="url(#a)"/><text class="ts" x="355" y="228" text-anchor="middle">ServerHello: the server's key share, also in plain text</text>
+      <text class="ts" x="355" y="252" text-anchor="middle">both now derive the same keys (ephemeral Diffie-Hellman); no key is ever sent</text>
+      <line class="e-acc" x1="630" y1="278" x2="82" y2="278" marker-end="url(#a-acc)"/><text class="ts" x="355" y="272" text-anchor="middle">encrypted: certificate for that name, signature over the handshake, Finished</text>
+      <rect class="n-soft" x="92" y="286" width="268" height="26" rx="4"/><text class="ts" x="102" y="303">client checks: chain to a trusted root, name, expiry</text>
+      <line class="e-acc" x1="80" y1="326" x2="628" y2="326" marker-end="url(#a-acc)"/><text class="ts" x="480" y="320" text-anchor="middle">client Finished, encrypted</text>
 
       <text class="tl" x="700" y="362">HTTP</text>
       <line class="e-good" x1="80" y1="346" x2="628" y2="346" marker-end="url(#a-good)"/><text class="ts" x="355" y="340" text-anchor="middle">request, encrypted with the session key</text>
       <line class="e-good" x1="630" y1="372" x2="82" y2="372" marker-end="url(#a-good)"/><text class="ts" x="355" y="366" text-anchor="middle">response</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 4.2</span>The first request to a site, in order. A raw IP address skips DNS; a kept-alive connection skips TCP and TLS for later requests. SNI is why one address can serve many certificates, and it is sent before anything is encrypted.</figcaption>
+    <figcaption><span class="fig-n">Figure 4.2</span>The first request to a site, in order, with TLS 1.3. A raw IP address skips DNS; a kept-alive connection skips TCP and TLS for later requests. The key shares ride in the first two messages, so the handshake takes one round trip and the certificate already travels encrypted. SNI is why one address can serve many certificates, and it is sent before anything is encrypted.</figcaption>
   </figure>
 
   <h3 id="ch4-tls">What TLS actually guarantees</h3>
@@ -1124,7 +1126,7 @@ messages = build_messages(payload.message, alerts, sections)</code></pre>
   </figure>
 
   <p>Why a certificate cannot decrypt anything: it holds only the public key. The private key never leaves the server, and the session key does the encrypting. A machine in the middle cannot sign the handshake as <code>example.com</code> without that private key, so the client's checks fail. When both sides present certificates, the connection is <strong>mutual TLS</strong>, common between services.</p>
-  <p>Three related distinctions come up constantly. <strong>In transit</strong> means TLS, SSH or a VPN; <strong>at rest</strong> means disks, databases and object storage, usually with <strong>envelope encryption</strong>: a data key encrypts the data, and a master key in a key management service encrypts the data key. <strong>Encryption</strong> is reversible with a key; <strong>hashing</strong> is one-way (passwords are stored as salted hashes, never encrypted); <strong>encoding</strong>, such as base64, is formatting, not secrecy.</p>
+  <p>Three related distinctions come up constantly. <strong>In transit</strong> means TLS, SSH or a VPN; <strong>at rest</strong> means disks, databases and object storage, usually with <strong>envelope encryption</strong>: a data key encrypts the data, and a master key in a key management service encrypts the data key. <strong>Encryption</strong> is reversible with a key; <strong>hashing</strong> is one-way (passwords are stored with a slow, salted password hash such as Argon2id or bcrypt, never encrypted); <strong>encoding</strong>, such as base64, is formatting, not secrecy.</p>
 
   <h3 id="ch4-http">HTTP: versions and status codes</h3>
   <p>HTTP/1.1 sends one request at a time per connection, so browsers open about six. <strong>HTTP/2</strong> is binary and multiplexes many streams over one TCP connection, with header compression, but one lost packet stalls every stream on it (TCP's head-of-line blocking). <strong>HTTP/3</strong> runs over <strong>QUIC</strong>, built on UDP: loss affects only its own stream, TLS 1.3 is built in, handshakes are faster, and connections survive a change of network. The common setup is HTTP/2 or 3 between clients and the edge, and HTTP/1.1 behind it. gRPC needs HTTP/2.</p>
@@ -1141,7 +1143,7 @@ messages = build_messages(payload.message, alerts, sections)</code></pre>
         <tr><td data-label="Status">500</td><td data-label="Meaning">An unhandled exception in the application</td></tr>
         <tr><td data-label="Status">502</td><td data-label="Meaning">The proxy got no valid response: the backend is down or crashed</td></tr>
         <tr><td data-label="Status">503</td><td data-label="Meaning">Deliberately unavailable: overloaded, draining, or a dependency is down</td></tr>
-        <tr><td data-label="Status">504</td><td data-label="Meaning">The proxy gave up waiting: the backend is up, but too slow</td></tr>
+        <tr><td data-label="Status">504</td><td data-label="Meaning">The proxy timed out: connecting (the backend is unreachable and packets vanish) or waiting for the reply (the backend is too slow). The proxy's log says which</td></tr>
       </tbody>
     </table>
   </div>
@@ -1240,7 +1242,7 @@ services:
     </li>
     <li>
       <p>A proxy returns 502 and later 504. What does each suggest about the backend?</p>
-      <details class="ans"><summary>Answer</summary><p>502: the proxy got no valid response, so the backend is down or crashed. 504: the proxy gave up waiting, so the backend is up but too slow.</p></details>
+      <details class="ans"><summary>Answer</summary><p>502: the proxy got no valid response, so the backend is down or crashed. 504: the proxy timed out, either connecting (the backend is unreachable) or waiting for the reply (the backend is up but too slow); the proxy's error log says which.</p></details>
     </li>
   </ol>
 </section>
@@ -1336,7 +1338,7 @@ services:
     <figcaption><span class="fig-n">Figure 5.2</span>The event loop's contract: never block it. Async does not bypass Python's global interpreter lock; it is one thread that never wastes time waiting. A blocking call breaks the contract for every request on that worker at once.</figcaption>
   </figure>
 
-  <p>Two consequences show up in production. On a busy loop, every wall-clock timeout fires early, because callbacks run late: the reference service saw its rate limiter failing open and pool timeouts firing at about 46% CPU. So CPU percentage is a poor saturation signal for async Python; <strong>event-loop lag</strong>, how late a timer fires, measures it directly, and the service exports it as a metric. And <strong>cancellation is normal</strong>: a user closing the tab cancels the stream, and <code>finally</code> blocks must close the model connection, which stops the billing.</p>
+  <p>Two consequences show up in production. On a busy loop, wall-clock timeouts expire although the dependency answered in time: the reply waits in the loop's queue while the budget runs out. The reference service saw its rate limiter failing open and pool timeouts firing at about 46% CPU. So CPU percentage is a poor saturation signal for async Python; <strong>event-loop lag</strong>, how late a timer fires, measures it directly, and the service exports it as a metric. And <strong>cancellation is normal</strong>: a user closing the tab cancels the stream, and <code>finally</code> blocks must close the model connection, which stops the billing.</p>
 
   <h3 id="ch5-workers">Workers: processes for CPU</h3>
   <p>One async process already holds thousands of waiting connections, so extra workers are for CPU: roughly one per core. They are processes, not threads, because each process has its own interpreter lock, so N workers really use N cores.</p>
@@ -1373,7 +1375,7 @@ services:
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/gunicorn.conf.py#L34-L55">apps/api/gunicorn.conf.py</a><span class="lines">worker count, heartbeat, drain, keep-alive</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/gunicorn.conf.py#L36-L57">apps/api/gunicorn.conf.py</a><span class="lines">worker count, heartbeat, drain, keep-alive</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>Four production settings, each with the reason it has the value it has. Every one can be overridden from the environment, so the same image fits a laptop, a VM or a one-process-per-task platform.</p>
@@ -1386,7 +1388,7 @@ services:
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="apps/api/gunicorn.conf.py" data-lines="34-55"><code class="language-python"># Async workers: one per usable CPU. Each worker's event loop already
+          <pre class="code" data-repo="triage-assistant" data-path="apps/api/gunicorn.conf.py" data-lines="36-57"><code class="language-python"># Async workers: one per usable CPU. Each worker's event loop already
 # serves many concurrent connections; the classic "2 x cores + 1" rule is
 # for sync workers that block while waiting on I/O. On ECS/Kubernetes set
 # WEB_CONCURRENCY=1 and scale with replicas instead.
@@ -1418,10 +1420,10 @@ keepalive = int(os.environ.get("GUNICORN_KEEPALIVE", "75"))</code></pre>
 
   <figure class="fig wide" id="fig-5-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 220" role="img" aria-label="pyproject.toml lists the direct dependencies you chose; uv lock resolves the whole graph into uv.lock with hashes, committed; uv sync --frozen installs exactly the lock into the virtual environment, failing rather than re-resolving; the image is built from that. Below: three tiers of Python dependencies: pure Python runs anywhere; wrappers around C libraries come as wheels per operating system and processor; wrappers that call external programs need the operating system's package manager.">
+    <svg viewBox="0 0 820 220" role="img" aria-label="pyproject.toml lists the direct dependencies you chose; uv lock resolves the whole graph into uv.lock with hashes, committed; uv sync --frozen installs exactly the lock into the virtual environment, never re-resolving and never checking that the lock still matches the manifest; the image is built from that. Below: three tiers of Python dependencies: pure Python runs anywhere; wrappers around C libraries come as wheels per operating system and processor; wrappers that call external programs need the operating system's package manager.">
       <rect class="n" x="16" y="20" width="170" height="64" rx="5"/><text class="tm tb" x="28" y="44">pyproject.toml</text><text class="ts" x="28" y="64">direct dependencies:</text><text class="ts" x="28" y="78">what you chose</text>
       <rect class="n-acc" x="230" y="20" width="170" height="64" rx="5"/><text class="tm tb" x="242" y="44">uv.lock</text><text class="ts" x="242" y="64">the whole graph, with</text><text class="ts" x="242" y="78">hashes; committed</text>
-      <rect class="n" x="444" y="20" width="170" height="64" rx="5"/><text class="tm tb" x="456" y="44">uv sync --frozen</text><text class="ts" x="456" y="64">installs exactly the lock;</text><text class="ts" x="456" y="78">fails rather than resolve</text>
+      <rect class="n" x="444" y="20" width="170" height="64" rx="5"/><text class="tm tb" x="456" y="44">uv sync --frozen</text><text class="ts" x="456" y="64">installs exactly the lock;</text><text class="ts" x="456" y="78">never checks it is current</text>
       <rect class="n-good" x="658" y="20" width="146" height="64" rx="5"/><text class="tb" x="670" y="44">The image</text><text class="ts" x="670" y="64">what was reviewed,</text><text class="ts" x="670" y="78">byte for byte</text>
       <line class="e" x1="187" y1="52" x2="228" y2="52" marker-end="url(#a)"/><text class="ts" x="207" y="44" text-anchor="middle">uv lock</text>
       <line class="e" x1="401" y1="52" x2="442" y2="52" marker-end="url(#a)"/>
@@ -1442,7 +1444,7 @@ keepalive = int(os.environ.get("GUNICORN_KEEPALIVE", "75"))</code></pre>
       <div class="repo-text">
         <p>The dependency layer of the api image. Only the two manifests are mounted into this step, so it is rebuilt only when dependencies change, not on every code edit.</p>
         <ul class="notice">
-          <li><code>--frozen</code> installs exactly what <code>uv.lock</code> pins and fails rather than resolve anything new.</li>
+          <li><code>--frozen</code> installs exactly what <code>uv.lock</code> pins and never re-resolves. It does not check the lock against <code>pyproject.toml</code>, so a dependency added to the manifest without re-locking is silently missing. <code>uv sync --locked</code> or <code>uv lock --check</code> fails on a stale lock. The reference CI runs <code>--locked</code>, so a stale lock fails the pull request, and the images install the checked lock with <code>--frozen</code>.</li>
           <li><code>--no-dev</code> keeps test and lint tools out of production.</li>
           <li>A cache mount keeps downloaded wheels between builds without baking them into a layer.</li>
         </ul>
@@ -1545,7 +1547,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
   <figure class="fig wide" id="fig-6-1">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 250" role="img" aria-label="A chain of migrations, each naming its parent: create alerts, add an external id, index by time, teams and users, row-level security, runbooks. Three databases record different positions: a developer's is at the newest revision, CI's throwaway database starts empty and replays all of them, production is two behind. Upgrading production runs only the two missing migrations, in order.">
+    <svg viewBox="0 0 820 250" role="img" aria-label="The first six of nine migrations in a chain, each naming its parent: create alerts, add an external id, index by time, teams and users, row-level security, runbooks. Three databases record different positions: a developer's is at the newest revision, CI's throwaway database starts empty and replays all of them, production is two behind. Upgrading production runs only the two missing migrations, in order.">
       <rect class="n" x="16" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="26" y="60">39b0de02</text><text class="ts" x="26" y="78">create alerts</text>
       <rect class="n" x="150" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="160" y="60">75397b87</text><text class="ts" x="160" y="78">external id</text>
       <rect class="n" x="284" y="40" width="118" height="58" rx="5"/><text class="tm tb" x="294" y="60">51ef9f54</text><text class="ts" x="294" y="78">index by time</text>
@@ -1563,11 +1565,11 @@ RUN --mount=type=cache,target=/root/.cache/uv \
       <path class="e-acc" d="M141,139 V120 H611 V100" marker-end="url(#a-acc)"/>
       <path class="e-acc" d="M141,139 V120 H745 V100" marker-end="url(#a-acc)"/>
       <text class="ts ta" x="300" y="146">an upgrade runs only the two it is missing, in order</text>
-      <rect class="n-soft" x="290" y="196" width="250" height="40" rx="5"/><text class="ts" x="302" y="221">CI starts empty and replays all six</text>
+      <rect class="n-soft" x="290" y="196" width="250" height="40" rx="5"/><text class="ts" x="302" y="221">CI starts empty and replays them all</text>
       <rect class="n-soft" x="556" y="196" width="248" height="40" rx="5"/><text class="ts" x="568" y="221">"heads" must print exactly one</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 6.1</span>Six real revisions of the reference schema. Random identifiers never collide when two branches each add a migration; if two branches do, the tool reports two "heads", and the team merges them.</figcaption>
+    <figcaption><span class="fig-n">Figure 6.1</span>The first six of the reference schema's nine revisions. Random identifiers never collide when two branches each add a migration; if two branches do, the tool reports two "heads", and the team merges them.</figcaption>
   </figure>
 
   <figure class="fig wide" id="fig-6-2">
@@ -1612,9 +1614,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
   </figure>
 
   <ul>
-    <li><strong>Add, don't change.</strong> A nullable column, or one with a default, is instant (metadata only). Renames and type changes become expand and contract across releases (Handbook 3, Chapter 13).</li>
+    <li><strong>Add, don't change.</strong> A nullable column, or one with a constant default, is instant (metadata only). A volatile default, such as <code>gen_random_uuid()</code> or <code>clock_timestamp()</code>, rewrites the whole table under an exclusive lock. Renames and type changes become expand and contract across releases (Handbook 3, Chapter 13).</li>
     <li><strong>Build indexes concurrently.</strong> A plain <code>CREATE INDEX</code> blocks writes for the whole build. <code>CONCURRENTLY</code> does not, but cannot run inside a transaction, and if it fails midway it leaves an invalid index to drop before retrying.</li>
     <li><strong>Add foreign keys in two steps.</strong> <code>NOT VALID</code> is instant and applies to new rows; <code>VALIDATE CONSTRAINT</code> in its own transaction then checks existing rows without blocking writes. The reference teams migration used all three patterns on 2 million rows in 1.5 seconds under load, with no failed request.</li>
+    <li><strong>Keep the lock timeout for the whole run.</strong> Alembic wraps a run in one transaction, and an autocommit block commits it. A <code>SET LOCAL</code> ends with that commit: the reference once set its timeout that way, and measured, it read 5 s at the start of a run and 0 inside the first block, after it, and in every later migration, so a run past the teams migration enabled row-level security on <code>alerts</code>, which takes an exclusive lock, with no timeout. It now uses a plain <code>SET</code> on the run's own connection, which lasts for the session: 5 s at every step, <code>CREATE INDEX CONCURRENTLY</code> included (one that gives up leaves an invalid index, to drop before retrying).</li>
     <li><strong>Name every constraint</strong>, or the tool cannot write a downgrade that drops it.</li>
     <li><strong>Migrations run as the schema owner, directly</strong> against Postgres. The application's own role can read and write rows but cannot change the schema.</li>
     <li><strong>One run at a time.</strong> Where every copy of the service migrates as it starts (an init container per task), two can start together, and two runs at once collided: one failed, three times in three. The fix is an advisory lock, and the first two versions failed in instructive ways. A transaction lock is released when a <code>CONCURRENTLY</code> migration commits midway. A blocking session lock makes the waiting run hold a snapshot that <code>CREATE INDEX CONCURRENTLY</code> waits for, and Postgres reports a deadlock. What works is a session lock on a separate connection, polled, so the waiting run holds nothing.</li>
@@ -1665,10 +1668,10 @@ Zero-downtime shape, the pattern for any index on a table in use:
       <thead><tr><th>Index type</th><th>For</th></tr></thead>
       <tbody>
         <tr><td data-label="Type">B-tree, the default</td><td data-label="For">Equality, ranges and sorting: almost every index</td></tr>
-        <tr><td data-label="Type">Composite <code>(a, b)</code></td><td data-label="For">Column order matters: it serves <code>a</code> and <code>a, b</code>, not <code>b</code> alone</td></tr>
+        <tr><td data-label="Type">Composite <code>(a, b)</code></td><td data-label="For">Column order matters: it serves <code>a</code> and <code>a, b</code> well; for <code>b</code> alone, only through a full index scan or, from Postgres 18, a skip scan when <code>a</code> has few values</td></tr>
         <tr><td data-label="Type">Unique</td><td data-label="For">A B-tree that also forbids duplicates</td></tr>
         <tr><td data-label="Type">Partial</td><td data-label="For">Only rows matching a <code>WHERE</code>: small, such as open alerts only</td></tr>
-        <tr><td data-label="Type">Covering (<code>INCLUDE</code>)</td><td data-label="For">Extra columns stored in the index, so a query never touches the table</td></tr>
+        <tr><td data-label="Type">Covering (<code>INCLUDE</code>)</td><td data-label="For">Extra columns stored in the index, so a query can often skip the table: an index-only scan still visits every table page the visibility map does not mark all-visible</td></tr>
         <tr><td data-label="Type">Expression</td><td data-label="For">A computed value, such as <code>lower(email)</code></td></tr>
         <tr><td data-label="Type">GIN</td><td data-label="For">Many values per row: arrays, JSONB, full-text search</td></tr>
         <tr><td data-label="Type">GiST, SP-GiST</td><td data-label="For">Geometry, ranges and other special types</td></tr>
@@ -1746,7 +1749,7 @@ Zero-downtime shape, the pattern for any index on a table in use:
       <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
       <tbody>
         <tr><td data-label="Symptom">A renamed column lost its data</td><td data-label="Cause">Autogenerate wrote the rename as a drop plus an add</td><td data-label="Fix">Read every generated migration; write renames explicitly, or as expand and contract.</td></tr>
-        <tr><td data-label="Symptom">A migration logged success but changed nothing</td><td data-label="Cause">A <code>SET</code> before the migration's transaction began opened a transaction that was then rolled back</td><td data-label="Fix">Use <code>SET LOCAL</code> inside the migration's transaction.</td></tr>
+        <tr><td data-label="Symptom">A migration logged success but changed nothing</td><td data-label="Cause">A <code>SET</code> before the migration's transaction began opened a transaction that was then rolled back</td><td data-label="Fix">Run the <code>SET</code> inside the migration's transaction. Make it a session <code>SET</code>, not <code>SET LOCAL</code>, if it must outlast an autocommit block.</td></tr>
         <tr><td data-label="Symptom">Writes stall during a deploy</td><td data-label="Cause">A plain <code>CREATE INDEX</code>, or a validated foreign key added in one step</td><td data-label="Fix">Build indexes concurrently; add foreign keys <code>NOT VALID</code>, then validate.</td></tr>
         <tr><td data-label="Symptom">Every query on a table waits during a migration</td><td data-label="Cause">A schema change queued for a lock, and later queries queued behind it</td><td data-label="Fix">A lock timeout on every migration; retry off-peak.</td></tr>
         <tr><td data-label="Symptom">A query that was fast in testing is slow in production</td><td data-label="Cause">An idle <code>EXPLAIN</code> on small data</td><td data-label="Fix">Measure under realistic load with production-sized data.</td></tr>
@@ -1830,7 +1833,7 @@ Zero-downtime shape, the pattern for any index on a table in use:
       <text class="ts" x="300" y="226">server pool ≤ Postgres' limit minus headroom for migrations and admins</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 7.1</span>The reference service's connection budget. Without the pooler, each replica's 40 connections would exhaust Postgres at three replicas. On AWS, RDS Proxy plays the pooler's role.</figcaption>
+    <figcaption><span class="fig-n">Figure 7.1</span>The reference service's connection budget. Without the pooler, each replica's 40 connections would exhaust Postgres at three replicas. On AWS, RDS Proxy can play the pooler's role, but where it sees session state it pins the client to one server connection until the client disconnects. Its PostgreSQL triggers include <code>set_config</code>, which this service calls in every signed-in transaction, so measure pinning before sizing on it.</figcaption>
   </figure>
 
   <p>Transaction pooling has one hard consequence: a server connection is handed to a different client at the end of every transaction, so <strong>nothing may rely on session state</strong>. Session <code>SET</code> commands, advisory locks held across transactions, <code>LISTEN</code>/<code>NOTIFY</code> and temporary tables all break. That is why the reference service sets its statement and idle timeouts on the database role itself, and why it tells Postgres who is asking in every transaction rather than once per connection.</p>
@@ -1975,10 +1978,10 @@ def upgrade() -&gt; None:
       <dt>Problem</dt><dd>Isolation depended on one line of code per query; a forgotten filter would leak silently, possibly into a model's prompt.</dd>
       <dt>Decision</dt><dd>One policy per command on team data, reading transaction-local settings; no context means no rows; the owner bypasses policies, the app role does not; rolled out expand-then-contract across two releases.</dd>
       <dt>Rejected</dt><dd>A schema or database per team (right for separate customers, heavy for teams in one organization); a database role per team; views per team.</dd>
-      <dt>See it in</dt><dd>The policies above, and nine database-level tests in <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/tests/integration/test_row_level_security.py">test_row_level_security.py</a> that query as the app role directly.</dd>
+      <dt>See it in</dt><dd>The policies above, and eleven database-level tests in <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/tests/integration/test_row_level_security.py">test_row_level_security.py</a> that query as the app role directly.</dd>
     </dl>
   </aside>
-  <p data-adr="ADR-0005">The companion decision, ADR-0005, set the two-role model and the pooler: the schema owner is used only by migrations, which run directly against Postgres as a one-off step before the api starts, never on api startup, where several workers and replicas would race to migrate.</p>
+  <p data-adr="ADR-0005">The companion decision, ADR-0005, set the two-role model and the pooler: the schema owner is used only by migrations, which run directly against Postgres as a one-off step before the api starts, never on api startup, where several workers and replicas would race to migrate. The Compose deploy does exactly that. The reference ECS stack instead migrates in an init container in every api task, so replicas that start together did race, and an advisory lock now makes them take turns (Chapter 6).</p>
 
   <aside class="say">
     <span class="label">How to say it</span>
@@ -2030,7 +2033,7 @@ def upgrade() -&gt; None:
     <span class="ch-num">8</span>
     <p class="eyebrow">Part IV · Identity and protection</p>
     <h2>Sign-in, sessions and roles</h2>
-    <p class="lede">Users sign in with the organization's identity provider through OpenID Connect, the server verifies the result and issues its own session, and every request is authorized from roles the provider asserts, so the application never handles a password and the browser never holds a token.</p>
+    <p class="lede">Users sign in with the organization's identity provider through OpenID Connect, the server verifies the result and issues its own session, and every request is authorized from roles the provider asserts, so the application never handles a password and the browser never holds an access token.</p>
   </header>
 
   <div class="glance">
@@ -2051,7 +2054,7 @@ def upgrade() -&gt; None:
       <tr><td data-label="Then">A users table with password hashes in every application</td><td>Single sign-on with the organization's identity provider over OIDC</td><td>One password, the organization's MFA, and access removed in one place when someone leaves.</td></tr>
       <tr><td data-label="Then">Access tokens stored in the browser's local storage</td><td>Tokens kept on the server; the browser holds only an HttpOnly cookie</td><td>A script injected into the page has nothing to steal.</td></tr>
       <tr><td data-label="Then">The implicit flow, tokens in the URL</td><td>The authorization code flow with PKCE</td><td>A stolen code is useless without the verifier only the server holds.</td></tr>
-      <tr><td data-label="Then">JWTs as sessions everywhere</td><td>Server-side sessions for web apps; JWTs for what they suit</td><td>Sessions can be revoked at once and carry current roles.</td></tr>
+      <tr><td data-label="Then">JWTs as sessions everywhere</td><td>Server-side sessions for web apps; JWTs for what they suit</td><td>Sessions can be revoked at once, which also makes a role change take effect at once.</td></tr>
       <tr><td data-label="Then">Roles maintained in the application's database by hand</td><td>Roles from the provider's groups, replaced at each sign-in</td><td>Access is managed where people are managed.</td></tr>
     </tbody>
   </table>
@@ -2059,7 +2062,7 @@ def upgrade() -&gt; None:
   <h3 id="ch8-flow">The sign-in flow</h3>
   <figure class="fig wide" id="fig-8-1">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 440" role="img" aria-label="OpenID Connect with PKCE, the api as a confidential client. The browser opens the api's login route. The api creates state, a nonce and a PKCE verifier, and redirects to the provider with the challenge. The person signs in at the provider, which the app never sees. The provider redirects the browser back to the callback with a one-time code and the state. The api checks the state, then exchanges the code, the verifier and its client secret for an ID token over its own back channel. It verifies the token, replaces the user's roles from the groups claim, stores the hash of a new session token and sets the cookie. The browser only ever holds the cookie.">
+    <svg viewBox="0 0 820 440" role="img" aria-label="OpenID Connect with PKCE, the api as a confidential client. The browser opens the api's login route. The api creates state, a nonce and a PKCE verifier, and redirects to the provider with the challenge. The person signs in at the provider, which the app never sees. The provider redirects the browser back to the callback with a one-time code and the state. The api checks the state, then exchanges the code, the verifier and its client secret for an ID token over its own back channel. It verifies the token, replaces the user's roles from the groups claim, stores the hash of a new session token and sets the cookie. After sign-in, the browser holds only the cookie, no token.">
       <rect class="n" x="20" y="14" width="130" height="40" rx="5"/><text class="tb" x="85" y="39" text-anchor="middle">Browser</text>
       <rect class="n-acc" x="330" y="14" width="160" height="40" rx="5"/><text class="tb" x="410" y="39" text-anchor="middle">api (confidential)</text>
       <rect class="n" x="650" y="14" width="150" height="40" rx="5"/><text class="tb" x="725" y="39" text-anchor="middle">Identity provider</text>
@@ -2071,7 +2074,7 @@ def upgrade() -&gt; None:
       <rect class="n-soft" x="420" y="88" width="290" height="36" rx="4"/><text class="ts" x="430" y="104">2  makes state, a nonce and a PKCE verifier;</text><text class="ts" x="430" y="118">keeps them for 10 minutes</text>
       <line class="e" x1="410" y1="138" x2="87" y2="138" marker-end="url(#a)"/><text class="ts" x="247" y="132" text-anchor="middle">redirect to the provider, with the challenge</text>
       <line class="e" x1="85" y1="160" x2="723" y2="160" marker-end="url(#a)"/><text class="ts" x="560" y="154" text-anchor="middle">3  the provider's sign-in page</text>
-      <rect class="n-soft" x="530" y="168" width="185" height="36" rx="4"/><text class="ts" x="540" y="184">password and MFA: the app</text><text class="ts" x="540" y="198">never sees either</text>
+      <rect class="n-soft" x="530" y="165" width="185" height="32" rx="4"/><text class="ts" x="540" y="179">password and MFA: the app</text><text class="ts" x="540" y="192">never sees either</text>
       <line class="e" x1="725" y1="218" x2="87" y2="218" marker-end="url(#a)"/><text class="ts" x="560" y="212" text-anchor="middle">4  redirect back: a one-time code, the state</text>
       <line class="e" x1="85" y1="240" x2="408" y2="240" marker-end="url(#a)"/><text class="ts" x="247" y="234" text-anchor="middle">GET /api/auth/callback?code=…&amp;state=…</text>
       <rect class="n-soft" x="200" y="248" width="200" height="22" rx="4"/><text class="ts" x="210" y="263">5  state matches the cookie?</text>
@@ -2079,7 +2082,7 @@ def upgrade() -&gt; None:
       <line class="e-acc dash" x1="725" y1="310" x2="412" y2="310" marker-end="url(#a-acc)"/><text class="ts" x="567" y="304" text-anchor="middle">7  ID token (the access token is dropped)</text>
       <rect class="n-acc" x="420" y="320" width="300" height="50" rx="4"/><text class="ts" x="430" y="338">8  verify: signature, issuer, audience,</text><text class="ts" x="430" y="352">expiry, nonce; replace roles from the</text><text class="ts" x="430" y="366">groups claim; store the session's hash</text>
       <line class="e-good" x1="410" y1="392" x2="87" y2="392" marker-end="url(#a-good)"/><text class="ts" x="247" y="386" text-anchor="middle">9  Set-Cookie: __Host-session (HttpOnly)</text>
-      <text class="ts tb" x="85" y="420">the browser holds only a cookie: never a token</text>
+      <text class="ts tb" x="85" y="420">after sign-in, the browser holds only a cookie</text>
     </svg>
     </div>
     <figcaption><span class="fig-n">Figure 8.1</span>The authorization code flow with PKCE, the server acting as a confidential client. The code is exchanged over the server's own connection to the provider, which the browser never sees; a stolen code is useless without the verifier and the client secret.</figcaption>
@@ -2152,13 +2155,13 @@ def upgrade() -&gt; None:
   <h3 id="ch8-sessions">Server sessions, not JWT sessions</h3>
   <figure class="fig wide" id="fig-8-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 250" role="img" aria-label="Left, a server-side session: the cookie holds 32 random bytes; the database stores only their SHA-256; each request costs one lookup, which also loads the user and teams; signing out or revoking is a DELETE, effective at once. Right, a JWT as the session: self-contained, but it cannot be ended before it expires unless you keep a revocation list, which is a session table again; it carries the roles it was issued with; anyone holding it can read its claims; and it adds a signing key to guard and rotate.">
+    <svg viewBox="0 0 820 250" role="img" aria-label="Left, a server-side session: the cookie holds 32 random bytes; the database stores only their SHA-256; each request costs one lookup, which also loads the user and teams, with roles as of the last sign-in; signing out or revoking is a DELETE, effective at once. Right, a JWT as the session: self-contained, but it cannot be ended before it expires unless you keep a revocation list, which is a session table again; it carries the roles it was issued with; anyone holding it can read its claims; and it adds a signing key to guard and rotate.">
       <rect class="n-good" x="16" y="16" width="384" height="220" rx="6"/>
       <text class="tb" x="30" y="40">Server-side session (the reference)</text>
       <text class="ts" x="30" y="66">cookie: 32 random bytes, HttpOnly, Secure, SameSite=Lax</text>
       <text class="ts" x="30" y="86">database: only the token's SHA-256</text>
       <text class="ts" x="30" y="106">each request: one lookup, in the query it makes anyway</text>
-      <text class="ts" x="30" y="126">roles: current, read from the database</text>
+      <text class="ts" x="30" y="126">roles: as of the last sign-in, read per request</text>
       <text class="ts tg tb" x="30" y="152">sign-out or revoke: a DELETE, effective at once</text>
       <text class="ts" x="30" y="178">ends after 12 hours, or 2 idle hours</text>
       <text class="ts" x="30" y="198">no salt needed: 256 random bits have</text>
@@ -2175,7 +2178,7 @@ def upgrade() -&gt; None:
       <text class="ts" x="434" y="214">adds a signing key to guard and rotate</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 8.2</span>The reference service uses exactly one JWT: the provider's ID token, checked once at sign-in and never sent to the browser. Its own sessions are plain random tokens, which can be revoked with a single delete.</figcaption>
+    <figcaption><span class="fig-n">Figure 8.2</span>The reference service uses exactly one JWT: the provider's ID token, checked once at sign-in and kept on the server; the browser sees it only once, as the hint in the sign-out redirect. Its own sessions are plain random tokens, which can be revoked with a single delete.</figcaption>
   </figure>
 
   <p>The cookie uses the <code>__Host-</code> prefix, which makes the browser refuse it unless it is Secure, has path <code>/</code> and no domain, so no subdomain can set or overwrite it. <code>SameSite=Lax</code>, not <code>Strict</code>: the provider's redirect back to the callback is a cross-site navigation, and a Strict cookie would be left behind on it. Passwords never reach the application: the provider stores them salted and hashed. Salts protect secrets that people choose and attackers can guess; a 256-bit random session token has nothing to guess, so a plain SHA-256 is enough and a slow salted hash would only slow every request.</p>
@@ -2246,13 +2249,13 @@ def upgrade() -&gt; None:
       <dt>Problem</dt><dd>Anyone who reached the site saw every alert, and the assistant could be asked about all of them.</dd>
       <dt>Decision</dt><dd>OIDC code flow with PKCE, the api as a confidential client; server-side sessions in Postgres; the provider's groups claim as the source of truth; ranked roles per team; the same visibility query for the list and the assistant.</dd>
       <dt>See it in</dt><dd><a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/app/oidc.py">oidc.py</a> (the protocol), <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/app/sessions.py">sessions.py</a> (cookie to user), <a href="https://github.com/Parzon/triage-assistant/blob/handbook-1/apps/api/app/access.py">access.py</a> (decisions).</dd>
-      <dt>Cost</dt><dd>Authentication first doubled the CPU of the cheapest request; folding the lookup into one query in the request's own transaction brought it back down.</dd>
+      <dt>Cost</dt><dd>Authentication roughly doubles the CPU of the cheapest read, an accepted cost that chat never shows. A first version, a query per table, collapsed at 1,000 requests a second (p95 1.07 s); one query in the request's own transaction brought p95 to 19.7 ms.</dd>
     </dl>
   </aside>
 
   <aside class="say">
     <span class="label">How to say it</span>
-    <p>"We use OIDC code flow with PKCE, the backend as a confidential client, so no token ever reaches the browser. Sessions are server-side and revocable; roles come from the provider's groups at every sign-in."</p>
+    <p>"We use OIDC code flow with PKCE, the backend as a confidential client, so no access token ever reaches the browser. Sessions are server-side and revocable; roles come from the provider's groups at every sign-in."</p>
     <p>"Anything you can't see is a 404, and Postgres enforces the same team rule underneath."</p>
   </aside>
 
@@ -2270,7 +2273,7 @@ def upgrade() -&gt; None:
         <tr><td data-label="Symptom">A client secret with <code>+</code> or <code>%</code> fails against strict providers</td><td data-label="Cause">The client id and secret must be form-encoded before base64 in basic authentication</td><td data-label="Fix">Encode them as the standard requires.</td></tr>
         <tr><td data-label="Symptom">Entra ID groups arrive as unreadable ids</td><td data-label="Cause">Its groups claim holds object ids, not names</td><td data-label="Fix">Use app roles for the claim; Google has no groups claim at all.</td></tr>
         <tr><td data-label="Symptom">A user's identity changed when their email changed</td><td data-label="Cause">Users were keyed by email</td><td data-label="Fix">Key users by issuer and subject.</td></tr>
-        <tr><td data-label="Symptom">Authentication doubled the cost of the cheapest request</td><td data-label="Cause">A query per table, each in its own transaction</td><td data-label="Fix">One query in the request's transaction: p95 from 1.07 s back to 19.7 ms at 1,000 requests a second.</td></tr>
+        <tr><td data-label="Symptom">With sign-in, the cheapest request collapsed at 1,000 requests a second</td><td data-label="Cause">A query per table, each in its own transaction</td><td data-label="Fix">One query in the request's transaction: p95 from 1.07 s to 19.7 ms at 1,000 requests a second. The CPU still doubles; that is the accepted cost of signing in.</td></tr>
       </tbody>
     </table>
   </div>
@@ -2279,7 +2282,7 @@ def upgrade() -&gt; None:
   <ol class="qs">
     <li>
       <p>In the code flow with a confidential client, what does the browser ever hold?</p>
-      <details class="ans"><summary>Answer</summary><p>A one-time authorization code on the way back from the provider, and then only the application's session cookie. The ID and access tokens stay on the server.</p></details>
+      <details class="ans"><summary>Answer</summary><p>A one-time authorization code on the way back from the provider, and then only the application's session cookie. The access token is dropped; the ID token stays on the server until sign-out, when it rides once in the provider's sign-out URL as <code>id_token_hint</code> (OIDC RP-Initiated Logout).</p></details>
     </li>
     <li>
       <p>What do <code>state</code>, the nonce and PKCE each protect against?</p>
@@ -2287,7 +2290,7 @@ def upgrade() -&gt; None:
     </li>
     <li>
       <p>Why does the reference service prefer server-side sessions to JWTs?</p>
-      <details class="ans"><summary>Answer</summary><p>A server session can be revoked with a delete and always reflects current roles. A JWT cannot be ended before it expires without a revocation list, carries stale roles, exposes its claims, and adds a key to manage.</p></details>
+      <details class="ans"><summary>Answer</summary><p>A server session can be revoked with a delete, which also makes a role change take effect at once; otherwise its roles are as of the last sign-in. A JWT cannot be ended before it expires without a revocation list, so its stale roles last until it expires; it also exposes its claims and adds a key to manage.</p></details>
     </li>
     <li>
       <p>When should a request answer 404 rather than 403?</p>
@@ -2348,11 +2351,11 @@ def upgrade() -&gt; None:
   <h3 id="ch9-least">Least privilege, layer by layer</h3>
   <figure class="fig wide" id="fig-9-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="Four layers of least privilege. Database: an owner role used only by migrations, an app role that reads and writes rows but cannot create, alter or drop, a monitor role that reads statistics only. Containers: non-root, read-only root filesystem, all capabilities dropped, no new privileges, CPU and memory limits, no development tools. Network: only the edge is published; internal endpoints answer 404 from outside; dashboards on loopback. HTTP: TLS 1.3, HSTS, a strict Content Security Policy, frame denial, nosniff, no server version, a body size limit, rate limits.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Four layers of least privilege. Database: an owner role used only by migrations, an app role that reads and writes rows but cannot create, alter or drop, a monitor role that reads statistics only. Containers: non-root, read-only root filesystem, all capabilities dropped, no new privileges, CPU and memory limits, no development tools. Network: only the edge is published; internal endpoints answer 404 from outside; dashboards on loopback. HTTP: TLS 1.2 and 1.3, HSTS, a strict Content Security Policy, frame denial, nosniff, no server version, a body size limit, rate limits.">
       <rect class="n-soft" x="16" y="16" width="788" height="62" rx="6"/><text class="tb" x="30" y="40">Database roles</text><text class="ts" x="30" y="60">owner: migrations only · app: rows only, cannot DROP, CREATE or ALTER, with its own timeouts · monitor: statistics only</text>
       <rect class="n-soft" x="16" y="86" width="788" height="62" rx="6"/><text class="tb" x="30" y="110">Containers</text><text class="ts" x="30" y="130">non-root (UID 10001) · read-only root filesystem with a tmpfs /tmp · cap_drop ALL · no-new-privileges · limits, no swap · no dev tools</text>
       <rect class="n-soft" x="16" y="156" width="788" height="62" rx="6"/><text class="tb" x="30" y="180">Network</text><text class="ts" x="30" y="200">only the edge is published · /metrics and the webhook answer 404 from outside · dashboards and debug ports on loopback only</text>
-      <rect class="n-soft" x="16" y="226" width="788" height="62" rx="6"/><text class="tb" x="30" y="250">HTTP</text><text class="ts" x="30" y="270">TLS 1.3 and HSTS · CSP default-src 'self', no inline scripts · frames denied · nosniff · no server version · 1 MB bodies · rate limits</text>
+      <rect class="n-soft" x="16" y="226" width="788" height="62" rx="6"/><text class="tb" x="30" y="250">HTTP</text><text class="ts" x="30" y="270">TLS 1.2 and 1.3, HSTS · CSP default-src 'self', no inline scripts · frames denied · nosniff · no server version · 1 MB bodies · rate limits</text>
     </svg>
     </div>
     <figcaption><span class="fig-n">Figure 9.2</span>Least privilege at four layers of the reference service. Each forbidden operation was tried and refused; the image checks run in CI, and the browser tests fail on any Content Security Policy violation.</figcaption>
@@ -2605,14 +2608,14 @@ SQL</code></pre>
 
   <figure class="fig wide" id="fig-10-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="The event stream: a meta event first, with the request id and how many alerts were in context; token events with JSON deltas; comment heartbeats every 15 seconds of silence; a done event with usage and timings, or an error event. Errors before the stream starts are ordinary JSON errors. Stop: the button aborts the fetch, the connection closes, the server cancels its producer task, which closes the provider's stream, and billing stops.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="The event stream: a meta event first, with the request id and how many alerts were in context, sent before the api calls the model; token events with JSON deltas; comment heartbeats every 15 seconds of silence; a done event with usage and timings, or an error event. Errors before the stream starts are ordinary JSON errors. Stop: the button aborts the fetch, the connection closes, the server cancels its producer task, which closes the provider's stream, and billing stops.">
       <rect class="n" x="16" y="16" width="120" height="40" rx="5"/><text class="ts" x="76" y="41" text-anchor="middle">browser</text>
       <rect class="n-acc" x="350" y="16" width="120" height="40" rx="5"/><text class="ts" x="410" y="41" text-anchor="middle">api</text>
       <rect class="n" x="684" y="16" width="120" height="40" rx="5"/><text class="ts" x="744" y="41" text-anchor="middle">model</text>
       <line class="rule dash" x1="76" y1="56" x2="76" y2="204"/><line class="rule dash" x1="410" y1="56" x2="410" y2="204"/><line class="rule dash" x1="744" y1="56" x2="744" y2="204"/>
-      <line class="e" x1="76" y1="78" x2="408" y2="78" marker-end="url(#a)"/><text class="ts" x="242" y="72" text-anchor="middle">POST /chat/stream, the question in JSON</text>
-      <line class="e" x1="410" y1="92" x2="742" y2="92" marker-end="url(#a)"/><text class="ts" x="576" y="86" text-anchor="middle">streamed completion</text>
-      <line class="e-acc" x1="410" y1="112" x2="78" y2="112" marker-end="url(#a-acc)"/><text class="tm" x="242" y="106" text-anchor="middle">event: meta {request_id, alerts}</text>
+      <line class="e" x1="76" y1="72" x2="408" y2="72" marker-end="url(#a)"/><text class="ts" x="242" y="66" text-anchor="middle">POST /chat/stream, the question in JSON</text>
+      <line class="e-acc" x1="410" y1="94" x2="78" y2="94" marker-end="url(#a-acc)"/><text class="tm" x="242" y="88" text-anchor="middle">event: meta {request_id, alerts}</text>
+      <line class="e" x1="410" y1="112" x2="742" y2="112" marker-end="url(#a)"/><text class="ts" x="576" y="106" text-anchor="middle">then: streamed completion</text>
       <line class="rule-strong dash" x1="410" y1="132" x2="78" y2="132"/><text class="tm" x="242" y="128" text-anchor="middle">: keep-alive</text>
       <line class="e-acc" x1="410" y1="152" x2="78" y2="152" marker-end="url(#a-acc)"/><text class="tm" x="242" y="148" text-anchor="middle">event: token {"delta": "Check "}</text>
       <line class="e-acc" x1="410" y1="170" x2="78" y2="170" marker-end="url(#a-acc)"/><text class="tm" x="242" y="166" text-anchor="middle">event: token {"delta": "the disk"}</text>
@@ -2760,11 +2763,11 @@ export async function* parseSSE(body: ReadableStream&lt;Uint8Array&gt;): AsyncGe
   <h3 id="ch11-path">Two proxies, two jobs</h3>
   <figure class="fig wide" id="fig-11-1">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="Browser to edge to nginx to api. The edge, Caddy, terminates TLS 1.3 with automatic certificates, speaks HTTP/2 and HTTP/3, redirects plain HTTP, overwrites X-Forwarded-For, passes stream chunks immediately, and holds requests for up to 5 seconds while nginx restarts. nginx serves the built frontend, forwards /api to the api with the prefix stripped, turns buffering off for the chat stream, re-resolves the api's name at runtime, answers its own 502 and 504 in the api's JSON format, refuses internal endpoints, and adds security headers. Behind a cloud load balancer, the edge is not started.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Browser to edge to nginx to api. The edge, Caddy, terminates TLS 1.2 and 1.3 (Caddy's defaults; current browsers negotiate 1.3) with automatic certificates, speaks HTTP/2 and HTTP/3, redirects plain HTTP, overwrites X-Forwarded-For, passes stream chunks immediately, and holds requests for up to 5 seconds while nginx restarts. nginx serves the built frontend, forwards /api to the api with the prefix stripped, turns buffering off for the chat stream, re-resolves the api's name at runtime, answers its own 502 and 504 in the api's JSON format, refuses internal endpoints, and adds security headers. Behind a cloud load balancer, the edge is not started.">
       <rect class="n-soft" x="16" y="110" width="100" height="56" rx="5"/><text class="tb" x="66" y="134" text-anchor="middle">Browser</text><text class="ts" x="66" y="152" text-anchor="middle">HTTPS</text>
       <rect class="n-acc" x="150" y="20" width="250" height="236" rx="6"/>
       <text class="tb" x="164" y="44">Edge (Caddy)</text>
-      <text class="ts" x="164" y="68">TLS 1.3, certificates over ACME</text>
+      <text class="ts" x="164" y="68">TLS 1.2 and 1.3; certificates over ACME</text>
       <text class="ts" x="164" y="88">HTTP/2 and HTTP/3; 80 redirects to 443</text>
       <text class="ts" x="164" y="108">overwrites X-Forwarded-For</text>
       <text class="ts" x="164" y="128">passes stream chunks at once</text>
@@ -2893,7 +2896,7 @@ handle {
         <p>Three more defaults changed for a containerized, streaming service.</p>
         <ul class="notice">
           <li>Docker's embedded DNS server, re-queried every 10 seconds: a recreated api container with a new address is found without restarting nginx, and nginx starts even before the api exists.</li>
-          <li>The real client address is taken from the forwarded header only when the connection comes from a private range.</li>
+          <li>The real client address is taken from the forwarded header only when the connection comes from a private range. That is safe only while every proxy in front overwrites the header, as the edge does. Behind a load balancer that appends, or with nginx reachable from a private network, a client with a private address is itself trusted and can choose its own address. The strict rule is to trust only the addresses of the proxies in front.</li>
           <li>The upstream's idle keep-alive is shorter than gunicorn's, so the proxy always closes first. Facing the proxies in front, nginx's own is longer than theirs (140 s), for the same reason.</li>
         </ul>
       </div>
@@ -2978,7 +2981,7 @@ upstream api_backend {
     </li>
     <li>
       <p>How does the application get the real client address through two proxies, safely?</p>
-      <details class="ans"><summary>Answer</summary><p>The outermost proxy overwrites <code>X-Forwarded-For</code> with the address it actually saw; inner proxies accept the header only from known private ranges and pass on exactly one address.</p></details>
+      <details class="ans"><summary>Answer</summary><p>The outermost proxy overwrites <code>X-Forwarded-For</code> with the address it actually saw; inner proxies accept the header only from the addresses of the proxies in front of them, not from every private range, because internal clients have private addresses too, and pass on exactly one address.</p></details>
     </li>
     <li>
       <p>What two proxy settings does a streamed answer need?</p>
@@ -3062,7 +3065,7 @@ upstream api_backend {
       <text class="ts tmu" x="560" y="60">used by make in development;</text><text class="ts tmu" x="560" y="76">never pushed to a registry</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 12.2</span>Three stages, one Dockerfile. The dev and production images share the exact dependency set, because both come from the same <code>deps</code> stage and lockfile.</figcaption>
+    <figcaption><span class="fig-n">Figure 12.2</span>Three stages, one Dockerfile. Both images start from the same <code>deps</code> stage and lockfile, so their runtime dependencies are identical; the dev image adds the dev group on top, which is why CI also builds and checks the production image.</figcaption>
   </figure>
 
   <section class="repo">
@@ -3148,7 +3151,7 @@ CMD ["gunicorn", "app.asgi:app", "-c", "gunicorn.conf.py"]</code></pre>
         <tr><td data-label="Concept">Named volume</td><td data-label="Know">Docker-managed storage for data a container owns, such as a database's files. Survives the container being recreated; <code>down</code> keeps it, <code>down -v</code> deletes it.</td></tr>
         <tr><td data-label="Concept">Bind mount</td><td data-label="Know">A host directory mapped in, live both ways: the development pattern for hot reload. It pins the directory, not the path, so a directory recreated by <code>git checkout</code> is no longer the one mounted.</td></tr>
         <tr><td data-label="Concept">Restart policy</td><td data-label="Know">Acts on exit only. <code>unless-stopped</code> restarts after a crash or a daemon restart, not after a manual stop. Docker never restarts a container for being <em>unhealthy</em>; orchestrators do.</td></tr>
-        <tr><td data-label="Concept">Health check</td><td data-label="Know">Drives <code>depends_on: condition: service_healthy</code> and orchestrators' replacement decisions. Its output is in <code>docker inspect</code>, not <code>docker logs</code>.</td></tr>
+        <tr><td data-label="Concept">Health check</td><td data-label="Know">Drives <code>depends_on: condition: service_healthy</code> and Docker's own status. Orchestrators use their own checks: Kubernetes ignores it, and ECS runs only a check written into the task definition, so define it there too. Its output is in <code>docker inspect</code>, not <code>docker logs</code>.</td></tr>
         <tr><td data-label="Concept">Logs</td><td data-label="Know"><code>docker logs</code> holds only the main process's standard output and error, in a file that is unbounded unless rotation is configured.</td></tr>
       </tbody>
     </table>
@@ -3157,8 +3160,8 @@ CMD ["gunicorn", "app.asgi:app", "-c", "gunicorn.conf.py"]</code></pre>
   <h3 id="ch12-compose">Compose: one base, an overlay per environment</h3>
   <figure class="fig wide" id="fig-12-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 270" role="img" aria-label="compose.yaml is what every environment shares: services, images or build contexts, the environment contract, health checks, dependencies, restart and log rotation; no ports and no mounts. compose.override.yaml is merged automatically into any plain docker compose command: dev targets, source bind mounts, ports on 127.0.0.1. compose.prod.yaml is named explicitly with -f: production targets, image names and tags, only the edge published, read-only filesystems, dropped capabilities, limits. Merge rules: environment merges key by key, the overlay winning; ports lists are concatenated; the !reset tag removes an inherited entry.">
-      <rect class="n-acc" x="300" y="16" width="220" height="104" rx="6"/><text class="tb" x="312" y="40">compose.yaml</text><text class="ts" x="312" y="60">what every environment shares:</text><text class="ts" x="312" y="76">services, env contract, health,</text><text class="ts" x="312" y="92">restart, log rotation</text><text class="ts tr" x="312" y="110">no ports, no mounts</text>
+    <svg viewBox="0 0 820 270" role="img" aria-label="compose.yaml is what every environment shares: services, images or build contexts, the environment contract, health checks, dependencies, restart and log rotation; no ports and no source mounts. compose.override.yaml is merged automatically into any plain docker compose command: dev targets, source bind mounts, ports on 127.0.0.1. compose.prod.yaml is named explicitly with -f: production targets, image names and tags, only the edge published, read-only filesystems, dropped capabilities, limits. Merge rules: environment merges key by key, the overlay winning; ports lists are concatenated; the !reset tag removes an inherited entry.">
+      <rect class="n-acc" x="300" y="16" width="220" height="104" rx="6"/><text class="tb" x="312" y="40">compose.yaml</text><text class="ts" x="312" y="60">what every environment shares:</text><text class="ts" x="312" y="76">services, env contract, health,</text><text class="ts" x="312" y="92">restart, log rotation</text><text class="ts tr" x="312" y="110">no ports, no source mounts</text>
       <rect class="n" x="16" y="150" width="250" height="96" rx="6"/><text class="tb" x="28" y="174">compose.override.yaml</text><text class="ts" x="28" y="194">development, merged automatically</text><text class="ts" x="28" y="210">dev targets, source bind mounts,</text><text class="ts" x="28" y="226">ports on 127.0.0.1</text>
       <rect class="n-good" x="554" y="150" width="250" height="96" rx="6"/><text class="tb" x="566" y="174">compose.prod.yaml</text><text class="ts" x="566" y="194">named explicitly with -f</text><text class="ts" x="566" y="210">release images, edge only published,</text><text class="ts" x="566" y="226">read-only, cap_drop, limits</text>
       <path class="e" d="M300,90 C220,90 141,110 141,148" marker-end="url(#a)"/>
@@ -3254,7 +3257,7 @@ CMD ["gunicorn", "app.asgi:app", "-c", "gunicorn.conf.py"]</code></pre>
     </li>
     <li>
       <p>Does Docker restart an unhealthy container?</p>
-      <details class="ans"><summary>Answer</summary><p>No. Restart policies act only when the process exits. Health matters to <code>depends_on</code> and to orchestrators, which replace unhealthy tasks or pods.</p></details>
+      <details class="ans"><summary>Answer</summary><p>No. Restart policies act only when the process exits. Health matters to <code>depends_on</code> and to orchestrators, which replace unhealthy tasks or pods, but by their own checks (Kubernetes probes, an ECS task-definition health check); the image's <code>HEALTHCHECK</code> alone does not reach them.</p></details>
     </li>
   </ol>
 </section>
@@ -3317,7 +3320,7 @@ CMD ["gunicorn", "app.asgi:app", "-c", "gunicorn.conf.py"]</code></pre>
 
   <figure class="fig wide" id="fig-13-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 320" role="img" aria-label="Which layer caught which bug. Integration tests: a pooler that could not authenticate to Postgres while its health check stayed green; a migration that logged success and was rolled back. Image checks: a production image that could not start because a runtime dependency was installed only for development. End-to-end tests: Stop re-submitting the question, which the component test passed before and after the fix. Load tests: a missing index, p95 7 seconds at 40 requests per second, under 152 milliseconds alone; a sign-in design that collapsed at 1,000 requests per second. Failure drills: leaked connections after Postgres froze under load; an identity-provider outage invisible to every request. Repeated evals: a prompt that printed its own instructions 5 times in 200 runs.">
+    <svg viewBox="0 0 820 320" role="img" aria-label="Which layer caught which bug. Integration tests: a pooler that could not authenticate to Postgres while its health check stayed green; a migration that logged success and was rolled back. Image checks: a production image that could not start because a runtime dependency was installed only for development. End-to-end tests: Stop re-submitting the question, which the component test passed before and after the fix. Load tests: a missing index, p95 7 seconds at 40 requests per second, under 152 milliseconds alone; a first sign-in design, a query per table, that collapsed at 1,000 requests per second. Failure drills: leaked connections after Postgres froze under load; an identity-provider outage invisible to every request. Repeated evals: a prompt that printed its own instructions 5 times in 200 runs.">
       <text class="tl" x="16" y="22">LAYER</text><text class="tl" x="200" y="22">A BUG ONLY IT CAUGHT</text>
       <line class="rule" x1="16" y1="30" x2="804" y2="30"/>
       <text class="tb" x="16" y="54">Integration</text><text class="ts" x="200" y="54">the pooler could not authenticate to Postgres; its own health check stayed green</text>
@@ -3327,7 +3330,7 @@ CMD ["gunicorn", "app.asgi:app", "-c", "gunicorn.conf.py"]</code></pre>
       <text class="tb" x="16" y="130">End to end</text><text class="ts" x="200" y="130">Stop re-submitted the question; the component test passed before and after the fix</text>
       <line class="rule" x1="16" y1="144" x2="804" y2="144"/>
       <text class="tb" x="16" y="168">Load test</text><text class="ts" x="200" y="168">a missing index: p95 7 s at 40 requests per second, 43–152 ms when tested alone</text>
-      <text class="ts" x="200" y="186">a sign-in design that doubled CPU per request and collapsed at 1,000 per second</text>
+      <text class="ts" x="200" y="186">a first sign-in design, a query per table, that collapsed at 1,000 per second</text>
       <line class="rule" x1="16" y1="200" x2="804" y2="200"/>
       <text class="tb" x="16" y="224">Failure drill</text><text class="ts" x="200" y="224">13 of 40 pool slots leaked forever after Postgres froze under load</text>
       <text class="ts" x="200" y="242">an identity-provider outage that no request noticed (metadata was cached)</text>
@@ -3518,19 +3521,19 @@ async def test_other_teams_alerts_are_not_found_not_forbidden(
   <h3 id="ch14-signals">Three signals, one id</h3>
   <figure class="fig wide" id="fig-14-1">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 260" role="img" aria-label="Metrics are numbers aggregated over time, scraped every 15 seconds: is the system healthy? Logs are one JSON line per event: what happened in this request? Traces are a tree of timed spans per request: where did this request's time go? A request id, stamped by the first proxy and carried in a context variable, appears on every log line, in the response header and error body, and on the trace, so a user's error message leads to all three.">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Metrics are numbers aggregated over time, scraped every 15 seconds: is the system healthy? Logs are one JSON line per event: what happened in this request? Traces are a tree of timed spans per request: where did this request's time go? A request id, stamped by nginx, or by the api when nothing in front did, and carried in a context variable, appears on every log line, in the response header and error body, and on the trace, so a user's error message leads to all three.">
       <rect class="n" x="16" y="16" width="250" height="132" rx="6"/><text class="tb" x="28" y="40">Metrics</text><text class="ts" x="28" y="62">numbers aggregated over time,</text><text class="ts" x="28" y="78">scraped every 15 seconds</text><text class="ts ta" x="28" y="106">"Is the system healthy?"</text><text class="ts tmu" x="28" y="132">Prometheus, Grafana</text>
       <rect class="n" x="285" y="16" width="250" height="132" rx="6"/><text class="tb" x="297" y="40">Logs</text><text class="ts" x="297" y="62">one JSON object per line,</text><text class="ts" x="297" y="78">on standard output</text><text class="ts ta" x="297" y="106">"What happened in this one?"</text><text class="ts tmu" x="297" y="132">docker logs, jq, a log store</text>
       <rect class="n" x="554" y="16" width="250" height="132" rx="6"/><text class="tb" x="566" y="40">Traces</text><text class="ts" x="566" y="62">a tree of timed spans per</text><text class="ts" x="566" y="78">request, across processes</text><text class="ts ta" x="566" y="106">"Where did its time go?"</text><text class="ts tmu" x="566" y="132">OpenTelemetry, Jaeger</text>
       <rect class="n-acc" x="16" y="186" width="788" height="56" rx="6"/>
-      <text class="tb" x="28" y="208">The request id</text><text class="ts" x="140" y="208">stamped by the first proxy, kept in a context variable, on every log line,</text>
+      <text class="tb" x="28" y="208">The request id</text><text class="ts" x="140" y="208">stamped by nginx, or by the api when nothing in front did; kept in a context variable, on every log line,</text>
       <text class="ts" x="140" y="228">in the response header and every error body, and on the request's span</text>
       <line class="e-acc" x1="141" y1="184" x2="141" y2="150" marker-end="url(#a-acc)"/>
       <line class="e-acc" x1="410" y1="184" x2="410" y2="150" marker-end="url(#a-acc)"/>
       <line class="e-acc" x1="679" y1="184" x2="679" y2="150" marker-end="url(#a-acc)"/>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 14.1</span>The three signals and what each answers. The support workflow follows from the id: a user pastes it from an error message, and the traceback is found in seconds, across the proxy, the api and the model call.</figcaption>
+    <figcaption><span class="fig-n">Figure 14.1</span>The three signals and what each answers. The support workflow follows from the id: a user pastes it from an error message, and the traceback is found in seconds, across the proxy, the api and the model call. An error the TLS edge answers itself, with nginx down, carries the edge's own id, found only in the edge's log.</figcaption>
   </figure>
 
   <figure class="fig wide" id="fig-14-2">
@@ -3874,7 +3877,7 @@ def route_template(scope: Scope) -&gt; str:
       <text class="ts" x="434" y="90">fails on hard dependencies: the database</text><text class="ts" x="434" y="114">reports soft ones as degraded, still 200:</text><text class="ts" x="434" y="130">the limiter's store, the identity provider</text><text class="ts" x="434" y="146">otherwise a partial outage becomes total</text><text class="ts tmu" x="434" y="176">orchestrator routing decisions, dashboards</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 15.3</span>Two different questions. ECS has only one signal, the load balancer's health check; pointed at readiness, a database outage marked every api task unhealthy and ECS kept replacing them, so there it points at <code>/health</code> (Handbook 3, Chapter 9).</figcaption>
+    <figcaption><span class="fig-n">Figure 15.3</span>Two different questions. ECS has no readiness-only signal: its container health check and the load balancer's target health both lead to a task's replacement. Pointed at readiness, a database outage marked every api task unhealthy and ECS kept replacing them, so on ECS both point at <code>/health</code> (Handbook 3, Chapter 9).</figcaption>
   </figure>
 
   <h3 id="ch15-drills">Failure drills</h3>
@@ -3928,7 +3931,7 @@ def route_template(scope: Scope) -&gt; str:
   <ol class="qs">
     <li>
       <p>When should a rate limiter fail open, and when closed?</p>
-      <details class="ans"><summary>Answer</summary><p>Open when the limit is a courtesy or cost guard and its store is a soft dependency; closed when the limit is itself the security control, or when each request is expensive, as with a paid model call.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Open when the limit is a courtesy on cheap requests and its store is a soft dependency; closed when the limit is itself the security control, or when it guards spend because each request is expensive, as with a paid model call.</p></details>
     </li>
     <li>
       <p>Why is a client-side timeout not enough to protect a pool?</p>
@@ -4074,18 +4077,18 @@ def route_template(scope: Scope) -&gt; str:
       <text class="ts" x="16" y="248">50 streams: first event p95 114 ms, 37 answers/s · 500 streams after the fixes: 1.25 s, 239 answers/s, 0 failed, 2 cores saturated</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 16.3</span>Capacity of one two-CPU instance, before sign-in existed. Signed in, the cheapest read costs about twice as much: roughly 530 reads per second per core instead of 920. For a real model, the provider's tokens-per-minute quota binds long before the api's CPU does.</figcaption>
+    <figcaption><span class="fig-n">Figure 16.3</span>Capacity of one two-CPU instance, before sign-in existed, from the operations guide's capacity run. A later A/B run of the same read measured p95 2.6 ms at 1,000 a second before sign-in and 19.7 ms signed in; signed in, the cheapest read costs about twice the CPU: roughly 530 reads per second per core instead of 920. For a real model, the provider's tokens-per-minute quota binds long before the api's CPU does.</figcaption>
   </figure>
 
   <h3 id="ch16-order">The bottlenecks, in the order they bite</h3>
   <figure class="fig wide" id="fig-16-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 320" role="img" aria-label="Bottlenecks in order. One: a missing index, before any real load arrives. Two: connection churn, a metastable slow state ended by a fixed pool. Three: api CPU on reads, about 530 signed-in reads per second per core. Four: api CPU on streaming, the SDK's 126 microseconds per chunk; 500 streams saturate 2 CPUs. Five: event-loop saturation turning into errors elsewhere, because every wall-clock timeout fires early; timeouts appeared at 46 percent CPU. Six: connection budgets between workers, the pooler and Postgres. Seven: the model provider's quota.">
+    <svg viewBox="0 0 820 320" role="img" aria-label="Bottlenecks in order. One: a missing index, before any real load arrives. Two: connection churn, a metastable slow state ended by a fixed pool. Three: api CPU on reads, about 530 signed-in reads per second per core. Four: api CPU on streaming, the SDK's 126 microseconds per chunk; 500 streams saturate 2 CPUs. Five: event-loop saturation turning into errors elsewhere, because wall-clock timeouts expire while replies wait in the loop's queue; timeouts appeared at 46 percent CPU. Six: connection budgets between workers, the pooler and Postgres. Seven: the model provider's quota.">
       <rect class="n-soft" x="16" y="16" width="788" height="36" rx="4"/><text class="tb" x="28" y="39">1</text><text class="ts" x="52" y="39">A missing index: the first bottleneck arrives before any real load does (Chapter 6)</text>
       <rect class="n-soft" x="16" y="58" width="788" height="36" rx="4"/><text class="tb" x="28" y="81">2</text><text class="ts" x="52" y="81">Connection churn: a slow state that sustains itself; a fixed-size pool ended it (Chapter 7)</text>
       <rect class="n-soft" x="16" y="100" width="788" height="36" rx="4"/><text class="tb" x="28" y="123">3</text><text class="ts" x="52" y="123">api CPU on reads: about 530 signed-in reads per second per core</text>
       <rect class="n-soft" x="16" y="142" width="788" height="36" rx="4"/><text class="tb" x="28" y="165">4</text><text class="ts" x="52" y="165">api CPU on streaming: the SDK's 126 µs per chunk; 500 streams saturate two CPUs</text>
-      <rect class="n-warn" x="16" y="184" width="788" height="36" rx="4"/><text class="tb" x="28" y="207">5</text><text class="ts" x="52" y="207">Event-loop saturation becomes errors elsewhere: every wall-clock timeout fires early, from 46% CPU</text>
+      <rect class="n-warn" x="16" y="184" width="788" height="36" rx="4"/><text class="tb" x="28" y="207">5</text><text class="ts" x="52" y="207">Event-loop saturation becomes errors elsewhere: timeouts expire while replies wait in the queue, from 46% CPU</text>
       <rect class="n-soft" x="16" y="226" width="788" height="36" rx="4"/><text class="tb" x="28" y="249">6</text><text class="ts" x="52" y="249">Connection budgets: 2 workers × 20 = 40 pooler clients per replica; the pooler's 500 allows about 12 replicas</text>
       <rect class="n-soft" x="16" y="268" width="788" height="36" rx="4"/><text class="tb" x="28" y="291">7</text><text class="ts" x="52" y="291">The model provider's quota: with a real provider, this binds first; plan capacity from it</text>
     </svg>
@@ -4094,7 +4097,7 @@ def route_template(scope: Scope) -&gt; str:
   </figure>
 
   <h4>A saturation cascade</h4>
-  <p>At 200 to 500 concurrent streams, errors came from everywhere at once: connection resets in nginx, thousands of rate-limiter fail-opens, Redis pool exhaustion and database pool timeouts. Each had its own cause, and they amplified each other. Workers were being recycled every ten thousand requests, closing keep-alive connections nginx was about to reuse, which nginx does not retry for a POST; the limiter's 50-millisecond budget was wall-clock time, so it included the time a busy loop took to read the reply; the Redis pool was smaller than the number of concurrent requests; and the database pool was churning. After four changes: zero errors in 10,056 answers, and more answers per second. The general lesson is that on a busy event loop every wall-clock timeout fires early, so the first symptoms of saturation are fail-opens and pool timeouts at moderate CPU, not slow responses.</p>
+  <p>At 200 to 500 concurrent streams, errors came from everywhere at once: connection resets in nginx, thousands of rate-limiter fail-opens, Redis pool exhaustion and database pool timeouts. Each had its own cause, and they amplified each other. Workers were being recycled every ten thousand requests, closing keep-alive connections nginx was about to reuse, which nginx does not retry for a POST; the limiter's 50-millisecond budget was wall-clock time, so it included the time a busy loop took to read the reply; the Redis pool was smaller than the number of concurrent requests; and the database pool was churning. After four changes: zero errors in 10,056 answers, and more answers per second. The general lesson is that on a busy event loop wall-clock timeouts expire while finished replies wait to be read, so the first symptoms of saturation are fail-opens and pool timeouts at moderate CPU, not slow responses.</p>
 
   <figure class="fig wide" id="fig-16-5">
     <div class="fig-scroll">
@@ -4174,7 +4177,7 @@ def route_template(scope: Scope) -&gt; str:
     </li>
     <li>
       <p>Why were the first signs of saturation errors rather than slow responses?</p>
-      <details class="ans"><summary>Answer</summary><p>On a busy event loop, every timeout measured in wall-clock time fires early, because it includes the time spent waiting for the loop. Limiter fail-opens and pool timeouts appeared at moderate CPU.</p></details>
+      <details class="ans"><summary>Answer</summary><p>On a busy event loop, a timeout measured in wall-clock time can expire although the reply has arrived, because it includes the time the reply spends waiting for the loop. Limiter fail-opens and pool timeouts appeared at moderate CPU.</p></details>
     </li>
   </ol>
 </section>
@@ -4918,7 +4921,7 @@ production because each question costs money (ADR-0023). Its
   <dt>Rate limit</dt>
   <dd>A cap on requests per client per time window, kept in a store shared by every worker. <a class="see" href="#ch11">Chapter 11</a></dd>
   <dt>Request id</dt>
-  <dd>An id stamped on a request at the edge, carried through every log line, response header and error body. <a class="see" href="#ch14">Chapter 14</a></dd>
+  <dd>An id stamped on a request by the proxy in front of the application, or by the application itself, carried through every log line, response header and error body. <a class="see" href="#ch14">Chapter 14</a></dd>
   <dt>Reverse proxy</dt>
   <dd>A server in front of the application that terminates TLS, routes requests and serves files. <a class="see" href="#ch11">Chapter 11</a></dd>
   <dt>Row-level security</dt>
@@ -4938,7 +4941,7 @@ production because each question costs money (ADR-0023). Its
   <dt>Walking skeleton</dt>
   <dd>The thinnest end-to-end version of a system, such as a health endpoint deployed by the real pipeline, built before any feature. <a class="see" href="#ch19">Chapter 19</a></dd>
   <dt>X-Forwarded-For</dt>
-  <dd>A header carrying the client's address through proxies; trustworthy only if the outermost proxy overwrites it. <a class="see" href="#ch11">Chapter 11</a></dd>
+  <dd>A header carrying the client's address through proxies; trustworthy only as far as proxies you control: the outermost one overwrites it, or you trust only the known proxies' addresses and take the right-most entry they added. <a class="see" href="#ch11">Chapter 11</a></dd>
 </dl>
 
   
@@ -5029,7 +5032,7 @@ production because each question costs money (ADR-0023). Its
 <tr><td data-label="Symptom">A container dies with exit 137 and no error in its log</td><td data-label="Fix">Read the kernel log and the cgroup's OOM counter; raise the limit or fix the leak.</td><td data-label="Chapter"><a href="#ch3">3 · Linux and processes</a></td></tr>
 <tr><td data-label="Symptom">Memory grows past the limit without any kill</td><td data-label="Fix">Set the swap limit equal to the memory limit.</td><td data-label="Chapter"><a href="#ch3">3 · Linux and processes</a></td></tr>
 <tr><td data-label="Symptom">A stopped-on-purpose container stays down after a "crash test"</td><td data-label="Fix">Simulate crashes with SIGKILL from the host's process namespace.</td><td data-label="Chapter"><a href="#ch3">3 · Linux and processes</a></td></tr>
-<tr><td data-label="Symptom">An unhealthy container is never restarted</td><td data-label="Fix">Let an orchestrator act on health, or make the process exit.</td><td data-label="Chapter"><a href="#ch3">3 · Linux and processes</a></td></tr>
+<tr><td data-label="Symptom">An unhealthy container is never restarted</td><td data-label="Fix">Define the check where the orchestrator reads it (Kubernetes probes, an ECS task-definition check), or make the process exit.</td><td data-label="Chapter"><a href="#ch3">3 · Linux and processes</a></td></tr>
 <tr><td data-label="Symptom">A worker pool is far too large inside a container</td><td data-label="Fix">Read the cgroup's CPU quota.</td><td data-label="Chapter"><a href="#ch3">3 · Linux and processes</a></td></tr>
 <tr><td data-label="Symptom">A wait loop never ends, or a kill loop kills itself</td><td data-label="Fix">Track and kill by process ID.</td><td data-label="Chapter"><a href="#ch3">3 · Linux and processes</a></td></tr>
 <tr><td data-label="Symptom">A script carries on after a failed command</td><td data-label="Fix">Test the condition explicitly with <code>if</code>.</td><td data-label="Chapter"><a href="#ch3">3 · Linux and processes</a></td></tr>
@@ -5053,7 +5056,7 @@ production because each question costs money (ADR-0023). Its
 <tr><td data-label="Symptom">The production image crashed on <code>import httpx</code></td><td data-label="Fix">Run the production image in CI and import every module.</td><td data-label="Chapter"><a href="#ch5">5 · Concurrency and the Python backend</a></td></tr>
 <tr><td data-label="Symptom">A hung dependency stalls every synchronous endpoint</td><td data-label="Fix">Bound every wait; prefer async endpoints.</td><td data-label="Chapter"><a href="#ch5">5 · Concurrency and the Python backend</a></td></tr>
 <tr><td data-label="Symptom">A renamed column lost its data</td><td data-label="Fix">Read every generated migration; write renames explicitly, or as expand and contract.</td><td data-label="Chapter"><a href="#ch6">6 · Postgres: schema changes and indexes</a></td></tr>
-<tr><td data-label="Symptom">A migration logged success but changed nothing</td><td data-label="Fix">Use <code>SET LOCAL</code> inside the migration's transaction.</td><td data-label="Chapter"><a href="#ch6">6 · Postgres: schema changes and indexes</a></td></tr>
+<tr><td data-label="Symptom">A migration logged success but changed nothing</td><td data-label="Fix">Run the <code>SET</code> inside the migration's transaction. Make it a session <code>SET</code>, not <code>SET LOCAL</code>, if it must outlast an autocommit block.</td><td data-label="Chapter"><a href="#ch6">6 · Postgres: schema changes and indexes</a></td></tr>
 <tr><td data-label="Symptom">Writes stall during a deploy</td><td data-label="Fix">Build indexes concurrently; add foreign keys <code>NOT VALID</code>, then validate.</td><td data-label="Chapter"><a href="#ch6">6 · Postgres: schema changes and indexes</a></td></tr>
 <tr><td data-label="Symptom">Every query on a table waits during a migration</td><td data-label="Fix">A lock timeout on every migration; retry off-peak.</td><td data-label="Chapter"><a href="#ch6">6 · Postgres: schema changes and indexes</a></td></tr>
 <tr><td data-label="Symptom">A query that was fast in testing is slow in production</td><td data-label="Fix">Measure under realistic load with production-sized data.</td><td data-label="Chapter"><a href="#ch6">6 · Postgres: schema changes and indexes</a></td></tr>
@@ -5080,7 +5083,7 @@ production because each question costs money (ADR-0023). Its
 <tr><td data-label="Symptom">A client secret with <code>+</code> or <code>%</code> fails against strict providers</td><td data-label="Fix">Encode them as the standard requires.</td><td data-label="Chapter"><a href="#ch8">8 · Sign-in, sessions and roles</a></td></tr>
 <tr><td data-label="Symptom">Entra ID groups arrive as unreadable ids</td><td data-label="Fix">Use app roles for the claim; Google has no groups claim at all.</td><td data-label="Chapter"><a href="#ch8">8 · Sign-in, sessions and roles</a></td></tr>
 <tr><td data-label="Symptom">A user's identity changed when their email changed</td><td data-label="Fix">Key users by issuer and subject.</td><td data-label="Chapter"><a href="#ch8">8 · Sign-in, sessions and roles</a></td></tr>
-<tr><td data-label="Symptom">Authentication doubled the cost of the cheapest request</td><td data-label="Fix">One query in the request's transaction: p95 from 1.07 s back to 19.7 ms at 1,000 requests a second.</td><td data-label="Chapter"><a href="#ch8">8 · Sign-in, sessions and roles</a></td></tr>
+<tr><td data-label="Symptom">With sign-in, the cheapest request collapsed at 1,000 requests a second</td><td data-label="Fix">One query in the request's transaction: p95 from 1.07 s to 19.7 ms at 1,000 requests a second. The CPU still doubles; that is the accepted cost of signing in.</td><td data-label="Chapter"><a href="#ch8">8 · Sign-in, sessions and roles</a></td></tr>
 <tr><td data-label="Symptom">A leaked secret keeps working after it was removed from the repository</td><td data-label="Fix">Rotate first, then remove.</td><td data-label="Chapter"><a href="#ch9">9 · Secrets, personal data and least privilege</a></td></tr>
 <tr><td data-label="Symptom">Secrets appear in a build log</td><td data-label="Fix">Pass secrets to containers by name (<code>-e NAME</code>), taking the value from the environment.</td><td data-label="Chapter"><a href="#ch9">9 · Secrets, personal data and least privilege</a></td></tr>
 <tr><td data-label="Symptom">An alert-routing tool cannot read a secret from the environment</td><td data-label="Fix">Mount the secret as a file.</td><td data-label="Chapter"><a href="#ch9">9 · Secrets, personal data and least privilege</a></td></tr>
@@ -5178,7 +5181,7 @@ production because each question costs money (ADR-0023). Its
 
 <footer class="series-foot">
   <p>Engineering Handbooks · Handbook 2 of 3 · Modern Software Engineering · Edition 1</p>
-  <p>Reference implementation: <a href="https://github.com/Parzon/triage-assistant">triage-assistant</a> at <code>handbook-1 (0b81c10)</code>.</p>
+  <p>Reference implementation: <a href="https://github.com/Parzon/triage-assistant">triage-assistant</a> at <code>handbook-1 (3fc2c43)</code>.</p>
 </footer>
 </main>
 </div>

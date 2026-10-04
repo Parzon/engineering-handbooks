@@ -175,7 +175,7 @@ One append-only table (ADR-0019):
         <tr><td data-label="Risk">LLM02 Sensitive information disclosure</td><td data-label="Here">Credentials redacted before any model call; the context holds only the asker's data; isolation cases</td></tr>
         <tr><td data-label="Risk">LLM05 Improper output handling</td><td data-label="Here">Answers rendered as text, never HTML; a test enforces it</td></tr>
         <tr><td data-label="Risk">LLM06 Excessive agency</td><td data-label="Here">Read-only tools acting as the asker; any future action confirmed by a person</td></tr>
-        <tr><td data-label="Risk">LLM07 System prompt leakage</td><td data-label="Here">The prompt holds no secrets; leaks are measured (5 in 200 brought to 0 in 200)</td></tr>
+        <tr><td data-label="Risk">LLM07 System prompt leakage</td><td data-label="Here">The prompt holds no secrets; leaks are measured against a 1.5% target: 5 in 200 at v4, 2 in 600 at the current v6 (95% bound 1.05%)</td></tr>
         <tr><td data-label="Risk">LLM08 Vector and embedding weaknesses</td><td data-label="Here">Retrieval filtered by the asker's teams inside the query; embeddings redacted too</td></tr>
         <tr><td data-label="Risk">LLM09 Misinformation</td><td data-label="Here">Grounding and refusal cases; citations verified; the judge</td></tr>
         <tr><td data-label="Risk">LLM10 Unbounded consumption</td><td data-label="Here">Rate limits, an output cap, a stream time cap, a cost panel</td></tr>

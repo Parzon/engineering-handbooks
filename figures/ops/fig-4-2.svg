@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="A finding is checked: is it HIGH or CRITICAL, and does a fixed version exist? If fixable, the build fails until the dependency or base image is bumped. If not fixable yet, a person accepts the risk in the accepted-risks file with a reason and an expiry at most 90 days out; code owners approve; at expiry the scan fails again. Findings in third-party images the team does not build are reported, not failed."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="A HIGH or CRITICAL finding is checked: does a fixed version exist? If not, the scan does not report it at all, so nothing records it and it needs a separate review. If one exists, the build fails. When the fix can be taken, the dependency or base image is bumped, usually by the bot's pull request. When it cannot be taken yet, for example because no rebuilt base image exists, a person accepts the risk in the accepted-risks file with a reason and an expiry at most 90 days out; code owners approve; at expiry the scan fails again. Findings in third-party images the team does not build are reported, not failed."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
 .ts { font-size: 11.5px; fill: #48505a; }
 .tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
 .tb { font-weight: 680; }
@@ -62,7 +62,7 @@ g.ts text { font-size: 11.5px; }
       <text class="ts" x="505" y="74" text-anchor="middle">merge and release blocked</text>
       <rect class="n-good" x="640" y="28" width="166" height="64" rx="6"/>
       <text class="tb" x="723" y="54" text-anchor="middle">Bump it</text>
-      <text class="ts" x="723" y="74" text-anchor="middle">usually the bot's PR</text>
+      <text class="ts" x="723" y="74" text-anchor="middle">fix usable: the bot's PR</text>
       <path class="e-bad" d="M275,119 V60 H408" marker-end="url(#a-bad)"/>
       <text class="ts" x="300" y="52">yes</text>
       <line class="e" x1="601" y1="60" x2="638" y2="60" marker-end="url(#a)"/>
@@ -75,8 +75,16 @@ g.ts text { font-size: 11.5px; }
       <text class="tb" x="723" y="184" text-anchor="middle">Code owners</text>
       <text class="ts" x="723" y="202" text-anchor="middle">approve the change</text>
       <text class="ts" x="723" y="218" text-anchor="middle">to the risk file</text>
-      <path class="e" d="M275,179 V199 H408" marker-end="url(#a)"/>
-      <text class="ts" x="300" y="216">not yet</text>
+      <line class="e" x1="505" y1="93" x2="505" y2="158" marker-end="url(#a)"/>
+      <text class="ts" x="515" y="122">fix not yet usable,</text>
+      <text class="ts" x="515" y="138">e.g. no new base yet</text>
+
+      <rect class="n-soft" x="200" y="214" width="150" height="70" rx="6"/>
+      <text class="tb" x="275" y="238" text-anchor="middle">Not reported</text>
+      <text class="ts" x="275" y="256" text-anchor="middle">hidden, with no record;</text>
+      <text class="ts" x="275" y="272" text-anchor="middle">review them separately</text>
+      <line class="e" x1="275" y1="179" x2="275" y2="212" marker-end="url(#a)"/>
+      <text class="ts" x="284" y="200">no</text>
       <line class="e" x1="601" y1="199" x2="638" y2="199" marker-end="url(#a)"/>
       <path class="e dash" d="M723,239 V268 H505 V240" marker-end="url(#a)"/>
       <text class="ts" x="614" y="286" text-anchor="middle">at expiry the scan fails again, and someone decides again</text>

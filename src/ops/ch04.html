@@ -13,7 +13,7 @@
       <li>Pin by content, not by name: lockfiles with hashes, base images by digest, CI actions by commit SHA. Names can be moved; content hashes cannot.</li>
       <li>Updates arrive as pull requests from a bot and pass the same checks as any change.</li>
       <li>Scan for known vulnerabilities and leaked secrets on every pull request, again at release, and weekly.</li>
-      <li>Block what can be fixed. Accept the rest explicitly, with an expiry that forces the question again.</li>
+      <li>Block what has a fix. When the fix cannot be taken yet, accept the risk explicitly, with an expiry that forces the question again. Findings with no fix at all are hidden, so review them separately.</li>
     </ul>
   </div>
 
@@ -70,7 +70,7 @@
     <figcaption><span class="fig-n">Figure 4.1</span>The layers of a container image, from the code you wrote down to the tools that check it. Every control on the right does the same thing: it names content by its hash rather than by a name someone else can move.</figcaption>
   </figure>
 
-  <p>The bottom layer is easy to forget. A scanner runs with access to your CI environment, so a compromised scanner is a compromised pipeline. This has happened: Trivy's own release binaries and almost every tag of its GitHub Action were replaced by code that stole CI credentials (CVE-2026-33634). Teams that ran it from an image pinned by digest were not affected. The reference service runs its scanners that way, from the same commands locally and in CI, with no access to the Docker socket.</p>
+  <p>The bottom layer is easy to forget. A scanner runs with access to your CI environment, so a compromised scanner is a compromised pipeline. This has happened: attackers published a Trivy release, binaries and container image alike, and moved almost every tag of its GitHub Action, all to code that stole CI credentials (CVE-2026-33634). Teams that ran a scanner image pinned to a digest from before the attack, and did not take the new release, were not affected. A digest pin stops a tag from being re-pointed; a reviewed bump is the chance to catch a bad new release. The reference service runs its scanners that way, from the same commands locally and in CI, with no access to the Docker socket.</p>
 
   <h3 id="ch4-pins">Pinning, and taking updates</h3>
   <p>Pinning alone would freeze a service with every vulnerability it ever had. The other half is a bot, Dependabot here, that opens pull requests to move the pins: grouped monthly for packages and actions, weekly for base images, and immediately for a known vulnerability. Each is an ordinary pull request, so CI and review decide whether it merges. A major version gets read like any other change.</p>
@@ -109,11 +109,11 @@ FROM python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa
   </section>
 
   <h3 id="ch4-scan">Scanning, and what to do with a finding</h3>
-  <p>Two kinds of scan run in the reference pipeline. <strong>Vulnerability scanning</strong> (Trivy) compares the packages inside each production image, and the web app's runtime dependencies, with databases of known vulnerabilities. <strong>Secret scanning</strong> (gitleaks) reads every commit in the history for things that look like keys and passwords. Both run on every pull request; the vulnerability scan runs again at release and weekly, because new advisories are published for images nobody changed.</p>
+  <p>Two kinds of scan run in the reference pipeline. <strong>Vulnerability scanning</strong> (Trivy) compares the packages inside each production image, and the web app's runtime dependencies, with databases of known vulnerabilities. <strong>Secret scanning</strong> (gitleaks) reads every commit in the history for things that look like keys and passwords. Both run on every pull request; the vulnerability scan runs again at release and weekly, because new advisories are published for images nobody changed. Each of those runs builds the images itself on an amd64 machine, so it checks the same source, not the exact published bytes, and not the arm64 images.</p>
 
   <figure class="fig wide" id="fig-4-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="A finding is checked: is it HIGH or CRITICAL, and does a fixed version exist? If fixable, the build fails until the dependency or base image is bumped. If not fixable yet, a person accepts the risk in the accepted-risks file with a reason and an expiry at most 90 days out; code owners approve; at expiry the scan fails again. Findings in third-party images the team does not build are reported, not failed.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="A HIGH or CRITICAL finding is checked: does a fixed version exist? If not, the scan does not report it at all, so nothing records it and it needs a separate review. If one exists, the build fails. When the fix can be taken, the dependency or base image is bumped, usually by the bot's pull request. When it cannot be taken yet, for example because no rebuilt base image exists, a person accepts the risk in the accepted-risks file with a reason and an expiry at most 90 days out; code owners approve; at expiry the scan fails again. Findings in third-party images the team does not build are reported, not failed.">
       <rect class="n-acc" x="16" y="120" width="140" height="58" rx="6"/>
       <text class="tb" x="86" y="145" text-anchor="middle">A finding</text>
       <text class="ts" x="86" y="163" text-anchor="middle">HIGH or CRITICAL</text>
@@ -128,7 +128,7 @@ FROM python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa
       <text class="ts" x="505" y="74" text-anchor="middle">merge and release blocked</text>
       <rect class="n-good" x="640" y="28" width="166" height="64" rx="6"/>
       <text class="tb" x="723" y="54" text-anchor="middle">Bump it</text>
-      <text class="ts" x="723" y="74" text-anchor="middle">usually the bot's PR</text>
+      <text class="ts" x="723" y="74" text-anchor="middle">fix usable: the bot's PR</text>
       <path class="e-bad" d="M275,119 V60 H408" marker-end="url(#a-bad)"/>
       <text class="ts" x="300" y="52">yes</text>
       <line class="e" x1="601" y1="60" x2="638" y2="60" marker-end="url(#a)"/>
@@ -141,8 +141,16 @@ FROM python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa
       <text class="tb" x="723" y="184" text-anchor="middle">Code owners</text>
       <text class="ts" x="723" y="202" text-anchor="middle">approve the change</text>
       <text class="ts" x="723" y="218" text-anchor="middle">to the risk file</text>
-      <path class="e" d="M275,179 V199 H408" marker-end="url(#a)"/>
-      <text class="ts" x="300" y="216">not yet</text>
+      <line class="e" x1="505" y1="93" x2="505" y2="158" marker-end="url(#a)"/>
+      <text class="ts" x="515" y="122">fix not yet usable,</text>
+      <text class="ts" x="515" y="138">e.g. no new base yet</text>
+
+      <rect class="n-soft" x="200" y="214" width="150" height="70" rx="6"/>
+      <text class="tb" x="275" y="238" text-anchor="middle">Not reported</text>
+      <text class="ts" x="275" y="256" text-anchor="middle">hidden, with no record;</text>
+      <text class="ts" x="275" y="272" text-anchor="middle">review them separately</text>
+      <line class="e" x1="275" y1="179" x2="275" y2="212" marker-end="url(#a)"/>
+      <text class="ts" x="284" y="200">no</text>
       <line class="e" x1="601" y1="199" x2="638" y2="199" marker-end="url(#a)"/>
       <path class="e dash" d="M723,239 V268 H505 V240" marker-end="url(#a)"/>
       <text class="ts" x="614" y="286" text-anchor="middle">at expiry the scan fails again, and someone decides again</text>
@@ -152,10 +160,10 @@ FROM python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa
       <text class="ts" x="16" y="264">reported, never failed</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 4.2</span>The policy for a vulnerability. Blocking only on findings that can be fixed keeps the check meaningful: a check that is red for reasons nobody can act on teaches people to ignore red.</figcaption>
+    <figcaption><span class="fig-n">Figure 4.2</span>The policy for a vulnerability. Blocking only on findings that can be fixed keeps the check meaningful: a check that is red for reasons nobody can act on teaches people to ignore red. The price is the bottom branch: the scan runs with <code>--ignore-unfixed</code>, so a finding with no fix anywhere is never shown, and nobody records or revisits it unless the team looks for it.</figcaption>
   </figure>
 
-  <p>The last line of the figure is a lesson learned. The weekly scan of the third-party images the stack merely runs, such as Keycloak, Grafana and pgvector, first found 336 findings in 12 of 14 images, nearly all waiting on releases from those projects. A job that fails every Monday for things the team cannot change is an email nobody reads, so that scan now reports instead of failing, and is read when those images are upgraded. The service's own images still fail on any fixable finding.</p>
+  <p>The note at the bottom left of the figure is a lesson learned. The weekly scan of the third-party images the stack merely runs, such as Keycloak, Grafana and pgvector, first found 336 findings in 12 of 14 images, nearly all waiting on releases from those projects. A job that fails every Monday for things the team cannot change is an email nobody reads, so that scan now reports instead of failing, and is read when those images are upgraded. The service's own images still fail on any fixable finding.</p>
   <p>The first scan also changed the images themselves. Two vulnerabilities lived inside <code>pip</code>, which the production image never used, so pip was removed and the image check now refuses an image that contains it. Another lived in nginx's optional modules, so the image moved to nginx's slim variant. Removing what you do not need is often a better fix than patching it.</p>
 
   <section class="repo">
@@ -199,9 +207,9 @@ reason. Run by `make scan` and `make scan-compose`.
     <p class="adr-title">Scan images and commits; pin base images and scanners by digest</p>
     <dl>
       <dt>Problem</dt><dd>Nothing said whether what shipped had a known vulnerability, or whether a commit carried a secret. The first scan found 20 fixable HIGH vulnerabilities, none in the team's own code.</dd>
-      <dt>Decision</dt><dd>Scan on every pull request, before release and weekly; block fixable HIGH and CRITICAL findings; accept the rest with a reason and an expiry; pin base images and scanners by digest.</dd>
+      <dt>Decision</dt><dd>Scan on every pull request, before release and weekly; block HIGH and CRITICAL findings that have a fix; when the fix cannot be taken yet, accept the risk with a reason and an expiry; pin base images and scanners by digest.</dd>
       <dt>Later</dt><dd>ADR-0026 made the third-party image scan report instead of fail, and moved base-image updates to weekly.</dd>
-      <dt>See it in</dt><dd><a href="{{TA}}/.github/workflows/scan.yml">scan.yml</a>, <a href="{{TA}}/.trivyignore.yaml">.trivyignore.yaml</a>, and the <code>security</code> job in <a href="{{TA}}/.github/workflows/ci.yml#L83-L96">ci.yml</a>.</dd>
+      <dt>See it in</dt><dd><a href="{{TA}}/.github/workflows/scan.yml">scan.yml</a>, <a href="{{TA}}/.trivyignore.yaml">.trivyignore.yaml</a>, and the <code>security</code> job in <a href="{{TA}}/.github/workflows/ci.yml#L85-L98">ci.yml</a>.</dd>
     </dl>
   </aside>
   <p data-adr="ADR-0026">A secret found in a commit is handled in a fixed order: rotate it first, because once pushed it may already be copied, and only then remove it. A fake credential in a test is allowed only by its exact fingerprint, with the value shown to be fake. GitHub's push protection adds a second layer by refusing the push itself.</p>
@@ -209,7 +217,7 @@ reason. Run by `make scan` and `make scan-compose`.
   <aside class="say">
     <span class="label">How to say it</span>
     <p>"Everything we depend on is pinned by content hash, and updates arrive as reviewed pull requests from a bot."</p>
-    <p>"We block fixable high and critical findings on every pull request and at release. Anything we can't fix yet is accepted in writing, with an owner and an expiry."</p>
+    <p>"We block fixable high and critical findings on every pull request and at release. When a fix exists but we can't take it yet, the risk is accepted in writing, with an owner and an expiry. Findings with no fix anywhere don't fail the build."</p>
   </aside>
 
   <h3 id="ch4-traps">Traps</h3>
@@ -220,7 +228,7 @@ reason. Run by `make scan` and `make scan-compose`.
         <tr><td data-label="Symptom">A trusted CI action starts exfiltrating secrets</td><td data-label="Cause">It was referenced by tag, and the tag was moved to malicious code</td><td data-label="Fix">Pin every third-party action to a full commit SHA.</td></tr>
         <tr><td data-label="Symptom">The scanner itself is the attack</td><td data-label="Cause">It ran from a third-party action or a mutable download</td><td data-label="Fix">Run scanners from images pinned by digest, with no Docker socket.</td></tr>
         <tr><td data-label="Symptom">Builds differ depending on the day they ran</td><td data-label="Cause"><code>apt-get upgrade</code> or unpinned installs inside the Dockerfile</td><td data-label="Fix">Pin the base by digest and take fixes as a reviewed digest bump.</td></tr>
-        <tr><td data-label="Symptom">Everyone ignores the red security check</td><td data-label="Cause">It fails on findings nobody can fix</td><td data-label="Fix">Block only fixable findings; accept the rest with an expiry; report third-party images.</td></tr>
+        <tr><td data-label="Symptom">Everyone ignores the red security check</td><td data-label="Cause">It fails on findings nobody can fix</td><td data-label="Fix">Block only findings with a fix; accept a fix you cannot take yet, with an expiry; report third-party images.</td></tr>
         <tr><td data-label="Symptom">A pull request goes red for a vulnerability it did not introduce</td><td data-label="Cause">A new advisory for the base image</td><td data-label="Fix">Take the bot's digest bump, or accept the risk with an expiry.</td></tr>
         <tr><td data-label="Symptom">The secret-scanning action fails for an organization</td><td data-label="Cause">The gitleaks GitHub Action needs a license for organizations</td><td data-label="Fix">Run its command-line tool instead.</td></tr>
         <tr><td data-label="Symptom">A leaked key was deleted from the repository, but it is still abused</td><td data-label="Cause">Deleting it does not unpublish it</td><td data-label="Fix">Rotate first, then remove.</td></tr>
@@ -231,7 +239,7 @@ reason. Run by `make scan` and `make scan-compose`.
   <details class="deep">
     <summary><span class="label">Going deeper</span> Provenance, bills of materials, and checking a new dependency</summary>
     <div class="deep-body">
-      <p><strong>Provenance</strong> is a signed record of how an artifact was built: which source commit, which workflow, which builder. A <strong>software bill of materials (SBOM)</strong> lists the packages inside it. The reference release stores both next to each image in the registry, so a question such as "which of our images contain this library version?" can be answered from the registry, without rebuilding anything. Frameworks such as SLSA grade how strongly a pipeline can prove these claims.</p>
+      <p><strong>Provenance</strong> is a record of how an artifact was built: which source commit, which workflow, which builder. A <strong>software bill of materials (SBOM)</strong> lists the packages inside it. The reference release stores both next to each image in the registry, so a question such as "which of our images contain this library version?" can be answered from the registry, without rebuilding anything. The reference release's records are BuildKit attestations, and they are not signed: anyone who can push the package could push different ones, so they describe a build without proving it. To make provenance verifiable, sign it, for example with <code>actions/attest-build-provenance</code> (checked with <code>gh attestation verify</code>) or Sigstore's <code>cosign</code>, and verify the signature before deploying. Frameworks such as SLSA grade how strongly a pipeline can prove these claims.</p>
       <p>Before adding a dependency at all, the reference team checks five things: its license (Redis and Docker Desktop both changed theirs, and Terraform moved to the Business Source License), that it is maintained and has a reasonable security record, that it publishes builds for both processor types, its size, and that it can be pinned and covered by the scans and the update bot. The pull request then says, in one line, why it is needed.</p>
     </div>
   </details>
@@ -244,7 +252,7 @@ reason. Run by `make scan` and `make scan-compose`.
     </li>
     <li>
       <p>Why does the policy block only findings that have a fixed version?</p>
-      <details class="ans"><summary>Answer</summary><p>A finding with no fix leaves nothing to do but wait. Blocking on it keeps the check permanently red, and people learn to ignore it. Unfixable findings are accepted in writing with an expiry instead, which forces a fresh decision later.</p></details>
+      <details class="ans"><summary>Answer</summary><p>A finding with no fix leaves nothing to do but wait. Blocking on it keeps the check permanently red, and people learn to ignore it. With <code>--ignore-unfixed</code> the scan does not even report them, so nothing records them either; a periodic report-only scan without that flag keeps them in sight. The accepted-risks file, with a reason and an expiry that forces a fresh decision, is for the other case: a fix exists upstream but cannot be taken yet.</p></details>
     </li>
     <li>
       <p>Why scan again at release and weekly if every pull request is scanned?</p>

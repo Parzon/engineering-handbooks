@@ -31,7 +31,7 @@
   </table>
 
   <h3 id="ch2-model">The model: snapshots and labels</h3>
-  <p>Most confusion with Git disappears once the model is clear. A <strong>commit</strong> is a snapshot of the whole project plus a pointer to its parent commit. Its identifier is a hash of both, so a commit can never change: change anything and you have a different commit. A <strong>branch</strong> is a label pointing at one commit, which moves forward when you commit. A <strong>tag</strong> is a label that never moves. <strong>HEAD</strong> is where you are.</p>
+  <p>Most confusion with Git disappears once the model is clear. A <strong>commit</strong> is a snapshot of the whole project plus a pointer to its parent commit. Its identifier is a hash of the snapshot, the parent, the author, the time and the message, so a commit can never change: change anything, even the message, and you have a different commit. A <strong>branch</strong> is a label pointing at one commit, which moves forward when you commit. A <strong>tag</strong> is a label that stays put: committing does not move it, and by convention nobody does, though <code>git tag -f</code> and a force-push can unless a tag ruleset forbids it. <strong>HEAD</strong> is where you are.</p>
 
   <figure class="fig wide" id="fig-2-1">
     <div class="fig-scroll">
@@ -62,12 +62,12 @@
       <text class="ts" x="60" y="205" text-anchor="middle">points to its parent</text>
 
       <text class="tb" x="580" y="40">Commit</text>
-      <text class="ts" x="580" y="58">a snapshot plus its parent; its ID is a</text>
-      <text class="ts" x="580" y="73">hash of both, so it never changes</text>
+      <text class="ts" x="580" y="58">a snapshot, parent, author and message;</text>
+      <text class="ts" x="580" y="73">its ID hashes all, so it never changes</text>
       <text class="tb" x="580" y="102">Branch</text>
       <text class="ts" x="580" y="120">a label that moves on each commit</text>
       <text class="tb" x="580" y="149">Tag</text>
-      <text class="ts" x="580" y="167">a label that never moves</text>
+      <text class="ts" x="580" y="167">a fixed label; only force can move it</text>
       <text class="tb" x="580" y="196">Remote-tracking label</text>
       <text class="ts" x="580" y="214">where main was at the last fetch</text>
     </svg>
@@ -200,7 +200,7 @@
   <ul>
     <li>six green checks: <code>lint</code>, <code>test-api</code>, <code>build</code>, <code>security</code>, <code>web-build</code> and <code>e2e</code>, on a branch that is up to date with main;</li>
     <li>one approving review, including one from the code owners of every path touched, with approvals dismissed when new commits arrive;</li>
-    <li>a linear history, so every change lands as one squashed commit.</li>
+    <li>a linear history; with squash as the only merge method the repository allows, every change lands as one commit.</li>
   </ul>
   <p>Code owners say whose approval a path needs. The pull request template asks the author for the evidence a reviewer needs, so verification is written down rather than assumed.</p>
 
@@ -272,7 +272,7 @@
     <table class="grid traps stack">
       <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
       <tbody>
-        <tr><td data-label="Symptom">An undo of one experiment also lost other uncommitted work in the same file</td><td data-label="Cause"><code>git checkout &lt;file&gt;</code> (or <code>git restore</code>) discards every uncommitted change in that file</td><td data-label="Fix">Commit first, or undo the experiment with a reverse patch.</td></tr>
+        <tr><td data-label="Symptom">An undo of one experiment also lost other uncommitted work in the same file</td><td data-label="Cause"><code>git checkout &lt;file&gt;</code> (or <code>git restore</code>) discards every unstaged change in that file (staged changes are kept: the file is restored from the staging area)</td><td data-label="Fix">Commit first, or undo the experiment with a reverse patch.</td></tr>
         <tr><td data-label="Symptom">Teammates' branches no longer line up with yours after a rebase</td><td data-label="Cause">Rebasing commits others already have gives them new IDs</td><td data-label="Fix">Rebase only your own unpushed work; use <code>--force-with-lease</code> on your own branch, never on a shared one.</td></tr>
         <tr><td data-label="Symptom">A service restarted mid-merge runs conflict markers as code</td><td data-label="Cause">A running service reads the working tree, not Git</td><td data-label="Fix">Production is never a developer checkout; deploy built releases.</td></tr>
         <tr><td data-label="Symptom">A solo owner cannot merge their own pull request</td><td data-label="Cause">GitHub never lets an author approve their own pull request</td><td data-label="Fix">Until a second reviewer exists, merge with the admin bypass, deliberately and noted in the description.</td></tr>
@@ -299,7 +299,7 @@
   <ol class="qs">
     <li>
       <p>Why can a commit never change, while a branch changes all the time?</p>
-      <details class="ans"><summary>Answer</summary><p>A commit's ID is a hash of its snapshot and its parent, so any change makes a different commit. A branch is only a label pointing at a commit, and it moves forward with each new commit.</p></details>
+      <details class="ans"><summary>Answer</summary><p>A commit's ID is a hash of its snapshot, its parent, its author and time, and its message, so any change makes a different commit. A branch is only a label pointing at a commit, and it moves forward with each new commit.</p></details>
     </li>
     <li>
       <p>When is rebasing safe, and when is it not?</p>

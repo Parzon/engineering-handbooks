@@ -75,7 +75,7 @@
   <dt>Rate limit</dt>
   <dd>A cap on requests per client per time window, kept in a store shared by every worker. <a class="see" href="#ch11">Chapter 11</a></dd>
   <dt>Request id</dt>
-  <dd>An id stamped on a request at the edge, carried through every log line, response header and error body. <a class="see" href="#ch14">Chapter 14</a></dd>
+  <dd>An id stamped on a request by the proxy in front of the application, or by the application itself, carried through every log line, response header and error body. <a class="see" href="#ch14">Chapter 14</a></dd>
   <dt>Reverse proxy</dt>
   <dd>A server in front of the application that terminates TLS, routes requests and serves files. <a class="see" href="#ch11">Chapter 11</a></dd>
   <dt>Row-level security</dt>
@@ -95,5 +95,5 @@
   <dt>Walking skeleton</dt>
   <dd>The thinnest end-to-end version of a system, such as a health endpoint deployed by the real pipeline, built before any feature. <a class="see" href="#ch19">Chapter 19</a></dd>
   <dt>X-Forwarded-For</dt>
-  <dd>A header carrying the client's address through proxies; trustworthy only if the outermost proxy overwrites it. <a class="see" href="#ch11">Chapter 11</a></dd>
+  <dd>A header carrying the client's address through proxies; trustworthy only as far as proxies you control: the outermost one overwrites it, or you trust only the known proxies' addresses and take the right-most entry they added. <a class="see" href="#ch11">Chapter 11</a></dd>
 </dl>

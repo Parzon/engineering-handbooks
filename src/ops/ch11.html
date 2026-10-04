@@ -10,7 +10,7 @@
     <span class="label">At a glance</span>
     <ul>
       <li>The concepts transfer: build once, promote, configuration from the environment, identities instead of keys, infrastructure as code.</li>
-      <li>The names change, and so do a few defaults: Cloud Run and Container Apps give each service an HTTPS URL, revisions with traffic splitting, and scale to zero.</li>
+      <li>The names change, and so do a few defaults: Cloud Run and Container Apps give each service an HTTPS URL, immutable revisions, and scale to zero. Cloud Run splits traffic between revisions out of the box; Container Apps does once switched to multiple revision mode.</li>
       <li>Environments are separated by AWS accounts, Azure subscriptions and resource groups, or Google Cloud projects.</li>
       <li>Terraform works on all three with the same workflow, but resources are not portable: each cloud's resource is written for that cloud.</li>
     </ul>
@@ -43,7 +43,7 @@
 
   <h3 id="ch11-diff">Three differences worth knowing</h3>
   <h4>Revisions and traffic splitting</h4>
-  <p>On Cloud Run and Container Apps, every deploy creates an immutable <strong>revision</strong>, and traffic is split between revisions by percentage. A canary (5% to the new revision) or a rollback (100% back to the old one) is a setting, not a redeploy. On ECS the equivalent is a rolling deployment with its circuit breaker, or blue/green deployments through CodeDeploy.</p>
+  <p>On Cloud Run and Container Apps, every deploy of a new image or new container settings creates an immutable <strong>revision</strong>, and traffic can be split between revisions by percentage. On Container Apps that takes multiple revision mode: the default, single revision mode, moves all traffic to the new revision once it is ready and retires the old one. Container Apps also keeps secret values and ingress settings app-wide, outside revisions, so changing them creates no revision, and moving traffic cannot roll them back. With splitting on, a canary (5% to the new revision) or a rollback (100% back to the old one) is a setting, not a redeploy. On ECS the equivalent is a rolling deployment with its circuit breaker, or the service's built-in blue/green, canary and linear strategies, which shift traffic between revisions behind a load balancer and roll back on an alarm. CodeDeploy is the older route to the same.</p>
 
   <figure class="fig wide" id="fig-11-1">
     <div class="fig-scroll">
@@ -61,7 +61,7 @@
       <text class="ts" x="190" y="222">Each revision is immutable, so going back means pointing traffic at it again.</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 11.1</span>Revisions and traffic splitting on Cloud Run and Container Apps. A canary and a rollback are both changes of percentages, which makes them quick and cheap to rehearse.</figcaption>
+    <figcaption><span class="fig-n">Figure 11.1</span>Revisions and traffic splitting on Cloud Run, and on Container Apps in multiple revision mode. A canary and a rollback are both changes of percentages, which makes them quick and cheap to rehearse.</figcaption>
   </figure>
 
   <h4>HTTPS out of the box</h4>
@@ -82,7 +82,7 @@
   <ol class="qs">
     <li>
       <p>How do Cloud Run and Container Apps make a rollback cheaper than a redeploy?</p>
-      <details class="ans"><summary>Answer</summary><p>Every deploy is an immutable revision, and traffic is split between revisions by configuration. A rollback sets 100% of traffic back on the previous revision, without building or deploying anything.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Every deploy of a new image or container settings is an immutable revision, and traffic is split between revisions by configuration (on Container Apps, in multiple revision mode). A rollback sets 100% of traffic back on the previous revision, without building or deploying anything. Settings kept outside revisions, such as Container Apps' secrets and ingress, are not rolled back this way.</p></details>
     </li>
     <li>
       <p>Why did the reference AWS build run over plain HTTP, when the same service on Cloud Run would not have?</p>

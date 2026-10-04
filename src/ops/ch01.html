@@ -35,7 +35,7 @@
 
   <figure class="fig wide" id="fig-1-1">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 330" role="img" aria-label="The delivery path in two rows. Top: developer, pull request, CI checks, protected main branch, version tag. Bottom, right to left: release builds and scans once, images in two registries, a deploy gated by a GitHub environment, a rolling update with a circuit breaker, and a smoke test through the load balancer. Rollback runs the same deploy with the previous tag.">
+    <svg viewBox="0 0 820 330" role="img" aria-label="The delivery path in two rows. Top: developer, pull request, CI checks, protected main branch, version tag. Bottom, right to left: release scans, then builds once for two architectures, images in two registries, a deploy gated by a GitHub environment, a rolling update with a circuit breaker, and a smoke test through the load balancer. Rollback runs the same deploy with the previous tag.">
       <rect class="n" x="16" y="34" width="136" height="64" rx="5"/>
       <text class="tb" x="84" y="60" text-anchor="middle">Developer</text>
       <text class="ts" x="84" y="78" text-anchor="middle">branch, commits</text>
@@ -61,8 +61,8 @@
       <path class="e-acc" d="M742,99 V150" marker-end="url(#a-acc)"/>
       <rect class="n" x="680" y="152" width="124" height="76" rx="5"/>
       <text class="tb" x="742" y="176" text-anchor="middle">Release</text>
-      <text class="ts" x="742" y="194" text-anchor="middle">build once, scan,</text>
-      <text class="ts" x="742" y="210" text-anchor="middle">amd64 and arm64</text>
+      <text class="ts" x="742" y="194" text-anchor="middle">scan; build once</text>
+      <text class="ts" x="742" y="210" text-anchor="middle">for amd64, arm64</text>
       <rect class="n" x="514" y="152" width="136" height="76" rx="5"/>
       <text class="tb" x="582" y="176" text-anchor="middle">Registries</text>
       <text class="ts" x="582" y="194" text-anchor="middle">GHCR, then ECR</text>
@@ -129,7 +129,7 @@
       <rect class="n-acc" x="16" y="88" width="214" height="88" rx="6"/>
       <text class="tl" x="30" y="110">ONE RELEASE IMAGE</text>
       <text class="tm tb" x="30" y="132">triage-assistant-api:0.8.2</text>
-      <text class="tm" x="30" y="152">sha256:fcbc59d1…</text>
+      <text class="tm" x="30" y="152">sha256:21115358…</text>
       <text class="ts" x="30" y="168">built once, never rebuilt</text>
 
       <rect class="n" x="320" y="18" width="214" height="58" rx="5"/>
@@ -259,7 +259,7 @@
         <tr><td data-label="Symptom">A rollback has nothing to go back to</td><td data-label="Cause">The service was deployed as <code>latest</code>, which names whatever was pushed last</td><td data-label="Fix">Deploy exact version tags, or digests, from a registry with immutable tags.</td></tr>
         <tr><td data-label="Symptom">Two servers on the same version behave differently</td><td data-label="Cause">Each built from source; a dependency or base image changed between builds</td><td data-label="Fix">Build once in CI; hosts only pull.</td></tr>
         <tr><td data-label="Symptom">Every release replaces a component that did not change</td><td data-label="Cause">Image layers record file times, and every CI checkout gets new ones, so no two builds are byte-identical</td><td data-label="Fix">Compare builds by a hash of their inputs, and replace a component only when its inputs changed.</td></tr>
-        <tr><td data-label="Symptom">An image tag now points at different code</td><td data-label="Cause">Anyone who can push a package can re-push a tag</td><td data-label="Fix">Make the release workflow the only pusher, use immutable tags, check build provenance, or deploy by digest.</td></tr>
+        <tr><td data-label="Symptom">An image tag now points at different code</td><td data-label="Cause">Anyone who can push a package can re-push a tag</td><td data-label="Fix">Make the release workflow the only pusher, use immutable tags, verify signed build provenance, or deploy by digest.</td></tr>
         <tr><td data-label="Symptom">Images from a public repository can be pulled by anyone</td><td data-label="Cause">Packages built by a public repository's workflow are public by default on GitHub's registry</td><td data-label="Fix">Expect it: never put a secret in an image.</td></tr>
       </tbody>
     </table>

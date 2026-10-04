@@ -16,7 +16,7 @@
       <li>A client-side probe reported an outage that never happened: judge availability from server-side metrics.</li>
       <li>The finished loop: one version tag, and the release is live on ECS 8 minutes 37 seconds later, with no failed requests.</li>
       <li>A last stage held the code to its own written rules and found eight gaps on the path to AWS; each was fixed and shown before and after. Testing the running system end to end then found four more.</li>
-      <li>The whole reference deployment, VM and ECS stacks included, cost about sixty cents of cloud time, because everything billed by the hour was torn down after each session.</li>
+      <li>The first full build, VM and ECS stacks included, cost about sixty cents of cloud time, and each later session cents more, because everything billed by the hour was torn down after each session.</li>
     </ul>
   </div>
 
@@ -53,7 +53,7 @@
         <tr><td data-label="Step">5 · CI</td><td data-label="What happens">Six jobs: lint, the api tests on a real stack, the production image, the security scans, the web build and the browser tests. Five start at once; the image waits for lint. All six are required, on a branch up to date with main. About three minutes.</td><td data-label="Held by"><a href="{{TA}}/.github/workflows/ci.yml">ci.yml</a>; branch protection on main</td></tr>
         <tr><td data-label="Step">6 · Merge</td><td data-label="What happens">One approval from a code owner, then a squash merge: one commit per change on a linear main. <code>Closes #N</code> closes the issue. GitHub never lets authors approve their own pull requests, so a solo owner merges with the administrator bypass, deliberately (Chapter 2).</td><td data-label="Held by">branch protection; the repository allows squash merges only</td></tr>
         <tr><td data-label="Step">7 · Tag</td><td data-label="What happens"><code>git tag -a vX.Y.Z</code> on main, then push the tag. Only that pattern starts a release; any other tag starts nothing. Only admins may create one, because a tag runs the workflow of the commit it points at.</td><td data-label="Held by">the release workflow's trigger; a tag ruleset</td></tr>
-        <tr><td data-label="Step">8 · Release</td><td data-label="What happens">Checks that the tag is on main, scans again, builds each image natively for two processor types, publishes them to GitHub's registry, smoke-tests what it published, copies it to ECR through OIDC, and writes the release notes: the merged pull requests, after upgrade notes that list the settings added or removed since the last release. About four minutes.</td><td data-label="Held by"><a href="{{TA}}/.github/workflows/release.yml">release.yml</a></td></tr>
+        <tr><td data-label="Step">8 · Release</td><td data-label="What happens">Checks that the tag is on main, scans again, builds each image natively for two processor types, publishes them to GitHub's registry, smoke-tests what it published while copying it to ECR through OIDC, and writes the release notes: the merged pull requests, after upgrade notes that list the settings added or removed since the last release. About four minutes.</td><td data-label="Held by"><a href="{{TA}}/.github/workflows/release.yml">release.yml</a></td></tr>
         <tr><td data-label="Step">9 · Deploy</td><td data-label="What happens">Starts when the release succeeds, waits for the reviewer the <code>aws-demo</code> environment requires, assumes the deploy role through OIDC, and runs <code>cdk deploy</code> with the new version: a rolling update with the circuit breaker armed, then a smoke test through the load balancer. About nine and a half minutes when the deploy created the stack from nothing; about four for an update.</td><td data-label="Held by"><a href="{{TA}}/.github/workflows/deploy.yml">deploy.yml</a>, <a href="{{TATREE}}/infra/aws">infra/aws</a></td></tr>
         <tr><td data-label="Step">10 · Rollback</td><td data-label="What happens">The same deploy, started by hand with the previous version. The infrastructure stays; the image changes.</td><td data-label="Held by">the deploy workflow's manual trigger</td></tr>
       </tbody>
@@ -340,7 +340,7 @@ exec gunicorn app.asgi:app -c gunicorn.conf.py</code></pre>
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L530-L560">infra/aws/service.py</a><span class="lines">routing at the load balancer</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L531-L561">infra/aws/service.py</a><span class="lines">routing at the load balancer</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>Two listener rules and a default carry the routing the edge does in compose, checked in priority order.</p>
@@ -353,7 +353,7 @@ exec gunicorn app.asgi:app -c gunicorn.conf.py</code></pre>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="530-560"><code class="language-python">elbv2.ApplicationListenerRule(
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="531-561"><code class="language-python">elbv2.ApplicationListenerRule(
     self,
     "Internal",
     listener=listener,
@@ -390,7 +390,7 @@ api_rule.node.default_child.add_property_override(
   </section>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L562-L595">infra/aws/service.py</a><span class="lines">scaling and alarms</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/service.py#L563-L596">infra/aws/service.py</a><span class="lines">scaling and alarms</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The service grows with its load and reports when it is unwell.</p>
@@ -402,7 +402,7 @@ api_rule.node.default_child.add_property_override(
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="562-595"><code class="language-python"># --- autoscaling: more api tasks while each serves over 1,000 requests a minute --------
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/service.py" data-lines="563-596"><code class="language-python"># --- autoscaling: more api tasks while each serves over 1,000 requests a minute --------
 # Bounded by the database: 4 tasks x 1 worker x DB_POOL_SIZE 10 = 40 connections, inside
 # a db.t4g.micro's ~80. Scale-in waits longer than scale-out, so it does not flap.
 scaling = api_svc.auto_scale_task_count(min_capacity=2, max_capacity=4)
@@ -533,7 +533,7 @@ cw.Alarm(
   </figure>
 
   <h3 id="ch12-loop">The whole loop, with no human step</h3>
-  <p>With the deploy workflow in place, the only human action was pushing a version tag (the environment has since gained a required reviewer, so a release now also waits for one approval). Everything after it ran on its own: the release built, scanned, published and smoke-tested the images and copied them to ECR; the deploy workflow then ran in the gated environment, applied the infrastructure code with the new version, waited for ECS to be stable, and smoke-tested through the load balancer.</p>
+  <p>With the deploy workflow in place, the only human action was pushing a version tag (the environment has since gained a required reviewer, so a release now also waits for one approval). Everything after it ran on its own: the release built, scanned and published the images, then smoke-tested them while copying them to ECR; the deploy workflow then ran in the gated environment, applied the infrastructure code with the new version, waited for ECS to be stable, and smoke-tested through the load balancer.</p>
 
   <figure class="fig wide" id="fig-12-5">
     <div class="fig-scroll">

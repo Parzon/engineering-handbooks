@@ -9,7 +9,7 @@
   <div class="glance">
     <span class="label">At a glance</span>
     <ul>
-      <li>Batching runs several sequences per forward pass: total throughput rises a lot, and each stream slows a little.</li>
+      <li>Batching runs several sequences per forward pass: total throughput rises a lot, and each stream slows, here to about half its speed at four at a time. Set concurrency against a per-stream latency target.</li>
       <li>GPU memory holds the weights (parameters × bytes each) plus the KV cache, which grows with concurrency and context.</li>
       <li>Quantization saves memory and speeds decode, and costs quality unevenly: evaluate the quantized model itself.</li>
       <li>Replicas when the model fits on one GPU; tensor parallelism within a node when it does not; pipeline parallelism across nodes only when you must.</li>
@@ -21,7 +21,7 @@
     <caption>Then and now</caption>
     <thead><tr><th>Then</th><th>Now</th><th>Why it changed</th></tr></thead>
     <tbody>
-      <tr><td data-label="Then">A model served one request at a time</td><td>Continuous batching in an inference server (vLLM, TGI, TensorRT-LLM)</td><td>Decode leaves compute idle while waiting on memory; batching fills it.</td></tr>
+      <tr><td data-label="Then">A model served one request at a time</td><td>Continuous batching in an inference server (vLLM, SGLang, TensorRT-LLM)</td><td>Decode leaves compute idle while waiting on memory; batching fills it.</td></tr>
       <tr><td data-label="Then">16- or 32-bit weights only</td><td>8- and 4-bit quantized weights as a common choice</td><td>Memory and bandwidth are the bottleneck, not arithmetic.</td></tr>
       <tr><td data-label="Then">A vendor SDK in application code</td><td>An OpenAI-compatible API in front of every backend</td><td>Changing the model or provider becomes configuration.</td></tr>
     </tbody>
@@ -85,7 +85,7 @@
   <h3 id="ch3-arch">The serving architecture, and the seam</h3>
   <figure class="fig wide" id="fig-3-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 290" role="img" aria-label="Inside the application, every model call goes through one seam that speaks the OpenAI-compatible API and maps failures to a small set of typed errors; a mock server sits behind the same seam in tests. When several services share models, a gateway sits between applications and backends: authentication, request and token limits per user or tenant, routing to the cheapest model that handles each request, fallback on errors or 429s, logging and cost tracking. Behind it: managed APIs, or inference servers such as vLLM, TGI or Ollama doing batching, KV cache management and streaming on GPUs.">
+    <svg viewBox="0 0 820 290" role="img" aria-label="Inside the application, every model call goes through one seam that speaks the OpenAI-compatible API and maps failures to a small set of typed errors; a mock server sits behind the same seam in tests. When several services share models, a gateway sits between applications and backends: authentication, request and token limits per user or tenant, routing to the cheapest model that handles each request, fallback on errors or 429s, logging and cost tracking. Behind it: managed APIs, or inference servers such as vLLM, SGLang or Ollama doing batching, KV cache management and streaming on GPUs.">
       <rect class="zone" x="16" y="16" width="230" height="258" rx="8"/><text class="tl" x="30" y="36">THE APPLICATION</text>
       <rect class="n" x="30" y="50" width="200" height="44" rx="5"/><text class="ts" x="130" y="76" text-anchor="middle">the prompt, the context</text>
       <rect class="n-acc" x="30" y="110" width="200" height="64" rx="5"/><text class="tb" x="130" y="134" text-anchor="middle">the seam</text><text class="ts" x="130" y="152" text-anchor="middle">one API, typed errors,</text><text class="ts" x="130" y="166" text-anchor="middle">explicit timeouts</text>
@@ -95,7 +95,7 @@
       <g class="ts"><text x="302" y="118">authentication</text><text x="302" y="138">request and token limits per tenant</text><text x="302" y="158">routing to the cheapest model</text><text x="302" y="178">fallback on errors and 429s</text><text x="302" y="198">logging, cost tracking</text></g>
       <line class="e" x1="231" y1="142" x2="288" y2="142" marker-end="url(#a)"/>
       <rect class="n" x="566" y="40" width="238" height="80" rx="6"/><text class="tb" x="578" y="64">Managed APIs</text><text class="ts" x="578" y="84">strongest models, priced per token;</text><text class="ts" x="578" y="100">their terms and rate limits</text>
-      <rect class="n" x="566" y="150" width="238" height="100" rx="6"/><text class="tb" x="578" y="174">Inference servers</text><text class="ts" x="578" y="194">vLLM, TGI, Ollama: batching,</text><text class="ts" x="578" y="210">KV cache, streaming, on GPUs</text><text class="ts" x="578" y="230">you run them, busy or idle</text>
+      <rect class="n" x="566" y="150" width="238" height="100" rx="6"/><text class="tb" x="578" y="174">Inference servers</text><text class="ts" x="578" y="194">vLLM, SGLang, Ollama: batching,</text><text class="ts" x="578" y="210">KV cache, streaming, on GPUs</text><text class="ts" x="578" y="230">you run them, busy or idle</text>
       <path class="e" d="M521,120 C545,120 545,80 564,80" marker-end="url(#a)"/><path class="e" d="M521,170 C545,170 545,200 564,200" marker-end="url(#a)"/>
     </svg>
     </div>

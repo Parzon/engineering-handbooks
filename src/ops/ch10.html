@@ -11,7 +11,7 @@
     <ul>
       <li>You declare objects (a Deployment of three replicas of an image); controllers continuously reconcile reality toward them.</li>
       <li>The control plane (API server, etcd, scheduler, controllers) decides; the nodes run pods. Managed offerings such as EKS, GKE and AKS run the control plane for you.</li>
-      <li>Readiness and liveness are separate probes: one controls traffic, the other restarts containers. ECS has only one signal.</li>
+      <li>Readiness and liveness are separate probes: one controls traffic, the other restarts containers. On ECS both health checks replace the task; neither only withholds traffic.</li>
       <li>Every pod gets a routable IP and services get DNS names, so containers on different hosts find each other the way Compose services do on one host.</li>
       <li>Pick ECS for a few AWS-only services and a small team; pick Kubernetes for many services, a platform team, portability, or its ecosystem.</li>
     </ul>
@@ -85,7 +85,7 @@
 
   <figure class="fig wide" id="fig-10-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 250" role="img" aria-label="During a database outage on Kubernetes, the readiness probe at /ready fails, so the pod stops receiving traffic but keeps running; the liveness probe at /health passes, so nothing restarts. On ECS, a single load balancer check acts on both questions at once, so a deep check restarts tasks.">
+    <svg viewBox="0 0 820 250" role="img" aria-label="During a database outage on Kubernetes, the readiness probe at /ready fails, so the pod stops receiving traffic but keeps running; the liveness probe at /health passes, so nothing restarts. On ECS, both the container health check and the load balancer's check end in a replaced task, so neither can act as readiness, and a deep check in either restarts tasks.">
       <text class="tb" x="16" y="26">Kubernetes: the database is down</text>
       <rect class="n" x="16" y="42" width="160" height="84" rx="6"/>
       <text class="tb" x="96" y="70" text-anchor="middle">api pod</text>
@@ -101,17 +101,17 @@
       <text class="ts" x="512" y="112">no restart: it reconnects when the database is back</text>
 
       <line class="rule" x1="16" y1="148" x2="804" y2="148"/>
-      <text class="tb" x="16" y="174">ECS: one signal for both questions</text>
+      <text class="tb" x="16" y="174">ECS: no readiness-only signal</text>
       <rect class="n" x="16" y="186" width="160" height="50" rx="6"/>
       <text class="tb" x="96" y="216" text-anchor="middle">api task</text>
       <rect class="n-bad" x="236" y="192" width="250" height="38" rx="5"/>
-      <text class="ts" x="250" y="216">load balancer check: one path</text>
+      <text class="ts" x="250" y="216">container check, load balancer check</text>
       <line class="e" x1="177" y1="211" x2="234" y2="211" marker-end="url(#a)"/>
-      <text class="ts" x="512" y="204">deep path: tasks replaced during an outage</text>
-      <text class="ts" x="512" y="222">so on ECS it must be the shallow one (Chapter 9)</text>
+      <text class="ts" x="512" y="204">either one deep: tasks replaced in an outage</text>
+      <text class="ts" x="512" y="222">so on ECS both must be shallow (Chapter 9)</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 10.2</span>Readiness and liveness. Kubernetes lets an unready pod sit out of rotation without being restarted. ECS cannot express that, which is why the reference service's load balancer checks only the shallow endpoint there.</figcaption>
+    <figcaption><span class="fig-n">Figure 10.2</span>Readiness and liveness. Kubernetes lets an unready pod sit out of rotation without being restarted. ECS cannot express that: both its checks end in a replaced task, which is why the reference service's container check and load balancer check both use the shallow endpoint there.</figcaption>
   </figure>
 
   <section class="repo">
@@ -180,9 +180,9 @@ async def ready(request: Request) -&gt; JSONResponse:
         <tr><td data-label="Concern">Unit</td><td data-label="ECS">Task definition (containers sharing localhost)</td><td data-label="Kubernetes">Pod spec</td></tr>
         <tr><td data-label="Concern">Keep N running</td><td data-label="ECS">Service</td><td data-label="Kubernetes">Deployment (with a ReplicaSet)</td></tr>
         <tr><td data-label="Concern">Init work</td><td data-label="ECS">Non-essential containers with <code>dependsOn: SUCCESS</code> and a start timeout</td><td data-label="Kubernetes"><code>initContainers</code>, sequential, built in</td></tr>
-        <tr><td data-label="Concern">Readiness and liveness</td><td data-label="ECS">One signal: the load balancer's check</td><td data-label="Kubernetes">Separate readiness and liveness probes</td></tr>
+        <tr><td data-label="Concern">Readiness and liveness</td><td data-label="ECS">No readiness-only signal: the container check and the load balancer's check both replace the task</td><td data-label="Kubernetes">Separate readiness and liveness probes</td></tr>
         <tr><td data-label="Concern">Routing</td><td data-label="ECS">Load balancer listener rules, URL rewrite</td><td data-label="Kubernetes">Ingress or the Gateway API; on AWS the Load Balancer Controller creates the ALB</td></tr>
-        <tr><td data-label="Concern">Finding services</td><td data-label="ECS">Load balancer, Service Connect, Cloud Map</td><td data-label="Kubernetes">Service and cluster DNS: <code>api:8010</code> works, as in Compose</td></tr>
+        <tr><td data-label="Concern">Finding services</td><td data-label="ECS">Load balancer, Service Connect, Cloud Map</td><td data-label="Kubernetes">Service and cluster DNS: <code>api:8010</code> resolves through the pod's resolver, as in Compose</td></tr>
         <tr><td data-label="Concern">Configuration and secrets</td><td data-label="ECS">Environment plus Secrets Manager injection</td><td data-label="Kubernetes">ConfigMap and Secret, plus External Secrets Operator or a CSI driver</td></tr>
         <tr><td data-label="Concern">AWS permissions</td><td data-label="ECS">Task role</td><td data-label="Kubernetes">IRSA or EKS Pod Identity</td></tr>
         <tr><td data-label="Concern">Rollout safety</td><td data-label="ECS">Min and max percent, circuit breaker with automatic rollback</td><td data-label="Kubernetes"><code>maxSurge</code>, <code>maxUnavailable</code>, a progress deadline; rollback by hand or with Argo Rollouts</td></tr>
@@ -192,7 +192,7 @@ async def ready(request: Request) -&gt; JSONResponse:
       </tbody>
     </table>
   </div>
-  <p>Both difficulties the reference build met on ECS are things Kubernetes handles natively: the web image's nginx would have found <code>api:8010</code> through cluster DNS, and the api's readiness and liveness split would have worked as designed. The same images could run on EKS Auto Mode in about an hour.</p>
+  <p>Of the two difficulties the reference build met on ECS, Kubernetes handles one natively: the api's readiness and liveness split would have worked as designed. The other only half. Cluster DNS does answer for the name <code>api</code>, but the web image's nginx asks Docker's DNS address, <code>127.0.0.11</code>, which a pod does not have either, so that image would first need its resolver made configurable, read from <code>/etc/resolv.conf</code> at start. The problem is in the image's configuration, not in ECS. With that change, the same images could run on EKS Auto Mode in about an hour.</p>
 
   <h3 id="ch10-why">Why orchestrators exist at all</h3>
   <p>Container networking on one host is easy: Compose creates a private network and its service names resolve. Across hosts, that stops. You need IP connectivity between machines and an orchestration layer on top: Kubernetes gives every pod a routable IP through a CNI plugin, and gives services stable names. Placement, health, rescheduling after a node failure, and rolling updates across many hosts are the other jobs a single host never needed.</p>

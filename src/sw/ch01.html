@@ -218,13 +218,13 @@
     <dl>
       <dt>Context</dt><dd>"Deploy the previous tag" failed across a migration: the older image's migration tool had never heard of the newer revision.</dd>
       <dt>Decision</dt><dd>A deploy never reverses a migration. A database ahead of the image means a code-only rollback. Reversing a migration is a deliberate, separate step.</dd>
-      <dt>See it in</dt><dd><a href="{{TA}}/scripts/deploy.sh#L87-L113">scripts/deploy.sh</a>, quoted below, and its ECS twin <a href="{{TA}}/infra/aws/container/migrate.sh">migrate.sh</a>.</dd>
-      <dt>Result</dt><dd>Rolled back under steady signed-in load with no request failing during the swap.</dd>
+      <dt>See it in</dt><dd><a href="{{TA}}/scripts/deploy.sh#L88-L114">scripts/deploy.sh</a>, quoted below, and its ECS twin <a href="{{TA}}/infra/aws/container/migrate.sh">migrate.sh</a>.</dd>
+      <dt>Result</dt><dd>Rolled back under steady signed-in load with no request failing during the api and nginx swaps. Only the TLS edge's replacement refused connections, for about 2 to 3 s; a deploy now replaces the edge only when it changed.</dd>
     </dl>
   </aside>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/scripts/deploy.sh#L87-L113">scripts/deploy.sh</a><span class="lines">the decision, carried out on a single host</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/scripts/deploy.sh#L88-L114">scripts/deploy.sh</a><span class="lines">the decision, carried out on a single host</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The comment restates the decision record in the place a future editor will read it. The code asks the database which revision it is on, then asks this release's migration tool whether it knows that revision.</p>
@@ -236,7 +236,7 @@
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="scripts/deploy.sh" data-lines="87-113"><code class="language-bash"># A rollback: the database already carries a newer release's migrations,
+          <pre class="code" data-repo="triage-assistant" data-path="scripts/deploy.sh" data-lines="88-114"><code class="language-bash"># A rollback: the database already carries a newer release's migrations,
 # which this image's Alembic has never heard of ("Can't locate revision").
 # Run this release's code on the newer schema, without migrating. That is
 # safe only if this release can run on it - down to the release before a

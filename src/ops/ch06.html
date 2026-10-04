@@ -23,7 +23,7 @@
     <tbody>
       <tr><td data-label="Then"><code>git pull</code> and a restart on the server</td><td>The server pulls a released image by version and rolls it in</td><td>A checkout can carry uncommitted edits; an image is exactly what was tested.</td></tr>
       <tr><td data-label="Then">Servers set up by hand and patched in place</td><td>Servers built from code at first boot, and replaced rather than repaired</td><td>A server you can rebuild in minutes is one you never have to nurse.</td></tr>
-      <tr><td data-label="Then">SSH keys for every operator, port 22 open</td><td>Session Manager and Run Command, authorized and recorded</td><td>No key to leak, no port to attack, every command attributed.</td></tr>
+      <tr><td data-label="Then">SSH keys for every operator, port 22 open</td><td>Session Manager and Run Command, authorized and recorded</td><td>No key to leak, no port to attack, every session attributed to a person.</td></tr>
       <tr><td data-label="Then">A maintenance window for each release</td><td>Rolling deploys that keep serving, even on one host</td><td>Users expect the service to stay up during a release.</td></tr>
       <tr><td data-label="Then">Logs read on the box</td><td>Logs shipped off the box by the container runtime or an agent</td><td>A replaced or broken host takes its local logs with it.</td></tr>
     </tbody>
@@ -74,13 +74,13 @@
   <ul>
     <li><strong>The image goes to a registry, not to Git.</strong> The VM pulls it by version, authenticated by its own role on AWS, and never builds anything.</li>
     <li><strong>The deploy definition matches the version.</strong> The compose file and deploy script must match the images, so they come from the same release: shipped by CI with each deploy, or checked out at the release tag. Never a working copy someone edited.</li>
-    <li><strong>The deploy script does five things:</strong> record the version, pull it, run migrations as a one-off container, start the new version, check its health and go back to the previous version if it fails.</li>
+    <li><strong>The deploy script never stops what works:</strong> it pulls the version, runs migrations as a one-off container, starts the new api beside the old one and waits for it to be healthy, drains the old one, and only then records the version, so later commands run it too. If the new api never becomes healthy, the script removes it and stops; the old one was never stopped.</li>
     <li><strong>Rollback is the same script with the previous version.</strong></li>
   </ul>
 
   <figure class="fig wide" id="fig-6-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 292" role="img" aria-label="Two timelines. A plain recreate stops the old container first, so new requests are refused during the drain: 6.7 seconds of 502 errors, and as long as the longest stream. The rolling deploy runs migrations, starts the new api beside the old, waits until it is healthy and resolved by nginx, then drains the old api; only replacing nginx leaves a gap of about 0.3 seconds.">
+    <svg viewBox="0 0 820 292" role="img" aria-label="Two timelines. A plain recreate stops the old container first, so new requests are refused during the drain: 6.7 seconds of 502 errors, and as long as the longest stream. The rolling deploy runs migrations, starts the new api beside the old, waits until it is healthy and resolved by nginx, then drains the old api; only replacing nginx leaves a gap of about 0.3 seconds when nginx owns the port. Behind the TLS edge that swap fails no request.">
       <text class="tb" x="16" y="30">Plain recreate</text>
       <text class="ts" x="16" y="48">compose up replaces a container by stopping it first</text>
       <rect class="n" x="16" y="62" width="180" height="30" rx="3"/><text class="ts" x="106" y="82" text-anchor="middle">old api serving</text>
@@ -104,25 +104,27 @@
       <rect class="n-warn" x="620" y="192" width="12" height="30" rx="2"/>
       <text class="ts tw" x="640" y="204">nginx replaced:</text>
       <text class="ts tw" x="640" y="219">about 0.3 s gap</text>
+      <text class="ts" x="640" y="234">(none behind the edge)</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 6.2</span>Why "recreate" is downtime. The rolling deploy failed no request during the api swap, with every in-flight stream finished. The one remaining gap is the single proxy that owns the port, which only a load balancer in front can remove.</figcaption>
+    <figcaption><span class="fig-n">Figure 6.2</span>Why "recreate" is downtime. The rolling deploy failed no request during the api swap, with every in-flight stream finished. The one remaining gap is replacing the single proxy that owns the port: about 0.3 s when nginx owns it, as on the AWS VM. Behind the reference TLS edge, nginx swaps with no failed request, and the gap moves to replacing the edge itself, about 2 s, which the script does only when the edge changed. Only a load balancer in front of two hosts removes it.</figcaption>
   </figure>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/scripts/deploy.sh#L1-L20">scripts/deploy.sh</a><span class="lines">the rolling deploy for one host</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/scripts/deploy.sh#L1-L21">scripts/deploy.sh</a><span class="lines">the rolling deploy for one host</span></header>
     <div class="repo-body">
       <div class="repo-text">
-        <p>The deploy script opens with its own design: why the obvious command is not used, and the five steps that replace it. It is about 90 lines of Bash, checked by a linter in CI, and its behavior is measured by a failure drill.</p>
+        <p>The deploy script opens with its own design: why the obvious command is not used, and the five steps that replace it. It is about 190 lines of Bash, checked by a linter in CI, and its behavior is measured by a failure drill.</p>
         <ul class="notice">
           <li>Migrations run while the old version still serves, which is why they must be backward compatible.</li>
           <li>The new api is started beside the old one, and nginx must resolve it before the old one stops.</li>
           <li>Rollback is the same script with the previous version, and the schema is never reversed.</li>
+          <li>Step 5's comment describes nginx owning the port. Further down, the script notes that the edge holds requests while nginx restarts (no request failed), and that it replaces the edge, about 2 s of refused connections, only when the edge's build inputs changed.</li>
         </ul>
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="scripts/deploy.sh" data-lines="1-20"><code class="language-bash">#!/usr/bin/env bash
+          <pre class="code" data-repo="triage-assistant" data-path="scripts/deploy.sh" data-lines="1-21"><code class="language-bash">#!/usr/bin/env bash
 # Deploy a release to this host without refusing requests.
 #
 #   make deploy tag=1.4.0          images from $IMAGE_PREFIX (ghcr.io/..., see .env)
@@ -137,8 +139,9 @@
 #   3. wait for nginx to resolve it (resolver valid=10s in default.conf)
 #   4. stop the old api: it finishes its in-flight requests (streams
 #      included, up to graceful_timeout) while nginx sends new ones to the new
-#   5. replace nginx itself - the one step with a gap: one container owns the
-#      published port (measured below; zero only behind a load balancer)
+#   5. replace nginx: behind the TLS edge no request fails (the edge retries);
+#      where nginx publishes the port itself, ~0.3 s of refused connections;
+#      then the edge, only if its image changed (~2 s of refused connections)
 # Rollback = deploy the previous tag. The database stays as it is (the
 # code rolls back, the schema does not), so the previous tag must be able to
 # run on it: the expand/contract rule.</code></pre>
@@ -150,14 +153,14 @@
   <h3 id="ch6-proper">The VM done properly</h3>
   <p>The reference build ran the same stack on an EC2 virtual machine defined in CDK. What makes it acceptable to a platform team, compared with a hand-built server:</p>
   <ul>
-    <li><strong>No SSH key and no port 22.</strong> Operators use Session Manager and Run Command, which the instance's role allows and CloudTrail records.</li>
+    <li><strong>No SSH key and no port 22.</strong> Operators use Session Manager and Run Command, which the instance's role allows. CloudTrail records who opened a session or sent a command; what was typed is kept only with session logging, which this stack does not turn on.</li>
     <li><strong>No registry password.</strong> A credential helper gets ECR credentials from the instance's role.</li>
     <li><strong>Built from code.</strong> cloud-init installs Docker, creates the deploy user, clones the repository for its compose files and scripts, and generates the <code>.env</code> with random passwords at first boot. Because cloud-init runs only once, a changed recipe replaces the VM rather than editing it.</li>
     <li><strong>Small surface.</strong> The metadata service accepts only its token-based version (IMDSv2), the disk is encrypted, and the security group admits HTTP and nothing else.</li>
   </ul>
 
   <section class="repo">
-    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/vm.py#L78-L90">infra/aws/vm.py</a><span class="lines">the VM's role and its single open port</span></header>
+    <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/infra/aws/vm.py#L79-L91">infra/aws/vm.py</a><span class="lines">the VM's role and its single open port</span></header>
     <div class="repo-body">
       <div class="repo-text">
         <p>The VM's identity and its network surface, in fifteen lines of CDK.</p>
@@ -169,7 +172,7 @@
       </div>
       <div class="repo-codes">
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="78-90"><code class="language-python">role = iam.Role(
+          <pre class="code" data-repo="triage-assistant" data-path="infra/aws/vm.py" data-lines="79-91"><code class="language-python">role = iam.Role(
     self,
     "Role",
     assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"),
@@ -250,7 +253,7 @@ sg.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80), "the app")</code></pr
     </li>
     <li>
       <p>What makes the reference VM acceptable to a platform team?</p>
-      <details class="ans"><summary>Answer</summary><p>No SSH key or open port 22, access through recorded Session Manager commands, images pulled with the instance's own role, a single open port, IMDSv2 and an encrypted disk, and a host rebuilt from code at first boot.</p></details>
+      <details class="ans"><summary>Answer</summary><p>No SSH key or open port 22, access through Session Manager, with every session recorded in CloudTrail, images pulled with the instance's own role, a single open port, IMDSv2 and an encrypted disk, and a host rebuilt from code at first boot.</p></details>
     </li>
     <li>
       <p>When is it time to move from one VM to a managed container platform?</p>

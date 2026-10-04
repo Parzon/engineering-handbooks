@@ -25,19 +25,21 @@
       <tr><td data-label="Then">Nightly builds that tell you tomorrow what broke today</td><td>Checks on every pull request, before the merge</td><td>A failure is caught on the change that caused it.</td></tr>
       <tr><td data-label="Then">Build outputs copied to a shared drive or server</td><td>Images in a registry, named by version, verified by content digest</td><td>Every environment fetches the same bytes, and can prove it.</td></tr>
       <tr><td data-label="Then">One processor type for every server</td><td>One version tag pointing at images for amd64 and arm64</td><td>Arm servers, such as AWS Graviton, cost about a fifth less, and laptops run on Arm too.</td></tr>
-      <tr><td data-label="Then">Trust that the build server built what you think</td><td>Build provenance and a software bill of materials attached to each image</td><td>You can show which commit and workflow produced an image, and what is inside it.</td></tr>
+      <tr><td data-label="Then">Trust that the build server built what you think</td><td>Build provenance and a software bill of materials attached to each image</td><td>You can look up which commit and workflow produced an image, and what is inside it; signing the record makes it proof.</td></tr>
     </tbody>
   </table>
 
   <h3 id="ch3-ci">Continuous integration: the merge gate</h3>
-  <p>On every pull request, the reference service runs six jobs in parallel on fresh machines. All six are required by branch protection (Chapter 2), so a pull request cannot merge until they pass. Each job is the same command a developer can run locally, which keeps "it passed on my machine" and "it passed in CI" the same statement.</p>
+  <p>On every pull request, the reference service runs six jobs on fresh machines: five in parallel, and the image build once lint has passed. All six are required by branch protection (Chapter 2), so a pull request cannot merge until they pass. Each job is the same command a developer can run locally, which keeps "it passed on my machine" and "it passed in CI" the same statement.</p>
 
   <figure class="fig wide" id="fig-3-1">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 312" role="img" aria-label="A pull request fans out to six parallel jobs: lint, test-api, build, security, web-build and e2e. All six are required checks; when they are green and the review is approved, the merge is allowed.">
+    <svg viewBox="0 0 820 312" role="img" aria-label="A pull request starts six jobs: lint, test-api, security, web-build and e2e at once, and build after lint passes. All six are required checks; when they are green and the review is approved, the merge is allowed.">
       <rect class="n-acc" x="16" y="118" width="128" height="64" rx="6"/>
       <text class="tb" x="80" y="146" text-anchor="middle">Pull request</text>
       <text class="ts" x="80" y="164" text-anchor="middle">every push to it</text>
+      <text class="ts" x="80" y="214" text-anchor="middle">dashed: build</text>
+      <text class="ts" x="80" y="230" text-anchor="middle">waits for lint</text>
 
       <rect class="n" x="214" y="12" width="300" height="38" rx="5"/>
       <text class="tm tb" x="226" y="36">lint</text><text class="ts" x="276" y="36">ruff, mypy, alert rules, shell, settings</text>
@@ -54,7 +56,7 @@
 
       <path class="e" d="M145,150 C180,150 180,31 212,31" marker-end="url(#a)"/>
       <path class="e" d="M145,150 C180,150 180,77 212,77" marker-end="url(#a)"/>
-      <path class="e" d="M145,150 C180,150 180,123 212,123" marker-end="url(#a)"/>
+      <path class="e dash" d="M145,150 C180,150 180,123 212,123" marker-end="url(#a)"/>
       <path class="e" d="M145,150 C180,150 180,169 212,169" marker-end="url(#a)"/>
       <path class="e" d="M145,150 C180,150 180,215 212,215" marker-end="url(#a)"/>
       <path class="e" d="M145,150 C180,150 180,261 212,261" marker-end="url(#a)"/>
@@ -116,7 +118,7 @@ permissions:
 </code></pre>
         </div>
         <div class="repo-code">
-          <pre class="code" data-repo="triage-assistant" data-path=".github/workflows/ci.yml" data-lines="49-57"><code class="language-yaml">test-api:
+          <pre class="code" data-repo="triage-assistant" data-path=".github/workflows/ci.yml" data-lines="51-59"><code class="language-yaml">test-api:
   runs-on: ubuntu-24.04
   steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -131,14 +133,14 @@ permissions:
   </section>
 
   <h4>Where CI runs, and what it costs</h4>
-  <p>GitHub Actions runs each job on a fresh, GitHub-hosted virtual machine, billed by the minute. Three habits keep the bill and the wait down: cache dependency downloads keyed on the lockfile, run expensive workflows only when their inputs change (path filters), and cancel superseded runs. A <strong>self-hosted runner</strong> executes whatever a workflow tells it to. Never attach one to a public repository that accepts pull requests from outside: a stranger's pull request would run code on your machine.</p>
+  <p>GitHub Actions runs each job on a fresh, GitHub-hosted virtual machine. Standard runners are free for public repositories, such as the reference one; a private repository gets a monthly quota of minutes and is billed by the minute beyond it, and larger runners are always billed. Three habits keep the bill and the wait down: cache dependency downloads keyed on the lockfile, run expensive workflows only when their inputs change (path filters), and cancel superseded runs. A <strong>self-hosted runner</strong> executes whatever a workflow tells it to. Never attach one to a public repository that accepts pull requests from outside: a stranger's pull request would run code on your machine.</p>
 
   <h3 id="ch3-cd">Continuous delivery: a tag becomes a release</h3>
   <p>A release starts when someone pushes a version tag, such as <code>v0.8.2</code>, to a commit on main. Versions follow <strong>semantic versioning</strong>: <code>MAJOR.MINOR.PATCH</code>, where the major number changes for a breaking change, the minor for a compatible feature, and the patch for a fix. Teams choose between deploying every merge to main (continuous deployment) and deploying on a tag (continuous delivery). The reference service deploys on a tag.</p>
 
   <figure class="fig wide" id="fig-3-2">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 300" role="img" aria-label="The release workflow: verify the tag is on main and scan; build three images on two architectures natively, each pushed by digest with provenance and an SBOM; merge the digests under one set of tags per image; smoke-test the published images on both architectures; copy to ECR; then deploy.">
+    <svg viewBox="0 0 820 300" role="img" aria-label="The release workflow: verify the tag is on main and scan an amd64 build of it; build three images on two architectures natively, each pushed by digest with provenance and an SBOM; merge the digests under one set of tags per image; smoke-test the published images on both architectures and, once they pass, copy them to ECR; the deploy starts only if the whole release succeeded.">
       <rect class="n-acc" x="16" y="116" width="110" height="64" rx="6"/>
       <text class="tb" x="71" y="144" text-anchor="middle">Tag pushed</text>
       <text class="tm" x="71" y="164" text-anchor="middle">v0.8.2</text>
@@ -147,7 +149,7 @@ permissions:
       <text class="tb" x="214" y="124" text-anchor="middle">Verify</text>
       <text class="ts" x="214" y="144" text-anchor="middle">tag is on main</text>
       <text class="ts" x="214" y="160" text-anchor="middle">image check</text>
-      <text class="ts" x="214" y="176" text-anchor="middle">scan again</text>
+      <text class="ts" x="214" y="176" text-anchor="middle">scan an amd64 build</text>
 
       <text class="tl" x="378" y="22" text-anchor="middle">SIX NATIVE BUILDS</text>
       <rect class="n" x="302" y="34" width="72" height="34" rx="4"/><text class="tm" x="338" y="56" text-anchor="middle">api</text>
@@ -180,15 +182,16 @@ permissions:
       <line class="e" x1="279" y1="148" x2="300" y2="135" marker-end="url(#a)"/>
       <line class="e" x1="455" y1="135" x2="476" y2="148" marker-end="url(#a)"/>
       <path class="e" d="M597,135 C610,135 605,75 618,75" marker-end="url(#a)"/>
-      <path class="e" d="M597,160 C610,160 605,221 618,221" marker-end="url(#a)"/>
-      <text class="ts" x="600" y="286" text-anchor="middle">then the deploy workflow starts (Chapter 13)</text>
+      <line class="e" x1="713" y1="111" x2="713" y2="183" marker-end="url(#a)"/>
+      <text class="ts" x="721" y="152">once it passes</text>
+      <text class="ts" x="600" y="286" text-anchor="middle">when the whole release succeeds, the deploy workflow starts (Chapter 13)</text>
       <line class="e-acc" x1="713" y1="257" x2="713" y2="270" marker-end="url(#a-acc)"/>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 3.2</span>The release workflow. It builds each image once per processor type, joins them under the release tags, and then tests what it published, not what it built. Only after that are the images copied onward and deployed.</figcaption>
+    <figcaption><span class="fig-n">Figure 3.2</span>The release workflow. It builds each image once per processor type, joins them under the release tags, and then tests what it published, not what it built. The copy to ECR waits for the smoke test, because ECR tags are immutable: an image that failed it must never land there. The deploy starts only if the whole release succeeded.</figcaption>
   </figure>
 
-  <p>Each step guards against a specific failure. Checking that the tag points at a commit on main stops anyone releasing code that never passed review. Scanning again at release catches vulnerabilities published after the merge. Testing the published images, rather than the build outputs, proves the registry holds what the team thinks it holds.</p>
+  <p>Each step guards against a specific failure. Checking that the tag points at a commit on main stops anyone releasing code that never passed review. Scanning again at release catches vulnerabilities published after the merge. Testing the published images, rather than the build outputs, proves the registry holds what the team thinks it holds. Two gaps remain. The release-time scan and image check run on images the verify job builds for them on its amd64 machine, from the same commit: neither the arm64 images nor the exact published bytes are scanned. Scanning the pushed index by digest, once per architecture, would close that gap. And the copy to ECR does not wait for the smoke test, so a release that fails it still lands in ECR under a tag that can never be re-pushed. Only the deploy waits. Making the copy depend on the smoke test would close the gap.</p>
 
   <section class="repo">
     <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/.github/workflows/release.yml#L57-L66">.github/workflows/release.yml</a><span class="lines">the release's guards and its build outputs</span></header>
@@ -197,7 +200,7 @@ permissions:
         <p>Two parts of the release workflow carry most of its guarantees.</p>
         <ul class="notice">
           <li><code>git merge-base --is-ancestor</code> fails unless the tagged commit is already on main.</li>
-          <li>The image check and the vulnerability scan run again at release time.</li>
+          <li>The image check and the vulnerability scan run again at release time, on an amd64 build of the tagged commit made for them, not on the images that are published.</li>
           <li>A tag push publishes each build by digest; a pull request only builds, to a cache.</li>
           <li><code>provenance</code> and <code>sbom</code> store, next to the image in the registry, which commit and workflow built it and what it contains.</li>
         </ul>
@@ -228,7 +231,7 @@ sbom: ${{ github.event_name == 'push' }}</code></pre>
   </section>
 
   <h3 id="ch3-artifacts">Tags, digests and multi-architecture images</h3>
-  <p>An image is the immutable build output, identified by a <strong>digest</strong>: a hash of its content, such as <code>sha256:fcbc59d1…</code>. A <strong>tag</strong> is a movable label, like a Git branch. The release workflow moves <code>0.8</code> on every 0.8.x release on purpose; a re-push can move any tag unless the registry forbids it. So deploy an exact version from a registry with immutable tags, or deploy by digest, and never deploy <code>latest</code> or a moving tag such as <code>0.8</code>.</p>
+  <p>An image is the immutable build output, identified by a <strong>digest</strong>: a hash of its content, such as <code>sha256:21115358…</code>. A <strong>tag</strong> is a movable label, like a Git branch. The release workflow moves <code>0.8</code> on every 0.8.x release on purpose; a re-push can move any tag unless the registry forbids it. So deploy an exact version from a registry with immutable tags, or deploy by digest, and never deploy <code>latest</code> or a moving tag such as <code>0.8</code>.</p>
 
   <figure class="fig wide" id="fig-3-3">
     <div class="fig-scroll">
@@ -240,7 +243,7 @@ sbom: ${{ github.event_name == 'push' }}</code></pre>
 
       <rect class="n-acc" x="180" y="78" width="210" height="92" rx="6"/>
       <text class="tl" x="196" y="100">INDEX (A DIGEST)</text>
-      <text class="tm" x="196" y="122">sha256:fcbc59d1…</text>
+      <text class="tm" x="196" y="122">sha256:21115358…</text>
       <text class="ts" x="196" y="142">lists one image per</text>
       <text class="ts" x="196" y="158">processor type</text>
 
@@ -313,7 +316,7 @@ sbom: ${{ github.event_name == 'push' }}</code></pre>
     </li>
     <li>
       <p>What does build provenance answer that a version number does not?</p>
-      <details class="ans"><summary>Answer</summary><p>Which commit and which workflow run produced this exact image. A version number is only a label someone chose; provenance is a signed record stored with the image.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Which commit and which workflow run produced this exact image. A version number is only a label someone chose; provenance is a record the build wrote and stored with the image. It proves the answer only when it is signed and the signature is checked; the reference release's is not signed.</p></details>
     </li>
   </ol>
 </section>

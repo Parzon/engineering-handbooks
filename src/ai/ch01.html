@@ -13,7 +13,7 @@
       <li>The familiar part: seams and adapters, timeouts, streaming, access control, observability, capacity, supply chain. All of it still applies, and most of an AI service is this.</li>
       <li>Tests prove the code; <strong>evals</strong> measure the model and prompt together, as a pass rate over repeated runs.</li>
       <li>A safety property that matters goes in code, not in the prompt: a prompt rule is a probability.</li>
-      <li>In the reference service, the AI-specific logic is two small modules; everything around them is the standard platform.</li>
+      <li>In the reference service, the AI-specific logic is a handful of modules: the prompt, the model seam, retrieval, redaction and the agent's tools. Everything around them is the standard platform.</li>
     </ul>
   </div>
 
@@ -51,7 +51,7 @@
     <figcaption><span class="fig-n">Figure 1.1</span>One question through the reference service. The AI-specific parts are the accented boxes; the rest is the platform that Handbook 2 covers, which the AI parts rely on for their safety: the model is only ever given what the visibility query returns.</figcaption>
   </figure>
 
-  <p>The reference service is an incident triage assistant: an on-call engineer asks about the alerts their teams can see, and a model answers from those alerts and the teams' runbooks, streaming its answer and citing the runbook sections it used. Its AI-specific logic lives in two modules, one deciding what the model sees and one talking to any OpenAI-compatible endpoint. Everything else (sign-in, roles, database isolation, rate limits, streaming, telemetry, deployment) is the same platform a service without a model would need, and that is deliberate: a new project replaces the domain and the prompt, and keeps the rest.</p>
+  <p>The reference service is an incident triage assistant: an on-call engineer asks about the alerts their teams can see, and a model answers from those alerts and the teams' runbooks, streaming its answer and citing the runbook sections it used. Its AI-specific logic lives in a handful of modules: the prompt builder, the seam that talks to any OpenAI-compatible endpoint, runbook retrieval, credential redaction and, in agent mode, the tool loop and its tools, about a third of the application code. Everything else (sign-in, roles, database isolation, rate limits, streaming, telemetry, deployment) is the same platform a service without a model would need, and that is deliberate: a new project replaces the domain and the prompt, and keeps the rest.</p>
 
   <section class="repo">
     <header class="repo-h"><span class="label">In the repo</span><a href="{{TA}}/apps/api/app/triage.py#L1-L5">apps/api/app/triage.py</a><span class="lines">the one module a new project rewrites</span></header>

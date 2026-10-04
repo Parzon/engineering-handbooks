@@ -67,10 +67,10 @@ blocks (`split_sections`, tested).
 
 At 12 words, "Free space" becomes four fragments. The safety warning is
 cut in two:
-- one fragment ends with "... `logrotate -f /etc/logrotate.conf`. Never";
+- one fragment ends with "... `logrotate -f /etc/logrotate.conf`. Never delete files inside";
 - the next reads "the data directory by hand."
 
-Neither says "never delete files in the data directory by hand".
+Neither says "never delete files inside the data directory by hand".
 
 **Diagnosis:** chunking. Too small, and a step loses its condition; too
 large, and one section dilutes the match. The service splits at headings

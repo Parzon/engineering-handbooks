@@ -47,7 +47,7 @@
       <text class="ts" x="300" y="226">server pool ≤ Postgres' limit minus headroom for migrations and admins</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 7.1</span>The reference service's connection budget. Without the pooler, each replica's 40 connections would exhaust Postgres at three replicas. On AWS, RDS Proxy plays the pooler's role.</figcaption>
+    <figcaption><span class="fig-n">Figure 7.1</span>The reference service's connection budget. Without the pooler, each replica's 40 connections would exhaust Postgres at three replicas. On AWS, RDS Proxy can play the pooler's role, but where it sees session state it pins the client to one server connection until the client disconnects. Its PostgreSQL triggers include <code>set_config</code>, which this service calls in every signed-in transaction, so measure pinning before sizing on it.</figcaption>
   </figure>
 
   <p>Transaction pooling has one hard consequence: a server connection is handed to a different client at the end of every transaction, so <strong>nothing may rely on session state</strong>. Session <code>SET</code> commands, advisory locks held across transactions, <code>LISTEN</code>/<code>NOTIFY</code> and temporary tables all break. That is why the reference service sets its statement and idle timeouts on the database role itself, and why it tells Postgres who is asking in every transaction rather than once per connection.</p>
@@ -192,10 +192,10 @@ def upgrade() -&gt; None:
       <dt>Problem</dt><dd>Isolation depended on one line of code per query; a forgotten filter would leak silently, possibly into a model's prompt.</dd>
       <dt>Decision</dt><dd>One policy per command on team data, reading transaction-local settings; no context means no rows; the owner bypasses policies, the app role does not; rolled out expand-then-contract across two releases.</dd>
       <dt>Rejected</dt><dd>A schema or database per team (right for separate customers, heavy for teams in one organization); a database role per team; views per team.</dd>
-      <dt>See it in</dt><dd>The policies above, and nine database-level tests in <a href="{{TA}}/apps/api/tests/integration/test_row_level_security.py">test_row_level_security.py</a> that query as the app role directly.</dd>
+      <dt>See it in</dt><dd>The policies above, and eleven database-level tests in <a href="{{TA}}/apps/api/tests/integration/test_row_level_security.py">test_row_level_security.py</a> that query as the app role directly.</dd>
     </dl>
   </aside>
-  <p data-adr="ADR-0005">The companion decision, ADR-0005, set the two-role model and the pooler: the schema owner is used only by migrations, which run directly against Postgres as a one-off step before the api starts, never on api startup, where several workers and replicas would race to migrate.</p>
+  <p data-adr="ADR-0005">The companion decision, ADR-0005, set the two-role model and the pooler: the schema owner is used only by migrations, which run directly against Postgres as a one-off step before the api starts, never on api startup, where several workers and replicas would race to migrate. The Compose deploy does exactly that. The reference ECS stack instead migrates in an init container in every api task, so replicas that start together did race, and an advisory lock now makes them take turns (Chapter 6).</p>
 
   <aside class="say">
     <span class="label">How to say it</span>

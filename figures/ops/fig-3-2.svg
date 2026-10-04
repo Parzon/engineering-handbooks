@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="The release workflow: verify the tag is on main and scan; build three images on two architectures natively, each pushed by digest with provenance and an SBOM; merge the digests under one set of tags per image; smoke-test the published images on both architectures; copy to ECR; then deploy."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="The release workflow: verify the tag is on main and scan an amd64 build of it; build three images on two architectures natively, each pushed by digest with provenance and an SBOM; merge the digests under one set of tags per image; smoke-test the published images on both architectures and, at the same time, copy them to ECR; the deploy starts only if the whole release succeeded."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
 .ts { font-size: 11.5px; fill: #48505a; }
 .tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
 .tb { font-weight: 680; }
@@ -56,7 +56,7 @@ g.ts text { font-size: 11.5px; }
       <text class="tb" x="214" y="124" text-anchor="middle">Verify</text>
       <text class="ts" x="214" y="144" text-anchor="middle">tag is on main</text>
       <text class="ts" x="214" y="160" text-anchor="middle">image check</text>
-      <text class="ts" x="214" y="176" text-anchor="middle">scan again</text>
+      <text class="ts" x="214" y="176" text-anchor="middle">scan an amd64 build</text>
 
       <text class="tl" x="378" y="22" text-anchor="middle">SIX NATIVE BUILDS</text>
       <rect class="n" x="302" y="34" width="72" height="34" rx="4"/><text class="tm" x="338" y="56" text-anchor="middle">api</text>
@@ -90,6 +90,6 @@ g.ts text { font-size: 11.5px; }
       <line class="e" x1="455" y1="135" x2="476" y2="148" marker-end="url(#a)"/>
       <path class="e" d="M597,135 C610,135 605,75 618,75" marker-end="url(#a)"/>
       <path class="e" d="M597,160 C610,160 605,221 618,221" marker-end="url(#a)"/>
-      <text class="ts" x="600" y="286" text-anchor="middle">then the deploy workflow starts (Chapter 13)</text>
+      <text class="ts" x="600" y="286" text-anchor="middle">when the whole release succeeds, the deploy workflow starts (Chapter 13)</text>
       <line class="e-acc" x1="713" y1="257" x2="713" y2="270" marker-end="url(#a-acc)"/>
     </svg>

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 250" role="img" aria-label="A chain of migrations, each naming its parent: create alerts, add an external id, index by time, teams and users, row-level security, runbooks. Three databases record different positions: a developer's is at the newest revision, CI's throwaway database starts empty and replays all of them, production is two behind. Upgrading production runs only the two missing migrations, in order."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 250" role="img" aria-label="The first six of nine migrations in a chain, each naming its parent: create alerts, add an external id, index by time, teams and users, row-level security, runbooks. Three databases record different positions: a developer's is at the newest revision, CI's throwaway database starts empty and replays all of them, production is two behind. Upgrading production runs only the two missing migrations, in order."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
 .ts { font-size: 11.5px; fill: #48505a; }
 .tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
 .tb { font-weight: 680; }
@@ -65,6 +65,6 @@ g.ts text { font-size: 11.5px; }
       <path class="e-acc" d="M141,139 V120 H611 V100" marker-end="url(#a-acc)"/>
       <path class="e-acc" d="M141,139 V120 H745 V100" marker-end="url(#a-acc)"/>
       <text class="ts ta" x="300" y="146">an upgrade runs only the two it is missing, in order</text>
-      <rect class="n-soft" x="290" y="196" width="250" height="40" rx="5"/><text class="ts" x="302" y="221">CI starts empty and replays all six</text>
+      <rect class="n-soft" x="290" y="196" width="250" height="40" rx="5"/><text class="ts" x="302" y="221">CI starts empty and replays them all</text>
       <rect class="n-soft" x="556" y="196" width="248" height="40" rx="5"/><text class="ts" x="568" y="221">"heads" must print exactly one</text>
     </svg>

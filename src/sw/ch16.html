@@ -126,18 +126,18 @@
       <text class="ts" x="16" y="248">50 streams: first event p95 114 ms, 37 answers/s · 500 streams after the fixes: 1.25 s, 239 answers/s, 0 failed, 2 cores saturated</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 16.3</span>Capacity of one two-CPU instance, before sign-in existed. Signed in, the cheapest read costs about twice as much: roughly 530 reads per second per core instead of 920. For a real model, the provider's tokens-per-minute quota binds long before the api's CPU does.</figcaption>
+    <figcaption><span class="fig-n">Figure 16.3</span>Capacity of one two-CPU instance, before sign-in existed, from the operations guide's capacity run. A later A/B run of the same read measured p95 2.6 ms at 1,000 a second before sign-in and 19.7 ms signed in; signed in, the cheapest read costs about twice the CPU: roughly 530 reads per second per core instead of 920. For a real model, the provider's tokens-per-minute quota binds long before the api's CPU does.</figcaption>
   </figure>
 
   <h3 id="ch16-order">The bottlenecks, in the order they bite</h3>
   <figure class="fig wide" id="fig-16-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 320" role="img" aria-label="Bottlenecks in order. One: a missing index, before any real load arrives. Two: connection churn, a metastable slow state ended by a fixed pool. Three: api CPU on reads, about 530 signed-in reads per second per core. Four: api CPU on streaming, the SDK's 126 microseconds per chunk; 500 streams saturate 2 CPUs. Five: event-loop saturation turning into errors elsewhere, because every wall-clock timeout fires early; timeouts appeared at 46 percent CPU. Six: connection budgets between workers, the pooler and Postgres. Seven: the model provider's quota.">
+    <svg viewBox="0 0 820 320" role="img" aria-label="Bottlenecks in order. One: a missing index, before any real load arrives. Two: connection churn, a metastable slow state ended by a fixed pool. Three: api CPU on reads, about 530 signed-in reads per second per core. Four: api CPU on streaming, the SDK's 126 microseconds per chunk; 500 streams saturate 2 CPUs. Five: event-loop saturation turning into errors elsewhere, because wall-clock timeouts expire while replies wait in the loop's queue; timeouts appeared at 46 percent CPU. Six: connection budgets between workers, the pooler and Postgres. Seven: the model provider's quota.">
       <rect class="n-soft" x="16" y="16" width="788" height="36" rx="4"/><text class="tb" x="28" y="39">1</text><text class="ts" x="52" y="39">A missing index: the first bottleneck arrives before any real load does (Chapter 6)</text>
       <rect class="n-soft" x="16" y="58" width="788" height="36" rx="4"/><text class="tb" x="28" y="81">2</text><text class="ts" x="52" y="81">Connection churn: a slow state that sustains itself; a fixed-size pool ended it (Chapter 7)</text>
       <rect class="n-soft" x="16" y="100" width="788" height="36" rx="4"/><text class="tb" x="28" y="123">3</text><text class="ts" x="52" y="123">api CPU on reads: about 530 signed-in reads per second per core</text>
       <rect class="n-soft" x="16" y="142" width="788" height="36" rx="4"/><text class="tb" x="28" y="165">4</text><text class="ts" x="52" y="165">api CPU on streaming: the SDK's 126 µs per chunk; 500 streams saturate two CPUs</text>
-      <rect class="n-warn" x="16" y="184" width="788" height="36" rx="4"/><text class="tb" x="28" y="207">5</text><text class="ts" x="52" y="207">Event-loop saturation becomes errors elsewhere: every wall-clock timeout fires early, from 46% CPU</text>
+      <rect class="n-warn" x="16" y="184" width="788" height="36" rx="4"/><text class="tb" x="28" y="207">5</text><text class="ts" x="52" y="207">Event-loop saturation becomes errors elsewhere: timeouts expire while replies wait in the queue, from 46% CPU</text>
       <rect class="n-soft" x="16" y="226" width="788" height="36" rx="4"/><text class="tb" x="28" y="249">6</text><text class="ts" x="52" y="249">Connection budgets: 2 workers × 20 = 40 pooler clients per replica; the pooler's 500 allows about 12 replicas</text>
       <rect class="n-soft" x="16" y="268" width="788" height="36" rx="4"/><text class="tb" x="28" y="291">7</text><text class="ts" x="52" y="291">The model provider's quota: with a real provider, this binds first; plan capacity from it</text>
     </svg>
@@ -146,7 +146,7 @@
   </figure>
 
   <h4>A saturation cascade</h4>
-  <p>At 200 to 500 concurrent streams, errors came from everywhere at once: connection resets in nginx, thousands of rate-limiter fail-opens, Redis pool exhaustion and database pool timeouts. Each had its own cause, and they amplified each other. Workers were being recycled every ten thousand requests, closing keep-alive connections nginx was about to reuse, which nginx does not retry for a POST; the limiter's 50-millisecond budget was wall-clock time, so it included the time a busy loop took to read the reply; the Redis pool was smaller than the number of concurrent requests; and the database pool was churning. After four changes: zero errors in 10,056 answers, and more answers per second. The general lesson is that on a busy event loop every wall-clock timeout fires early, so the first symptoms of saturation are fail-opens and pool timeouts at moderate CPU, not slow responses.</p>
+  <p>At 200 to 500 concurrent streams, errors came from everywhere at once: connection resets in nginx, thousands of rate-limiter fail-opens, Redis pool exhaustion and database pool timeouts. Each had its own cause, and they amplified each other. Workers were being recycled every ten thousand requests, closing keep-alive connections nginx was about to reuse, which nginx does not retry for a POST; the limiter's 50-millisecond budget was wall-clock time, so it included the time a busy loop took to read the reply; the Redis pool was smaller than the number of concurrent requests; and the database pool was churning. After four changes: zero errors in 10,056 answers, and more answers per second. The general lesson is that on a busy event loop wall-clock timeouts expire while finished replies wait to be read, so the first symptoms of saturation are fail-opens and pool timeouts at moderate CPU, not slow responses.</p>
 
   <figure class="fig wide" id="fig-16-5">
     <div class="fig-scroll">
@@ -226,7 +226,7 @@
     </li>
     <li>
       <p>Why were the first signs of saturation errors rather than slow responses?</p>
-      <details class="ans"><summary>Answer</summary><p>On a busy event loop, every timeout measured in wall-clock time fires early, because it includes the time spent waiting for the loop. Limiter fail-opens and pool timeouts appeared at moderate CPU.</p></details>
+      <details class="ans"><summary>Answer</summary><p>On a busy event loop, a timeout measured in wall-clock time can expire although the reply has arrived, because it includes the time the reply spends waiting for the loop. Limiter fail-opens and pool timeouts appeared at moderate CPU.</p></details>
     </li>
   </ol>
 </section>

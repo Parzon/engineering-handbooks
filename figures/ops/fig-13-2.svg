@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 260" role="img" aria-label="Expand and contract across four releases. Release 1 expands: adds a nullable column; old code ignores it. Release 2 writes both old and new; a backfill fills history. Release 3 reads and writes only the new. Release 4 contracts: removes the old column. Rolling back is safe between adjacent releases up to the one before a contract; skipping from release 1 straight to release 4 is not."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 272" role="img" aria-label="Expand and contract across five releases. Release 1 expands: adds a nullable column; old code ignores it. Release 2 writes both old and new and still reads the old; a backfill fills history. Release 3 reads the new column and still writes both. Release 4 writes only the new; the old column is no longer used. Release 5 contracts: removes the old column. Each release can be rolled back to the one before it. Skipping from release 1 straight to release 5 is not safe, and from release 4 or 5 only a one-release rollback is: the old column is stale after release 4 and gone after release 5."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
 .ts { font-size: 11.5px; fill: #48505a; }
 .tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
 .tb { font-weight: 680; }
@@ -47,34 +47,43 @@ g.ts text { font-size: 11.5px; }
     <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
     <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
     <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
-  </defs><rect width="820" height="260" fill="#ffffff"/>
-      <text class="tl" x="16" y="18">FOUR RELEASES, ONE SCHEMA CHANGE</text>
-      <rect class="n-acc" x="16" y="30" width="186" height="96" rx="6"/>
-      <text class="tb" x="30" y="54">1  Expand</text>
-      <text class="ts" x="30" y="74">add the new column,</text>
-      <text class="ts" x="30" y="90">nullable; old code</text>
-      <text class="ts" x="30" y="106">simply ignores it</text>
-      <rect class="n" x="218" y="30" width="186" height="96" rx="6"/>
-      <text class="tb" x="232" y="54">2  Write both</text>
-      <text class="ts" x="232" y="74">code writes old and new;</text>
-      <text class="ts" x="232" y="90">a backfill fills history</text>
-      <text class="ts" x="232" y="106">in batches</text>
-      <rect class="n" x="420" y="30" width="186" height="96" rx="6"/>
-      <text class="tb" x="434" y="54">3  Use only the new</text>
-      <text class="ts" x="434" y="74">code reads and writes</text>
-      <text class="ts" x="434" y="90">only the new column</text>
-      <rect class="n-warn" x="622" y="30" width="182" height="96" rx="6"/>
-      <text class="tb" x="636" y="54">4  Contract</text>
-      <text class="ts" x="636" y="74">remove the old column,</text>
-      <text class="ts" x="636" y="90">in a later release</text>
-      <line class="e" x1="203" y1="78" x2="216" y2="78" marker-end="url(#a)"/>
-      <line class="e" x1="405" y1="78" x2="418" y2="78" marker-end="url(#a)"/>
-      <line class="e" x1="607" y1="78" x2="620" y2="78" marker-end="url(#a)"/>
+  </defs><rect width="820" height="272" fill="#ffffff"/>
+      <text class="tl" x="16" y="18">FIVE RELEASES, ONE SCHEMA CHANGE</text>
+      <rect class="n-acc" x="16" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="28" y="54">1  Expand</text>
+      <text class="ts" x="28" y="74">add the new column,</text>
+      <text class="ts" x="28" y="90">nullable; old code</text>
+      <text class="ts" x="28" y="106">simply ignores it</text>
+      <rect class="n" x="174" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="186" y="54">2  Write both</text>
+      <text class="ts" x="186" y="74">write old and new,</text>
+      <text class="ts" x="186" y="90">still read the old;</text>
+      <text class="ts" x="186" y="106">backfill the history</text>
+      <rect class="n" x="332" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="344" y="54">3  Read the new</text>
+      <text class="ts" x="344" y="74">read the new column,</text>
+      <text class="ts" x="344" y="90">still write both</text>
+      <rect class="n" x="490" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="502" y="54">4  Write only new</text>
+      <text class="ts" x="502" y="74">the old column is</text>
+      <text class="ts" x="502" y="90">no longer used</text>
+      <rect class="n-warn" x="648" y="30" width="146" height="100" rx="6"/>
+      <text class="tb" x="660" y="54">5  Contract</text>
+      <text class="ts" x="660" y="74">remove the old column,</text>
+      <text class="ts" x="660" y="90">in a later release</text>
+      <line class="e" x1="163" y1="80" x2="172" y2="80" marker-end="url(#a)"/>
+      <line class="e" x1="321" y1="80" x2="330" y2="80" marker-end="url(#a)"/>
+      <line class="e" x1="479" y1="80" x2="488" y2="80" marker-end="url(#a)"/>
+      <line class="e" x1="637" y1="80" x2="646" y2="80" marker-end="url(#a)"/>
 
-      <path class="e-good" d="M300,140 C300,170 110,170 110,132" marker-end="url(#a-good)"/>
-      <text class="ts tg" x="205" y="150" text-anchor="middle">roll 2 back to 1: safe</text>
-      <path class="e-good" d="M510,140 C510,170 310,170 310,132" marker-end="url(#a-good)"/>
-      <text class="ts tg" x="410" y="150" text-anchor="middle">roll 3 back to 2: safe</text>
-      <path class="e-bad" d="M713,140 C713,222 110,222 110,134" marker-end="url(#a-bad)"/>
-      <text class="ts tr" x="410" y="248" text-anchor="middle">never skip from 1 to 4, or roll 4 back past 3: the old code needs the column that was removed</text>
+      <path class="e-good" d="M239,144 C239,174 97,174 97,136" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="168" y="154" text-anchor="middle">roll 2 back to 1: safe</text>
+      <path class="e-good" d="M397,144 C397,174 255,174 255,136" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="326" y="154" text-anchor="middle">roll 3 back to 2: safe</text>
+      <path class="e-good" d="M555,144 C555,174 413,174 413,136" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="484" y="154" text-anchor="middle">roll 4 back to 3: safe</text>
+      <path class="e-good" d="M713,144 C713,174 571,174 571,136" marker-end="url(#a-good)"/>
+      <text class="ts tg" x="642" y="154" text-anchor="middle">roll 5 back to 4: safe</text>
+      <path class="e-bad" d="M729,144 C729,234 81,234 81,138" marker-end="url(#a-bad)"/>
+      <text class="ts tr" x="410" y="258" text-anchor="middle">never skip from 1 to 5; from 4 or 5, roll back one release only: the old column is stale after 4, gone after 5</text>
     </svg>

@@ -10,7 +10,7 @@
     <span class="label">At a glance</span>
     <ul>
       <li>One forward pass per output token. Prices, limits and speed are all counted in tokens.</li>
-      <li>Two phases: <strong>prefill</strong> reads the prompt in parallel and sets the time to first token; <strong>decode</strong> writes one token at a time and sets tokens per second.</li>
+      <li>Two phases: <strong>prefill</strong> reads the prompt in parallel and sets the time to first token; <strong>decode</strong> writes one token at a time and sets tokens per second. A reasoning model also decodes its hidden thinking before the first answer token.</li>
       <li>Sampling (temperature, top-p) is why the same prompt answers differently, and why evals repeat runs.</li>
       <li>The context window holds input and output together; hidden reasoning spends the output budget too.</li>
       <li>The KV cache holds every earlier token's keys and values in GPU memory, and caps how many requests fit at once.</li>
@@ -77,7 +77,7 @@
   <h3 id="ch2-sampling">Logits, sampling and temperature</h3>
   <figure class="fig wide" id="fig-2-3">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 260" role="img" aria-label="Next-token probabilities after 'the disk is', as bars for full, nearly, at, almost and other tokens. Low temperature sharpens the distribution toward 'full'; high temperature flattens it. Temperature 0 is greedy: always the top token. Top-p keeps only the smallest set of tokens whose probabilities reach p, here full and nearly, and samples among them. Low temperature suits extraction, classification, judges and tool calls; higher suits drafting.">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Next-token probabilities after 'the disk is', as bars for full, nearly, at, almost and other tokens. Low temperature sharpens the distribution toward 'full'; high temperature flattens it. Temperature 0 is greedy: always the top token. Top-p keeps only the smallest set of tokens whose probabilities reach p, here full and nearly, and samples among them; top-k keeps only the k likeliest. Adjust temperature or top-p, usually not both. Low temperature suits extraction, classification, judges and tool calls; higher suits drafting.">
       <text class="tl" x="16" y="22">TEMPERATURE 0.3: SHARP</text>
       <g class="ts">
       <text x="16" y="52">full</text><rect class="fill-acc" x="80" y="40" width="210" height="16"/><text x="298" y="52">0.82</text>
@@ -87,15 +87,15 @@
       </g>
       <text class="tl" x="430" y="22">TEMPERATURE 1.5: FLAT</text>
       <g class="ts">
-      <text x="430" y="52">full</text><rect class="fill-acc" x="494" y="40" width="110" height="16"/><text x="612" y="52">0.43</text>
+      <text x="430" y="52">full</text><rect class="fill-acc" x="494" y="40" width="97" height="16"/><text x="599" y="52">0.38</text>
       <text x="430" y="76">nearly</text><rect class="fill-acc" x="494" y="64" width="67" height="16"/><text x="569" y="76">0.26</text>
-      <text x="430" y="100">at</text><rect class="fill-acc" x="494" y="88" width="46" height="16"/><text x="548" y="100">0.18</text>
-      <text x="430" y="124">almost</text><rect class="fill-acc" x="494" y="112" width="33" height="16"/><text x="535" y="124">0.13</text>
+      <text x="430" y="100">at</text><rect class="fill-acc" x="494" y="88" width="54" height="16"/><text x="556" y="100">0.21</text>
+      <text x="430" y="124">almost</text><rect class="fill-acc" x="494" y="112" width="41" height="16"/><text x="543" y="124">0.16</text>
       </g>
       <rect class="n-soft" x="16" y="150" width="788" height="96" rx="6"/>
       <text class="ts" x="28" y="172"><tspan class="tb">Temperature</tspan> divides the logits before softmax: below 1 sharpens toward the likeliest token, above 1 flattens.</text>
       <text class="ts" x="28" y="192"><tspan class="tb">0 is greedy</tspan>: always the top token, the most repeatable setting, though not bit-identical on GPUs that batch requests.</text>
-      <text class="ts" x="28" y="212"><tspan class="tb">Top-p</tspan>: sample only from the smallest set reaching probability p; <tspan class="tb">top-k</tspan>: only the k likeliest. Tune one, not both.</text>
+      <text class="ts" x="28" y="212"><tspan class="tb">Top-p</tspan>: sample only from the smallest set reaching probability p; <tspan class="tb">top-k</tspan>: only the k likeliest. Adjust temperature or top-p, usually not both.</text>
       <text class="ts" x="28" y="232">Low temperature for extraction, classification, judges and tool calls; higher for drafting.</text>
     </svg>
     </div>
@@ -105,17 +105,17 @@
   <h3 id="ch2-phases">Prefill and decode: two phases, two bottlenecks</h3>
   <figure class="fig wide" id="fig-2-4">
     <div class="fig-scroll">
-    <svg viewBox="0 0 820 250" role="img" aria-label="A request's timeline. Prefill runs the whole prompt through the model in one parallel pass and builds the KV cache; it is compute-bound, grows with the prompt and sets the time to first token. Decode produces one token per forward pass, reading all the weights and the KV cache from GPU memory each time; it is memory-bandwidth-bound and sets tokens per second per stream. Total time is roughly the time to first token plus output tokens divided by tokens per second. Measured for a 20-billion-parameter model on one GPU: time to first token about 0.2 to 0.3 seconds, and 176 tokens per second for a single stream.">
+    <svg viewBox="0 0 820 250" role="img" aria-label="A request's timeline. Prefill runs the whole prompt through the model in one parallel pass and builds the KV cache; it is compute-bound, grows with the prompt and sets the time to first token. Decode produces one token per forward pass, reading all the weights and the KV cache from GPU memory each time; it is memory-bandwidth-bound and sets tokens per second per stream. Total time is roughly the time to first token plus output tokens divided by tokens per second. Measured for a 20-billion-parameter reasoning model on one GPU: time to the first answer token about 0.2 to 0.3 seconds, which includes its hidden thinking as well as prefill, and 176 tokens per second for a single stream.">
       <rect class="n-acc" x="16" y="40" width="150" height="50" rx="4"/><text class="tb" x="91" y="62" text-anchor="middle">prefill</text><text class="ts" x="91" y="80" text-anchor="middle">whole prompt, parallel</text>
       <g class="fill-good"><rect x="172" y="50" width="22" height="30"/><rect x="198" y="50" width="22" height="30"/><rect x="224" y="50" width="22" height="30"/><rect x="250" y="50" width="22" height="30"/><rect x="276" y="50" width="22" height="30"/><rect x="302" y="50" width="22" height="30"/><rect x="328" y="50" width="22" height="30"/><rect x="354" y="50" width="22" height="30"/><rect x="380" y="50" width="22" height="30"/><rect x="406" y="50" width="22" height="30"/><rect x="432" y="50" width="22" height="30"/><rect x="458" y="50" width="22" height="30"/><rect x="484" y="50" width="22" height="30"/><rect x="510" y="50" width="22" height="30"/><rect x="536" y="50" width="22" height="30"/><rect x="562" y="50" width="22" height="30"/></g>
       <text class="ts" x="380" y="36" text-anchor="middle">decode: one token per forward pass</text>
       <line class="rule-strong" x1="166" y1="100" x2="166" y2="116"/><text class="ts" x="166" y="130" text-anchor="middle">first token</text>
       <text class="tb" x="600" y="70">total ≈ TTFT + N ÷ tok/s</text>
-      <rect class="n" x="16" y="150" width="384" height="86" rx="6"/><text class="tb" x="28" y="172">Prefill: compute-bound</text><text class="ts" x="28" y="192">large matrix multiplications keep the GPU busy;</text><text class="ts" x="28" y="208">grows with the prompt; sets time to first token</text><text class="ts" x="28" y="226">measured: about 0.2 to 0.3 s</text>
+      <rect class="n" x="16" y="150" width="384" height="86" rx="6"/><text class="tb" x="28" y="172">Prefill: compute-bound</text><text class="ts" x="28" y="192">large matrix multiplications keep the GPU busy;</text><text class="ts" x="28" y="208">grows with the prompt; sets time to first token</text><text class="ts" x="28" y="226">measured: 0.2 to 0.3 s, model thinking included</text>
       <rect class="n" x="420" y="150" width="384" height="86" rx="6"/><text class="tb" x="432" y="172">Decode: memory-bandwidth-bound</text><text class="ts" x="432" y="192">each pass reads all weights and the KV cache</text><text class="ts" x="432" y="208">to do little arithmetic; sets tokens per second</text><text class="ts" x="432" y="226">measured: 176 tokens/s, one stream</text>
     </svg>
     </div>
-    <figcaption><span class="fig-n">Figure 2.4</span>The two phases of a request, measured for a 20-billion-parameter open model on one 48 GB GPU. A longer prompt raises the time to first token; a longer answer raises total time at a steady rate. Hence: short prompts for a quick first word, streaming so users wait for the first token rather than the whole answer, and a cap on output.</figcaption>
+    <figcaption><span class="fig-n">Figure 2.4</span>The two phases of a request, measured for a 20-billion-parameter open model on one 48 GB GPU. A longer prompt raises the time to first token; a longer answer raises total time at a steady rate. This model reasons before it answers, so its measured time to the first answer token includes hidden thinking as well as prefill; Chapter 8 measures the two apart. Hence: short prompts for a quick first word, streaming so users wait for the first token rather than the whole answer, and a cap on output.</figcaption>
   </figure>
 
   <h4>The KV cache</h4>
@@ -172,7 +172,7 @@
 
   <aside class="say">
     <span class="label">How to say it</span>
-    <p>"Time to first token is prefill, which grows with the prompt; tokens per second is decode, which is memory-bound. Total is roughly TTFT plus output tokens over the decode rate."</p>
+    <p>"Time to first token is prefill, which grows with the prompt, plus, for a reasoning model, its hidden thinking; tokens per second is decode, which is memory-bound. Total is roughly TTFT plus output tokens over the decode rate."</p>
     <p>"Reasoning tokens are output: they count against the limit and the bill, so an empty answer is an error we count and alert on."</p>
   </aside>
 
@@ -195,7 +195,7 @@
   <ol class="qs">
     <li>
       <p>Which phase sets the time to first token, which sets tokens per second, and what makes each worse?</p>
-      <details class="ans"><summary>Answer</summary><p>Prefill sets the time to first token and grows with the prompt's length; it is compute-bound. Decode sets tokens per second; it is memory-bandwidth-bound and slows as more streams share the GPU or the cache grows.</p></details>
+      <details class="ans"><summary>Answer</summary><p>Prefill sets the time to first token and grows with the prompt's length; it is compute-bound. Decode sets tokens per second; it is memory-bandwidth-bound and slows as more streams share the GPU or the cache grows. For a reasoning model, the first answer token also waits for its hidden thinking, which grows with reasoning effort; the time to the first chunk is the closer measure of prefill.</p></details>
     </li>
     <li>
       <p>What does temperature do, and why do evals repeat runs?</p>

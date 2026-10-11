@@ -232,6 +232,8 @@ reason. Run by `make scan` and `make scan-compose`.
         <tr><td data-label="Symptom">A pull request goes red for a vulnerability it did not introduce</td><td data-label="Cause">A new advisory for the base image</td><td data-label="Fix">Take the bot's digest bump, or accept the risk with an expiry.</td></tr>
         <tr><td data-label="Symptom">The secret-scanning action fails for an organization</td><td data-label="Cause">The gitleaks GitHub Action needs a license for organizations</td><td data-label="Fix">Run its command-line tool instead.</td></tr>
         <tr><td data-label="Symptom">A leaked key was deleted from the repository, but it is still abused</td><td data-label="Cause">Deleting it does not unpublish it</td><td data-label="Fix">Rotate first, then remove.</td></tr>
+        <tr><td data-label="Symptom">An agent added a package that does not exist, or a look-alike</td><td data-label="Cause">Models invent package names between one in twenty and one in five times</td><td data-label="Fix">Installs only from a lockfile the pipeline checks; a registry allowlist where one exists.</td></tr>
+        <tr><td data-label="Symptom">A pinned scanner action ran attacker code</td><td data-label="Cause">Tags were moved after a maintainer account was compromised; a tag is not a pin</td><td data-label="Fix">Pin every action to a full commit SHA and let the update bot move the SHA.</td></tr>
       </tbody>
     </table>
   </div>

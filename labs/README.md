@@ -1,6 +1,6 @@
 # Labs
 
-Four hands-on labs that accompany Handbook 1, *AI Engineering & Architecture*.
+Five hands-on labs that accompany Handbook 1, *AI Engineering & Architecture*.
 Each one breaks or measures one part of the reference service,
 [triage-assistant](https://github.com/Parzon/triage-assistant), and shows
 what that looks like from the outside.
@@ -11,6 +11,7 @@ what that looks like from the outside.
 | [ai-observability](ai-observability/README.md) | a worse or slower answer, diagnosed from telemetry alone (Chapter 8) | the monitoring stack; a real model for some steps |
 | [ai-security](ai-security/README.md) | redaction measured, an investigation with the audit trail, a tool design review (Chapter 9) | the dev stack; the mock model is enough |
 | [ai-cost](ai-cost/README.md) | what an answer costs, where its tokens go, and which settings move the bill (Chapter 10) | Ollama models |
+| [agent-ab](agent-ab/README.md) | a coding-agent skill or plugin measured on the reference build: same task, two arms, the repository's own checks (Chapter 18) | Claude Code; the api and web toolchains |
 
 ## Running them
 

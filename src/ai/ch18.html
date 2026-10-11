@@ -14,6 +14,8 @@
       <li>An instructions file in the repository is the contract: commands, conventions and prohibitions. When an agent gets something wrong twice, the fix goes there.</li>
       <li>Tests are the real gate: untested generated code is as unmergeable as untested human code, and a test must never be loosened to get green.</li>
       <li>Small pull requests, one concern each; a human merges and owns what was merged.</li>
+      <li>Rules in the instructions file are advice; hooks and CI are the gates. A skill or plugin is measured on your own tasks before it is adopted, and its token cost is read before it is installed.</li>
+      <li>Two reviewers with different questions beat the same reviewer twice; a simplify pass needs the diff and the surrounding code, not repetition.</li>
     </ul>
   </div>
 
@@ -120,6 +122,170 @@
     <figcaption><span class="fig-n">Figure 18.3</span>Review standards matter more, not less, with coding agents. "The AI probably got it right" is not a review; the commands and numbers in the pull request are the evidence.</figcaption>
   </figure>
 
+  <h3 id="ch18-anatomy">How an agent is extended: skills, plugins, hooks, MCP</h3>
+  <p>A coding agent is a model inside a harness that reads, edits and runs things under a permission policy. Everything you add to it lands in one of six places, and they differ in two ways that matter: whether the agent can ignore it, and what it costs on every turn. The instructions file is advice the model reads once per session. A <em>skill</em> is a markdown file of instructions loaded when its trigger matches or when it is invoked by name; only its one-line description is in context until then. A <em>plugin</em> bundles skills with <em>hooks</em> (shell commands the harness runs at events: session start, before and after a tool call, when the agent wants to stop), <em>MCP servers</em> (tools from outside: a browser, a documentation index, a design file) and <em>subagents</em> (a fresh context with a narrower job). A hook is the one extension the model cannot talk its way around: a blocking exit code stops the edit or the turn, and that holds even when permission prompts are switched off. The same harness runs headless, from a script, which is how it joins a pipeline and how you can measure it.</p>
+
+  <figure class="fig wide" id="fig-18-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Six extension points of a coding agent, arranged by how binding they are and what they cost per turn. Advisory, read by the model: the instructions file, skills, MCP tools and subagents. Mechanical, run by the harness: hooks, and headless runs in a pipeline. Each box names the cost: the instructions file every turn; a skill's description always and its body when it fires; a plugin's bundle; hooks nothing in context; MCP tool definitions every turn.">
+      <text class="tl" x="16" y="22">ADVISORY: THE MODEL READS IT, AND MAY WEIGH IT AGAINST THE TASK</text>
+      <rect class="n-acc" x="16" y="34" width="186" height="92" rx="6"/><text class="tb" x="28" y="56">Instructions file</text><text class="ts" x="28" y="76">AGENTS.md / CLAUDE.md</text><text class="ts" x="28" y="92">read every session</text><text class="ts" x="28" y="110">cost: its length, each turn</text>
+      <rect class="n" x="216" y="34" width="186" height="92" rx="6"/><text class="tb" x="228" y="56">Skill</text><text class="ts" x="228" y="76">markdown, on a trigger or /name</text><text class="ts" x="228" y="92">one-line description always on,</text><text class="ts" x="228" y="110">the body only when it fires</text>
+      <rect class="n" x="416" y="34" width="186" height="92" rx="6"/><text class="tb" x="428" y="56">MCP server</text><text class="ts" x="428" y="76">tools from outside: a browser,</text><text class="ts" x="428" y="92">a docs index, a design file</text><text class="ts" x="428" y="110">tool definitions cost every turn</text>
+      <rect class="n" x="616" y="34" width="188" height="92" rx="6"/><text class="tb" x="628" y="56">Subagent</text><text class="ts" x="628" y="76">a fresh context, one job:</text><text class="ts" x="628" y="92">explore, review, test</text><text class="ts" x="628" y="110">cost: a second conversation</text>
+
+      <text class="tl" x="16" y="160">MECHANICAL: THE HARNESS RUNS IT, THE MODEL CANNOT SKIP IT</text>
+      <rect class="n-good" x="16" y="172" width="386" height="92" rx="6"/><text class="tb" x="28" y="194">Hook</text><text class="ts" x="28" y="214">a command at an event: session start, before or after</text><text class="ts" x="28" y="230">a tool call, when the agent wants to stop</text><text class="ts" x="28" y="248">exit code 2 blocks; holds with permissions switched off; no context cost</text>
+      <rect class="n-good" x="416" y="172" width="388" height="92" rx="6"/><text class="tb" x="428" y="194">Headless run</text><text class="ts" x="428" y="214">the same agent from a script, with a budget and a tool allowlist</text><text class="ts" x="428" y="230">how it joins a pipeline, and how you measure a skill:</text><text class="ts" x="428" y="248">same task, two arms, your own checks afterwards</text>
+
+      <text class="ts" x="16" y="290">A plugin is a versioned bundle of any of these, from a marketplace. Ask what each one costs per turn before installing it.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 18.4</span>Where an extension lands decides whether the agent can ignore it. Rules in the instructions file are advice; a hook that runs the linter is a gate. Both have a price: the harness reports an always-on token cost for each installed plugin, and a session with a dozen of them starts several thousand tokens behind before anything is typed.</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+    <table class="grid stack">
+      <caption>What some plugins cost before you type, as the harness reports it</caption>
+      <thead><tr><th>Plugin</th><th>Contains</th><th>Always-on tokens</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Plugin">A pull-request review toolkit (official)</td><td data-label="Contains">1 skill, 6 review subagents</td><td data-label="Tokens">about 2,000</td></tr>
+        <tr><td data-label="Plugin">A process bundle (brainstorm, plan, test-first, debug)</td><td data-label="Contains">15 skills</td><td data-label="Tokens">about 840</td></tr>
+        <tr><td data-label="Plugin">A "write less code" ruleset</td><td data-label="Contains">6 skills, 3 hooks</td><td data-label="Tokens">about 640; 1,100 more when it fires</td></tr>
+        <tr><td data-label="Plugin">A design skill (official)</td><td data-label="Contains">1 skill</td><td data-label="Tokens">about 80; 2,700 when it fires</td></tr>
+        <tr><td data-label="Plugin">Security guidance (official)</td><td data-label="Contains">4 hooks only</td><td data-label="Tokens">0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>One extension deserves a security note. Some plugins build a map of the repository at session start and inject it as hidden context the user never sees. That is repository text reaching the model as instructions, which is the prompt-injection channel of chapter 9 opened from inside the toolchain: a file in a dependency or a pull request can carry text addressed to the agent. Prefer plugins that show what they inject, switch such maps off where a flag exists, pin versions, and treat a plugin marketplace like any other dependency source.</p>
+
+  <h3 id="ch18-measure">Measure a skill before adopting it</h3>
+  <p>A skill's own benchmark was run by its maintainer, on tasks chosen by its maintainer, with rules tuned on those tasks. The number to trust is the one you measure on your work, and the harness makes that cheap: the same task text, a fresh worktree from the same commit for every run, the agent allowed to read and edit but not to run commands (so the measure is what it writes, not what it can debug into shape), and your own checks afterwards, the same ones CI runs. Two arms, a handful of runs each, then read the diffs rather than only the totals. The reference build's own version of this is in the <a href="{{EH}}/labs/agent-ab/README.md">agent A/B lab</a>.</p>
+
+  <figure class="fig wide" id="fig-18-5">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 250" role="img" aria-label="The same three tasks, two arms, twelve runs on the reference build. Without the skill: 73 lines added per run, 4,092 output tokens, 15.6 cents, four of six runs passed every check. With a lean-code skill: 50 lines, 3,308 tokens, 15.3 cents, five of six passed. The skill's README claimed 53% less code; an independent replication found 15%; this measured 32%.">
+      <text class="tl" x="16" y="22">THREE TASKS, TWO ARMS, TWELVE RUNS, THE SAME CHECKS AFTERWARDS</text>
+      <rect class="n" x="16" y="34" width="386" height="120" rx="6"/><text class="tb" x="28" y="58">No skill</text>
+      <text class="ts" x="28" y="82">73 lines added per run; 4,092 output tokens</text>
+      <text class="ts" x="28" y="100">15.6 cents and 30 seconds per run</text>
+      <text class="ts" x="28" y="118">4 of 6 runs green on lint, types, tests; same type slip once</text>
+      <text class="ts" x="28" y="136">retry task: noticed the SDK already retried in 1 run of 2</text>
+      <rect class="n-good" x="416" y="34" width="388" height="120" rx="6"/><text class="tb" x="428" y="58">With a "least code that works" skill</text>
+      <text class="ts" x="428" y="82">50 lines added per run; 3,308 output tokens</text>
+      <text class="ts" x="428" y="100">15.3 cents and 32 seconds per run</text>
+      <text class="ts" x="428" y="118">5 of 6 runs green; the same type slip once</text>
+      <text class="ts" x="428" y="136">retry task: noticed it in 1 run of 2, as well</text>
+      <text class="tb" x="16" y="186">Read: a third less code at the same price and correctness.</text>
+      <text class="ts" x="16" y="206">The skill's own benchmark said half the code and 41% less time. An independent replication on 80 tasks found 15% less code and 10% lower cost.</text>
+      <text class="ts" x="16" y="224">Two runs per cell is a pilot. It was enough to see that the README number would not appear on this codebase.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 18.5</span>A skill measured on the reference build rather than on its maintainer's tasks. The lean-code rule did what it says, at a third of its headline. The retry task was the more interesting result: the SDK already retried, so the right change was none, and each arm found that only half the time. No ruleset fixes "read before writing".</figcaption>
+  </figure>
+
+  <p>Two readings from the diffs. The lean rule wrote the same endpoint with four files instead of five and half the test lines, and its replies ended with what it had skipped ("I did not check the index on that pair of columns"), which is worth more than the tokens saved. And the one run per arm that implemented a redundant retry passed every check: a green pipeline does not know a feature was unnecessary. Only reading the surrounding code did, which is why the simplification pass below needs the diff and the files, not the diff alone.</p>
+
+  <h3 id="ch18-reviewers">Three reviewers, three questions</h3>
+  <p>Reviewing is where extensions differ most, because each one asks a different question. Three reviews of the same twelve-file security commit, by the same model, read-only:</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Reviewer</th><th>Findings</th><th>What it alone found</th><th>Cost</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Reviewer">A plain prompt: "review this like the engineer who will be paged"</td><td data-label="Findings">14 in 1,200 words; its top finding was wrong (checked against the running system)</td><td data-label="Alone">an unauthenticated route that blocks the event loop; a public static mount nobody had reviewed</td><td data-label="Cost">24 cents</td></tr>
+        <tr><td data-label="Reviewer">A lean-code review skill</td><td data-label="Findings">6, ranked, each with "if we skip it"; none wrong; one doubt labeled as unchecked</td><td data-label="Alone">put the one must-fix first: a size cap that missed two upload routes</td><td data-label="Cost">24 cents</td></tr>
+        <tr><td data-label="Reviewer">A structure-only review skill ("maintainability, abstractions, file growth")</td><td data-label="Findings">9, all structural; ignored behavior on purpose</td><td data-label="Alone">the ownership check was pasted into ten places and belonged in one helper; a dev-only route should not be mounted in production at all; a request field that invited the original bug should be deleted</td><td data-label="Cost">15 cents</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>All three found the same four real defects. The plain prompt found the most and was the only one to lead with a false alarm; the lean review was the one a busy person could act on in one read; the structural review was the only one that would have prevented the next incident, because it asked where the rule lives rather than whether it was applied. Use two reviewers with different questions, not the same one twice. The same holds for the "simplify" pass people run before a pull request: three passes of the same simplifier on the same diff changed a few test lines and then nothing, in both arms; one pass given the diff and the surrounding code found that the whole change was redundant. Repetition buys nothing; context does.</p>
+
+  <h3 id="ch18-ui">Design with an agent: ambition, then a check</h3>
+  <p>Left alone, an agent builds the page it has seen most: a cream background, one word of the headline in color, identical rounded cards. A design skill raises the ambition. The official one tells the agent to ground the look in the subject, choose typefaces on purpose, spend boldness in one place, and avoid a named list of tells: the cream-and-terracotta palette, black with one acid accent, broadsheet hairlines, the card kit, all-caps eyebrow labels, a middle dot between metadata, an arrow after every link, an entrance animation on every section. Four landing pages from one brief, measured with a headless browser and an accessibility checker:</p>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Arm</th><th>Lines</th><th>Accessibility violations</th><th>By eye</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Arm">No skill</td><td data-label="Lines">323</td><td data-label="Violations">2</td><td data-label="By eye">the default: cream, one green word in the headline, a phone mock</td></tr>
+        <tr><td data-label="Arm">Design skill</td><td data-label="Lines">373</td><td data-label="Violations">1</td><td data-label="By eye">the only page with a point of view: a dark hero, a serif display face, a language toggle; it still used two of the tells its own text forbids</td></tr>
+        <tr><td data-label="Arm">Lean-code skill</td><td data-label="Lines">119</td><td data-label="Violations">0</td><td data-label="By eye">clean, accessible, forgettable; a lean rule has no opinion about design</td></tr>
+        <tr><td data-label="Arm">Both</td><td data-label="Lines">151</td><td data-label="Violations">1</td><td data-label="By eye">kept the serif, the subhead and the chat card in half the code; the best trade on this brief</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure class="fig wide" id="fig-18-6">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 256" role="img" aria-label="The design loop with an agent. Brief, then a written design plan reviewed against the brief for defaults, then build, then the agent looks at the page: screenshots at phone and laptop widths through a browser tool, then deterministic checks: accessibility rules, a performance budget, a detector for the known generic tells, then a critique pass with a different question, then fix. A skill supplies the ambition; the checks supply the discipline.">
+      <rect class="n-acc" x="16" y="30" width="120" height="70" rx="6"/><text class="tb" x="28" y="54">Brief</text><text class="ts" x="28" y="74">subject, audience,</text><text class="ts" x="28" y="90">the one job</text>
+      <rect class="n" x="152" y="30" width="140" height="70" rx="6"/><text class="tb" x="164" y="54">Design plan</text><text class="ts" x="164" y="74">palette, type, layout;</text><text class="ts" x="164" y="90">reviewed for defaults</text>
+      <rect class="n" x="308" y="30" width="110" height="70" rx="6"/><text class="tb" x="320" y="54">Build</text><text class="ts" x="320" y="74">one memorable</text><text class="ts" x="320" y="90">element, rest quiet</text>
+      <rect class="n-good" x="434" y="30" width="170" height="70" rx="6"/><text class="tb" x="446" y="54">Look at it</text><text class="ts" x="446" y="74">screenshots at phone and</text><text class="ts" x="446" y="90">laptop width, console errors</text>
+      <rect class="n-good" x="620" y="30" width="184" height="70" rx="6"/><text class="tb" x="632" y="54">Check it</text><text class="ts" x="632" y="74">accessibility rules, a speed</text><text class="ts" x="632" y="90">budget, the tells detector</text>
+      <line class="e" x1="137" y1="65" x2="150" y2="65" marker-end="url(#a)"/><line class="e" x1="293" y1="65" x2="306" y2="65" marker-end="url(#a)"/><line class="e" x1="419" y1="65" x2="432" y2="65" marker-end="url(#a)"/><line class="e" x1="605" y1="65" x2="618" y2="65" marker-end="url(#a)"/>
+      <rect class="n-warn" x="16" y="128" width="788" height="72" rx="6"/><text class="tb" x="28" y="150">Critique, with a different question</text><text class="ts" x="28" y="170">"Would this page be mistaken for any other?" "Which of the named tells is on it?" Then fix, and look again.</text><text class="ts" x="28" y="188">Baseline screenshot diffs catch change; only a critique catches generic.</text>
+      <text class="ts" x="16" y="224">Accessibility checkers find about half of the issues a person would: a green run is necessary, not sufficient.</text>
+      <text class="ts" x="16" y="242">Keyboard-only use, reduced motion and screen-reader labels need a script or a person.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 18.6</span>Ambition from a skill, discipline from checks the agent can run. The agent needs a way to see the page: a browser tool that takes screenshots and reads the accessibility tree, and a stop hook that runs the browser tests and the budget before the turn can end.</figcaption>
+  </figure>
+
+  <p>What that loop needs installed, in order of value. A browser the agent can drive: the Chrome DevTools MCP server (screenshots, the accessibility tree, device emulation, performance traces) or Playwright's command-line tool with its skills, which its maintainers now recommend over the MCP server for token cost. A written design system per project, in a format with a linter, so "follow the tokens" is a check rather than a hope; the agent's first job on a new page is three deliberately different design plans with ASCII wireframes, from which a person picks one, and that choice becomes the file. The official documentation of whichever motion or 3D library you chose, given to the agent as a skill or an MCP server, because models carry stale copies of these APIs; the major animation libraries publish skills or an <code>llms.txt</code> for exactly this reason. A deterministic detector for the generic tells, if one exists for your stack, as a hook after each edit, after reading what the hook installs: one popular detector's hook downloads a binary and runs it outside the tool-approval flow, which is the supply-chain question of the cloud handbook's chapter 4 arriving through a design tool. And the interaction rules a polish review checks: a visible focus ring, reduced motion respected, animations on transform and opacity only, tabular figures in tables. Skip the lookup-table skills that map a product category to a palette and a typeface: they return the same answer for every product of that kind, which is the generic page by another route. For calibration, of three hundred recent award-winning sites, about half tag an animation library, a third WebGL and a quarter a 3D library, and one in five uses none of those; the one documented award-level build with a coding agent was directed by a designer throughout, with the agent covering the unfamiliar code. Nothing in this section produces that from one prompt.</p>
+
+  <h3 id="ch18-evidence">What the evidence says</h3>
+  <div class="table-wrap">
+    <table class="grid stack">
+      <thead><tr><th>Study</th><th>Finding</th><th>What it changes</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Study">METR's randomized trial, 2025: 16 experienced open-source developers, 246 real issues</td><td data-label="Finding">19% slower with AI tools, while forecasting a 24% speed-up and still believing in a 20% gain afterwards. A 2026 follow-up with 57 developers leaned toward a speed-up but its intervals crossed zero.</td><td data-label="Changes">Self-reported speed is not evidence. Measure throughput and rework on your own repositories.</td></tr>
+        <tr><td data-label="Study">DORA's 2025 report, about 5,000 respondents</td><td data-label="Finding">90% use AI; throughput rises; delivery stability falls unless automated testing and fast feedback are strong.</td><td data-label="Changes">The gates in chapter 13 of the software handbook are the precondition, not an optimization.</td></tr>
+        <tr><td data-label="Study">A difference-in-differences study of 806 repositories after adopting an agentic editor, against 1,380 controls</td><td data-label="Finding">Lines added rose 281% in the first month and faded by the third; static-analysis warnings stayed 30% higher and cognitive complexity 42% higher.</td><td data-label="Changes">Ratchet complexity, duplication and dead code on new code; the damage is structural, not functional.</td></tr>
+        <tr><td data-label="Study">ETH Zurich on repository context files, 2026</td><td data-label="Finding">AGENTS.md-style files did not generally raise task success and added more than 20% to cost.</td><td data-label="Changes">Keep the file short; put every checkable rule in a hook or CI.</td></tr>
+        <tr><td data-label="Study">SkillsBench, 86 tasks</td><td data-label="Finding">Curated narrow skills raised pass rates 16 points on average, 4.5 in software engineering; 16 of 84 tasks got worse; skills the agent wrote for itself gained nothing.</td><td data-label="Changes">Install few, narrow, written-by-someone-else skills, and measure them.</td></tr>
+        <tr><td data-label="Study">GitClear's analysis of hundreds of millions of changed lines</td><td data-label="Finding">Duplicated blocks up several-fold; refactoring down from a quarter of changes to under a tenth; swallowed errors and stubs up.</td><td data-label="Changes">A duplication check and a silent-failure review belong in the loop.</td></tr>
+        <tr><td data-label="Study">An independent replication of a lean-code skill's claims, 80 paired tasks</td><td data-label="Finding">15% less code, 10% lower cost, no quality difference, against a README claim of 54%.</td><td data-label="Changes">Treat a skill's own benchmark as a hypothesis.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>No randomized or independently replicated study shows that any of the popular loop systems, the brainstorm-plan-implement bundles or the specification-first kits, improves delivered quality. What has evidence is narrower: verification the agent must pass, a short contract, a plan a person edits, review in a fresh context, small changes. Those are what the loop in Figure 18.1 is made of; the bundles are packaging.</p>
+
+  <h3 id="ch18-operating">What you own when the agent writes the code</h3>
+  <p>The point of all this is a different division of labor, not a faster typist. The engineer's day moves to the problem: what is being asked, by whom, what "done" looks like, what must never happen, and which risk tier the change sits in. Each of those becomes an artifact the agent can work from: a problem statement written as an outcome with constraints and its acceptance check, a plan the engineer edits before any code, the risk tier that decides how strict the human review is. The agent owns the implementation, the tests, the first review pass and the documentation, inside gates it cannot loosen. The gates own correctness of the cheap kind: formatting, types, lint, the unit tests, the architecture contract, the secret scan, and the rule that the agent never holds a credential that can delete production.</p>
+
+  <figure class="fig wide" id="fig-18-7">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 260" role="img" aria-label="Three columns. You own: the problem statement as an outcome with constraints, the acceptance check, stakeholder decisions, the risk tier, editing the plan, reading the tests first, the merge. The agent owns: the implementation in a worktree, the tests, the first review pass, the documentation and the decision record draft, the pull request text with the commands it ran. The gates own: format, lint and types on every edit; unit tests before a turn can end; CI's required checks; owners on the guardrail files; scoped credentials with no production-delete rights.">
+      <rect class="n-acc" x="16" y="16" width="250" height="196" rx="6"/><text class="tb" x="28" y="40">You own</text>
+      <text class="ts" x="28" y="64">the problem statement: an outcome,</text><text class="ts" x="28" y="80">its constraints, its acceptance check</text>
+      <text class="ts" x="28" y="102">the stakeholder decisions</text>
+      <text class="ts" x="28" y="124">the risk tier of the change</text>
+      <text class="ts" x="28" y="146">the plan, edited before any code</text>
+      <text class="ts" x="28" y="168">the review: tests first, then the diff</text>
+      <text class="ts" x="28" y="190">the merge, and what was merged</text>
+      <rect class="n" x="285" y="16" width="250" height="196" rx="6"/><text class="tb" x="297" y="40">The agent owns</text>
+      <text class="ts" x="297" y="64">the implementation, in its own worktree</text>
+      <text class="ts" x="297" y="86">the tests, placed where the contract says</text>
+      <text class="ts" x="297" y="108">the first review pass and the simplify pass</text>
+      <text class="ts" x="297" y="130">the docs and the draft decision record</text>
+      <text class="ts" x="297" y="152">the pull request text: what changed, what it ran,</text><text class="ts" x="297" y="168">with the output</text>
+      <text class="ts" x="297" y="190">what it skipped, said out loud</text>
+      <rect class="n-good" x="554" y="16" width="250" height="196" rx="6"/><text class="tb" x="566" y="40">The gates own</text>
+      <text class="ts" x="566" y="64">format, lint, types on every edit (hooks)</text>
+      <text class="ts" x="566" y="86">unit tests before a turn may end (hook)</text>
+      <text class="ts" x="566" y="108">the required checks on the pull request (CI)</text>
+      <text class="ts" x="566" y="130">owners on every guardrail file</text>
+      <text class="ts" x="566" y="152">credentials scoped and short-lived;</text><text class="ts" x="566" y="168">nothing that can delete production</text>
+      <text class="ts" x="566" y="190">a sandbox for unattended runs</text>
+      <text class="ts" x="16" y="244">The documented disasters, an agent deleting a production database twice in two years, were missing the third column, not the first two.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 18.7</span>The division of labor that makes an agent-written codebase safe to run. The engineer's artifacts are the problem statement, the plan and the merge; the agent's are the change and its evidence; the gates are mechanical and the agent cannot edit them.</figcaption>
+  </figure>
+
+  <p>Three habits make the day work. Write the problem statement before opening the agent, with the check that proves it done. Start a non-trivial task in plan mode and edit the plan; a change you can describe in one sentence does not need one. Keep an agent session to one task in one worktree, and start unattended chores with a measurable goal, a turn limit and an allowlist. The rest is the loop, the contract and the review standards above, which have not changed.</p>
+
   <h3 id="ch18-n8n">Workflow tools beside code</h3>
   <p>Low-code workflow tools such as n8n sit next to coding agents in many teams. A workflow there is a JSON document (nodes, connections, parameters), so it can live in Git and an agent can write it; the tool's own MCP server and published skills are better than hand-written JSON, where agents invent node types and parameters. Exports carry credential names, not secrets, but a request node imported from a command line can carry authorization headers, so scan before committing. Credential ids, webhook URLs and the active flag are what break between environments. Use the workflow tool for orchestration and glue (prebuilt integrations, credentials, triggers, retries, flows that non-engineers can read), and code for real logic (unit tests, type checks, reviewable diffs, complex branching). Check the license: several such tools are source-available rather than open source.</p>
 
@@ -143,6 +309,7 @@
     <span class="label">How to say it</span>
     <p>"Agents work from the repository's instructions file, plan before they code, and report the commands they ran. A human reviews small pull requests and owns the merge."</p>
     <p>"Tests are the gate for generated code; an agent may never loosen a test or an eval case to get green."</p>
+    <p>"The instructions file is advice; the hooks and CI are the gates. We measured the plugin on our own tasks before adopting it, and it does a third of what its README says."</p>
   </aside>
 
   <h3 id="ch18-traps">Traps</h3>
@@ -156,6 +323,12 @@
         <tr><td data-label="Symptom">Code calls an API that does not exist</td><td data-label="Cause">An invented method or parameter</td><td data-label="Fix">Verification by running types, tests and the real call.</td></tr>
         <tr><td data-label="Symptom">A key appeared in a conversation</td><td data-label="Cause">A secret pasted into a prompt</td><td data-label="Fix">Rotate it; agents read the example file, never the real one.</td></tr>
         <tr><td data-label="Symptom">Two agents overwrote each other's work</td><td data-label="Cause">One working copy shared between sessions</td><td data-label="Fix">One worktree and branch per session.</td></tr>
+        <tr><td data-label="Symptom">A rule in the instructions file is followed most of the time</td><td data-label="Cause">The file is advice the model weighs against the task</td><td data-label="Fix">Make it a hook (blocks the edit) or a CI check (blocks the merge); keep the file for what tools cannot express.</td></tr>
+        <tr><td data-label="Symptom">Every session starts slow and expensive</td><td data-label="Cause">A dozen plugins each adding always-on context</td><td data-label="Fix">Read each plugin's always-on token cost; keep the few that earn it; prefer hook-only plugins for enforcement.</td></tr>
+        <tr><td data-label="Symptom">A skill's benchmark numbers did not appear on your code</td><td data-label="Cause">The maintainer measured on tasks chosen and tuned for the skill</td><td data-label="Fix">Measure it yourself: same task, fresh worktree per run, your checks; expect a fraction of the headline.</td></tr>
+        <tr><td data-label="Symptom">The agent behaves oddly on one repository</td><td data-label="Cause">A plugin injected repository text as hidden context; a file carried text addressed to the agent</td><td data-label="Fix">Switch the injection off, pin the plugin, scan dependencies' text as you would their code.</td></tr>
+        <tr><td data-label="Symptom">A review bot blocked the merge over nits while a real bug passed</td><td data-label="Cause">The bot gates the merge; its precision is unknown</td><td data-label="Fix">Comment-only mode first, repo-owned review rules, a cap on nits; a human approval stays the gate.</td></tr>
+        <tr><td data-label="Symptom">Three simplification passes, nothing changed, the feature was unnecessary</td><td data-label="Cause">The simplifier saw the diff without the code around it</td><td data-label="Fix">One pass with the diff and the files; a second reviewer with a different question.</td></tr>
       </tbody>
     </table>
   </div>
@@ -173,6 +346,14 @@
     <li>
       <p>An agent keeps making the same mistake. Where does the fix go?</p>
       <details class="ans"><summary>Answer</summary><p>In the repository's instructions file, which every session reads, so the correction is permanent and visible to people too.</p></details>
+    </li>
+    <li>
+      <p>A rule says "never edit the lint configuration to make a check pass". Where does it belong, and why?</p>
+      <details class="ans"><summary>Answer</summary><p>In a hook that denies edits to the configuration files, and in CI as a required check with owners on those files. The instructions file is advice the model weighs against the task; a hook's blocking exit code is not negotiable, and CI is the one layer the agent cannot edit around.</p></details>
+    </li>
+    <li>
+      <p>A colleague recommends a plugin whose README reports half the code at a fifth of the cost. What do you do before rolling it out?</p>
+      <details class="ans"><summary>Answer</summary><p>Read what it installs and its always-on token cost; look for hidden context it injects; then measure it on your own tasks with the same task text, a fresh worktree per run and your own checks afterwards. Expect a fraction of the headline, and read the diffs, because a green run can still contain an unnecessary feature.</p></details>
     </li>
   </ol>
 </section>

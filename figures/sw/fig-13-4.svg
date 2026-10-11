@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="Four layers of gates for agent-written code, from advisory to non-negotiable. Layer one, the instructions file: advice, read each session; only what tools cannot express. Layer two, hooks in the agent's loop: after every edit, format and lint the file in seconds; before the agent may stop, lint, types, unit tests and the import contract in under a minute; a blocking exit code holds the turn. Layer three, CI on the pull request: the full suite, patch coverage, mutation on the diff, complexity and duplication ratchets on new code, a secret scan, locked installs; the one layer the agent cannot edit around. Layer four, branch protection: required checks, owners on every guardrail file, one human approval."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #2349a3; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #e7edf9; stroke: #2349a3; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #2349a3; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #2349a3; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #2349a3; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="300" fill="#ffffff"/>
+      <rect class="n-soft" x="16" y="16" width="788" height="54" rx="6"/><text class="tb" x="28" y="38">1 · Instructions file</text><text class="ts" x="28" y="58">advice, read each session: commands, the non-obvious, "never edit lint config, CI or the hooks to make a check pass"</text>
+      <text class="ts ta" x="640" y="38">advisory</text>
+      <rect class="n" x="16" y="82" width="788" height="70" rx="6"/><text class="tb" x="28" y="104">2 · Hooks, inside the agent's loop</text>
+      <text class="ts" x="28" y="124">after every edit: format and lint that file (seconds)    ·    before the agent may stop: lint, types, unit tests, the import contract (under a minute)</text>
+      <text class="ts" x="28" y="142">a protected-paths hook denies edits to configuration, pipelines and lockfiles; exit code 2 blocks the edit or the turn</text>
+      <text class="ts tg" x="640" y="104">deterministic, local</text>
+      <rect class="n-good" x="16" y="164" width="788" height="70" rx="6"/><text class="tb" x="28" y="186">3 · CI on the pull request</text>
+      <text class="ts" x="28" y="206">the full suite · patch coverage · mutation on the diff · complexity, duplication and dead-code ratchets on new code · secret scan · locked installs</text>
+      <text class="ts" x="28" y="224">the one layer the agent cannot edit around; nothing heavy belongs in layer 2</text>
+      <text class="ts tg" x="610" y="186">non-bypassable</text>
+      <rect class="n-acc" x="16" y="246" width="788" height="44" rx="6"/><text class="tb" x="28" y="268">4 · Branch protection</text><text class="ts" x="200" y="268">required checks · owners on every guardrail file · one human approval · the committer owns the change</text>
+    </svg>

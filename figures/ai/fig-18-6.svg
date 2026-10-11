@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 256" role="img" aria-label="The design loop with an agent. Brief, then a written design plan reviewed against the brief for defaults, then build, then the agent looks at the page: screenshots at phone and laptop widths through a browser tool, then deterministic checks: accessibility rules, a performance budget, a detector for the known generic tells, then a critique pass with a different question, then fix. A skill supplies the ambition; the checks supply the discipline."><style>text { font-family: "Archivo", Arial, Helvetica, sans-serif; fill: #1a1e23; font-size: 13px; }
+.ts { font-size: 11.5px; fill: #48505a; }
+.tm { font-family: "JetBrains Mono", Menlo, Consolas, monospace; font-size: 11.5px; }
+.tb { font-weight: 680; }
+g.ts text { font-size: 11.5px; }
+.tl { font-size: 10.5px; letter-spacing: 0.09em; fill: #6a727b; font-weight: 650; }
+.ta { fill: #7b2d84; }
+.tg { fill: #2b7a3d; }
+.tr { fill: #b3261e; }
+.tw { fill: #965a00; }
+.tmu { fill: #6a727b; }
+.n { fill: #ffffff; stroke: #a6adb2; stroke-width: 1.2; }
+.n-soft { fill: #eef0ed; stroke: #d8dcd9; stroke-width: 1; }
+.n-acc { fill: #f5e9f6; stroke: #7b2d84; stroke-width: 1.4; }
+.n-good { fill: #e4f2e6; stroke: #2b7a3d; stroke-width: 1.2; }
+.n-bad { fill: #fae3e0; stroke: #b3261e; stroke-width: 1.2; }
+.n-warn { fill: #fbf0dc; stroke: #965a00; stroke-width: 1.2; }
+.zone { fill: none; stroke: #a6adb2; stroke-width: 1; stroke-dasharray: 4 4; }
+.band { fill: #eef0ed; stroke: none; }
+.rule { stroke: #d8dcd9; stroke-width: 1; fill: none; }
+.rule-strong { stroke: #a6adb2; stroke-width: 1; fill: none; }
+.e { fill: none; stroke: #6a727b; stroke-width: 1.4; }
+.e-acc { fill: none; stroke: #7b2d84; stroke-width: 1.8; }
+.e-good { fill: none; stroke: #2b7a3d; stroke-width: 1.6; }
+.e-bad { fill: none; stroke: #b3261e; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.dash { stroke-dasharray: 4 4; }
+.m { fill: #6a727b; }
+.m-acc { fill: #7b2d84; }
+.m-good { fill: #2b7a3d; }
+.m-bad { fill: #b3261e; }
+.dot-good { fill: #2b7a3d; }
+.dot-bad { fill: #b3261e; }
+.dot-muted { fill: #a6adb2; }
+.fill-acc { fill: #7b2d84; }
+.fill-good { fill: #2b7a3d; }
+.fill-bad { fill: #b3261e; }
+.fill-surface { fill: #ffffff; }
+.s1 { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.s2 { stroke: #eb6834; fill: none; stroke-width: 2; }
+.s3 { stroke: #1baf7a; fill: none; stroke-width: 2; }
+.f1 { fill: #2a78d6; }
+.f2 { fill: #eb6834; }
+.f3 { fill: #1baf7a; }
+.ring { stroke: #ffffff; stroke-width: 2; }
+.xhair { stroke: #48505a; stroke-width: 1; stroke-dasharray: 3 3; }</style><defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-acc" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path class="m-acc" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-good" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-good" d="M0,1 L10,5 L0,9 z"/></marker>
+    <marker id="a-bad" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path class="m-bad" d="M0,1 L10,5 L0,9 z"/></marker>
+  </defs><rect width="820" height="256" fill="#ffffff"/>
+      <rect class="n-acc" x="16" y="30" width="120" height="70" rx="6"/><text class="tb" x="28" y="54">Brief</text><text class="ts" x="28" y="74">subject, audience,</text><text class="ts" x="28" y="90">the one job</text>
+      <rect class="n" x="152" y="30" width="140" height="70" rx="6"/><text class="tb" x="164" y="54">Design plan</text><text class="ts" x="164" y="74">palette, type, layout;</text><text class="ts" x="164" y="90">reviewed for defaults</text>
+      <rect class="n" x="308" y="30" width="110" height="70" rx="6"/><text class="tb" x="320" y="54">Build</text><text class="ts" x="320" y="74">one memorable</text><text class="ts" x="320" y="90">element, rest quiet</text>
+      <rect class="n-good" x="434" y="30" width="170" height="70" rx="6"/><text class="tb" x="446" y="54">Look at it</text><text class="ts" x="446" y="74">screenshots at phone and</text><text class="ts" x="446" y="90">laptop width, console errors</text>
+      <rect class="n-good" x="620" y="30" width="184" height="70" rx="6"/><text class="tb" x="632" y="54">Check it</text><text class="ts" x="632" y="74">accessibility rules, a speed</text><text class="ts" x="632" y="90">budget, the tells detector</text>
+      <line class="e" x1="137" y1="65" x2="150" y2="65" marker-end="url(#a)"/><line class="e" x1="293" y1="65" x2="306" y2="65" marker-end="url(#a)"/><line class="e" x1="419" y1="65" x2="432" y2="65" marker-end="url(#a)"/><line class="e" x1="605" y1="65" x2="618" y2="65" marker-end="url(#a)"/>
+      <rect class="n-warn" x="16" y="128" width="788" height="72" rx="6"/><text class="tb" x="28" y="150">Critique, with a different question</text><text class="ts" x="28" y="170">"Would this page be mistaken for any other?" "Which of the named tells is on it?" Then fix, and look again.</text><text class="ts" x="28" y="188">Baseline screenshot diffs catch change; only a critique catches generic.</text>
+      <text class="ts" x="16" y="224">Accessibility checkers find about half of the issues a person would: a green run is necessary, not sufficient.</text>
+      <text class="ts" x="16" y="242">Keyboard-only use, reduced motion and screen-reader labels need a script or a person.</text>
+    </svg>

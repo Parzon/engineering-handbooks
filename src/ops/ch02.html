@@ -267,6 +267,9 @@
     <p>"Every change traces back to an issue through the branch name and the pull request, so we can answer why any line exists."</p>
   </aside>
 
+  <h3 id="ch2-agents">When an agent wrote the commits</h3>
+  <p>Nothing in the pull-request gate changes when a coding agent authored the change; what changes is how much weight each part carries. The person who opens the pull request owns it: the kernel and the Apache projects both settled on that rule, with an attribution trailer on the commit (<code>Assisted-by:</code> or an equivalent) so the history says what was generated. A commit-message hook enforces the trailer. Small pull requests matter more: one vendor's review service reports an average of 7.5 findings on pull requests over a thousand lines and half a finding under fifty, which is as much about what reviewers can read as about what agents write. The files that define the gates, the pipeline, the lint configuration, the hooks and the lockfiles, get a code-owners entry, so a change to them needs a named reviewer and an agent cannot loosen a rule inside the same pull request that needs it loosened. Required status checks stay the merge gate; a review bot comments and never blocks, runs in comment-only mode for a few weeks first, reads its rules from a file the repository owns, and is capped on nits. Review effort follows the risk tier of the change: strict for authentication, personal data, money and migrations, sampled elsewhere. The four layers that this sits on top of are drawn in chapter 13 of the software handbook.</p>
+
   <h3 id="ch2-traps">Traps</h3>
   <div class="table-wrap">
     <table class="grid traps stack">
@@ -281,6 +284,8 @@
         <tr><td data-label="Symptom">Your branch vanishes and files disappear while you work</td><td data-label="Cause">Another person or automated agent switched branches in the same checkout</td><td data-label="Fix">One <code>git worktree</code> per parallel session; confirm the current branch before every commit; stage explicit paths, never everything.</td></tr>
         <tr><td data-label="Symptom">"No checks" right after opening a pull request</td><td data-label="Cause">The platform had not attached the runs yet</td><td data-label="Fix">Look at the workflow runs for the branch rather than trusting an empty answer.</td></tr>
         <tr><td data-label="Symptom">A commit went in even though lint had just failed</td><td data-label="Cause">Commands chained with <code>;</code>, which runs the next step regardless</td><td data-label="Fix">Chain with <code>&amp;&amp;</code>, so a failing check stops the chain.</td></tr>
+        <tr><td data-label="Symptom">Nobody can tell which commits were generated</td><td data-label="Cause">No attribution in the history</td><td data-label="Fix">An <code>Assisted-by:</code> trailer, enforced by a commit-message hook; the committer still owns the change.</td></tr>
+        <tr><td data-label="Symptom">The review bot approved; a real bug merged</td><td data-label="Cause">The bot was the gate and its precision is unknown</td><td data-label="Fix">Comment-only mode with repo-owned rules; required checks and a human approval remain the gate.</td></tr>
       </tbody>
     </table>
   </div>

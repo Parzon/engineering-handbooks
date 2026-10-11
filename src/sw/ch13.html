@@ -184,6 +184,47 @@ async def test_other_teams_alerts_are_not_found_not_forbidden(
     <p>"We don't mock the database or the provider SDK; the bugs that mattered were in the drivers and the pooler."</p>
   </aside>
 
+  <h3 id="ch13-generated">Gates for generated code</h3>
+  <p>When an agent writes most of the code, the failure mode measured across hundreds of repositories is structural rather than functional: more lines, more duplication, higher complexity, more swallowed errors, fewer refactors, while the tests still pass. The answer is not a longer instructions file, which the model weighs against the task, but gates arranged in four layers by how binding they are and how fast they run. The reference build's <code>make check</code> is the command behind the middle layers: an agent runs it before it may say "done", and the pipeline runs it again.</p>
+
+  <figure class="fig wide" id="fig-13-4">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 300" role="img" aria-label="Four layers of gates for agent-written code, from advisory to non-negotiable. Layer one, the instructions file: advice, read each session; only what tools cannot express. Layer two, hooks in the agent's loop: after every edit, format and lint the file in seconds; before the agent may stop, lint, types, unit tests and the import contract in under a minute; a blocking exit code holds the turn. Layer three, CI on the pull request: the full suite, patch coverage, mutation on the diff, complexity and duplication ratchets on new code, a secret scan, locked installs; the one layer the agent cannot edit around. Layer four, branch protection: required checks, owners on every guardrail file, one human approval.">
+      <rect class="n-soft" x="16" y="16" width="788" height="54" rx="6"/><text class="tb" x="28" y="38">1 · Instructions file</text><text class="ts" x="28" y="58">advice, read each session: commands, the non-obvious, "never edit lint config, CI or the hooks to make a check pass"</text>
+      <text class="ts ta" x="640" y="38">advisory</text>
+      <rect class="n" x="16" y="82" width="788" height="70" rx="6"/><text class="tb" x="28" y="104">2 · Hooks, inside the agent's loop</text>
+      <text class="ts" x="28" y="124">after every edit: format and lint that file (seconds)    ·    before the agent may stop: lint, types, unit tests, the import contract (under a minute)</text>
+      <text class="ts" x="28" y="142">a protected-paths hook denies edits to configuration, pipelines and lockfiles; exit code 2 blocks the edit or the turn</text>
+      <text class="ts tg" x="640" y="104">deterministic, local</text>
+      <rect class="n-good" x="16" y="164" width="788" height="70" rx="6"/><text class="tb" x="28" y="186">3 · CI on the pull request</text>
+      <text class="ts" x="28" y="206">the full suite · patch coverage · mutation on the diff · complexity, duplication and dead-code ratchets on new code · secret scan · locked installs</text>
+      <text class="ts" x="28" y="224">the one layer the agent cannot edit around; nothing heavy belongs in layer 2</text>
+      <text class="ts tg" x="610" y="186">non-bypassable</text>
+      <rect class="n-acc" x="16" y="246" width="788" height="44" rx="6"/><text class="tb" x="28" y="268">4 · Branch protection</text><text class="ts" x="200" y="268">required checks · owners on every guardrail file · one human approval · the committer owns the change</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 13.4</span>Gates for agent-written code, by how binding they are. The in-loop hooks keep the agent honest cheaply; CI is the layer that cannot be edited around, so it carries the expensive checks; owners on the configuration files stop a pull request from loosening the rules unnoticed.</figcaption>
+  </figure>
+
+  <div class="table-wrap">
+    <table class="grid stack">
+      <caption>What to ratchet on new code, and the tool for each stack</caption>
+      <thead><tr><th>Concern</th><th>Python service</th><th>TypeScript app</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Concern">Invented APIs and signatures</td><td data-label="Python">mypy strict, with unused-ignore warnings on</td><td data-label="TypeScript">tsc strict, unchecked index access, exact optional properties</td></tr>
+        <tr><td data-label="Concern">Complexity and size</td><td data-label="Python">ruff's complexity and pylint-style limits (branches, arguments, statements)</td><td data-label="TypeScript">ESLint complexity, max-lines-per-function, max-depth</td></tr>
+        <tr><td data-label="Concern">Suppression as an escape hatch</td><td data-label="Python">blanket <code>noqa</code> and unused <code>noqa</code> banned by rule</td><td data-label="TypeScript">ban-ts-comment; unused disable directives reported</td></tr>
+        <tr><td data-label="Concern">Layering</td><td data-label="Python">an import contract: routes call services, services call repositories, handlers never import the ORM</td><td data-label="TypeScript">dependency-cruiser or boundary rules per folder</td></tr>
+        <tr><td data-label="Concern">Dead code and dependencies</td><td data-label="Python">vulture; deptry; installs from the lockfile only</td><td data-label="TypeScript">knip; installs from the lockfile only</td></tr>
+        <tr><td data-label="Concern">Tests that test something</td><td data-label="Python">patch coverage on the diff against main; mutation testing on the diff, nightly</td><td data-label="TypeScript">the same, with a mutation runner for the diff</td></tr>
+        <tr><td data-label="Concern">Duplication</td><td data-label="Python">a copy-paste detector with a baseline ref, so only new duplication fails</td><td data-label="TypeScript">the same tool, same baseline</td></tr>
+        <tr><td data-label="Concern">Secrets and supply chain</td><td data-label="Python">secret scan on every commit; static analysis that exits non-zero on findings; pinned actions</td><td data-label="TypeScript">the same</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Two numbers to keep in mind. Coverage is not test quality: one published suite reached 100% line coverage and killed 4% of the mutants introduced into the code it covered, which is why the mutation step sits beside patch coverage rather than instead of it. And generated package names are wrong between one in twenty and one in five times depending on the model, so an install that is not from a lockfile is an install of whatever a typo resolves to. The review that follows the gates is in chapter 18 of the AI handbook: one simplification pass given the diff and the surrounding code, then two reviewers asking different questions, then a person reading the tests first.</p>
+
   <h3 id="ch13-traps">Traps</h3>
   <div class="table-wrap">
     <table class="grid traps stack">
@@ -197,6 +238,9 @@ async def test_other_teams_alerts_are_not_found_not_forbidden(
         <tr><td data-label="Symptom">A redaction function passed every unit test and missed 37 of 54 real secrets</td><td data-label="Cause">Each test used a whole-word label; real logs write <code>DB_PASSWORD=</code></td><td data-label="Fix">Score it against a corpus of real shapes, held out from tuning.</td></tr>
         <tr><td data-label="Symptom">An insert fails with a policy error after row-level security is added</td><td data-label="Cause"><code>INSERT … RETURNING</code> is also checked against the read policy</td><td data-label="Fix">An integration test for every write path.</td></tr>
         <tr><td data-label="Symptom">A test fails one run in twenty</td><td data-label="Cause">A race in the test or the application</td><td data-label="Fix">Find it; never add retries.</td></tr>
+        <tr><td data-label="Symptom">Every check is green, complexity and duplication keep climbing</td><td data-label="Cause">The gates test behavior; nothing ratchets structure on new code</td><td data-label="Fix">Complexity, duplication and dead-code checks against a baseline, in CI; mutation on the diff.</td></tr>
+        <tr><td data-label="Symptom">100% coverage, and a planted bug survives</td><td data-label="Cause">Tests execute the code without asserting on it</td><td data-label="Fix">Patch coverage beside mutation testing; read the assertions in review.</td></tr>
+        <tr><td data-label="Symptom">A pull request loosened the lint rules to pass</td><td data-label="Cause">The configuration was editable in the same change</td><td data-label="Fix">Owners on the guardrail files; a hook that denies edits to them in the agent's loop.</td></tr>
       </tbody>
     </table>
   </div>

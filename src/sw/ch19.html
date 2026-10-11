@@ -173,6 +173,26 @@
     <p>"New services start from the template: we keep the platform, replace the domain and configure the providers, and the rules that keep copies consistent change only with an ADR."</p>
   </aside>
 
+  <h3 id="ch19-agent">Day one with an agent</h3>
+  <p>A new service that an agent will mostly write needs its guardrails before its first feature, for the same reason the pipeline comes before the first feature: everything the agent writes afterwards is shaped by what the repository enforces on day one. The hour it takes is the cheapest hour of the project.</p>
+
+  <figure class="fig wide" id="fig-19-5">
+    <div class="fig-scroll">
+    <svg viewBox="0 0 820 270" role="img" aria-label="The first hour of a service an agent will write, in six steps. One: the contract file, under forty lines: commands, the non-obvious, the prohibitions. Two: hooks: deny edits to configuration, pipeline and lockfiles; format and lint after each edit; the check command before the agent may stop. Three: owners on every guardrail file and the required checks on main. Four: a problem-statement template: outcome, constraints, acceptance check, risk tier. Five: one worktree per agent session, a plan file per feature. Six: the first feature is the health endpoint through the pipeline, as before.">
+      <rect class="n-acc" x="16" y="30" width="250" height="90" rx="6"/><text class="tb" x="28" y="52">1 · The contract, under 40 lines</text><text class="ts" x="28" y="74">the commands; the non-obvious conventions;</text><text class="ts" x="28" y="90">"never edit lint config, CI or hooks to pass";</text><text class="ts" x="28" y="106">pointers to the longer documents</text>
+      <rect class="n-good" x="285" y="30" width="250" height="90" rx="6"/><text class="tb" x="297" y="52">2 · Hooks</text><text class="ts" x="297" y="74">deny edits to config, pipeline, lockfiles;</text><text class="ts" x="297" y="90">format and lint after each edit;</text><text class="ts" x="297" y="106">the check command before it may stop</text>
+      <rect class="n-good" x="554" y="30" width="250" height="90" rx="6"/><text class="tb" x="566" y="52">3 · Owners and required checks</text><text class="ts" x="566" y="74">owners on every guardrail file;</text><text class="ts" x="566" y="90">required status checks on main;</text><text class="ts" x="566" y="106">one human approval</text>
+      <rect class="n" x="16" y="140" width="250" height="90" rx="6"/><text class="tb" x="28" y="162">4 · A problem-statement template</text><text class="ts" x="28" y="184">outcome with constraints; the acceptance</text><text class="ts" x="28" y="200">check that proves it done; the risk tier</text><text class="ts" x="28" y="216">that sets how strict the human review is</text>
+      <rect class="n" x="285" y="140" width="250" height="90" rx="6"/><text class="tb" x="297" y="162">5 · Working shape</text><text class="ts" x="297" y="184">one worktree and branch per agent session;</text><text class="ts" x="297" y="200">a plan file per feature, edited by a person;</text><text class="ts" x="297" y="216">plugins measured before they are adopted</text>
+      <rect class="n-soft" x="554" y="140" width="250" height="90" rx="6"/><text class="tb" x="566" y="162">6 · Then the first feature</text><text class="ts" x="566" y="184">the health endpoint, through the pipeline,</text><text class="ts" x="566" y="200">as the chapter began; the agent's first</text><text class="ts" x="566" y="216">task is also the first test of the gates</text>
+      <text class="ts" x="16" y="256">Steps 1 to 3 are a template: copy them from the reference build, then change only what the new domain needs.</text>
+    </svg>
+    </div>
+    <figcaption><span class="fig-n">Figure 19.5</span>The first hour of a service an agent will write. The contract, the hooks and the owners file are platform, like CI: kept from the template, not rewritten per service.</figcaption>
+  </figure>
+
+  <p>The contract stays short because the research on repository instruction files found that longer ones did not raise success and did raise cost; it holds what a tool cannot express. The hooks are where "the agent runs the checks before it says done" stops being a request. The owners file is what stops a pull request from quietly loosening a rule. And the problem-statement template is the engineer's main artifact from now on: the agent is only as good as the outcome it was given and the check that proves it.</p>
+
   <h3 id="ch19-traps">Traps</h3>
   <div class="table-wrap">
     <table class="grid traps stack">
@@ -185,6 +205,8 @@
         <tr><td data-label="Symptom">The prompt keeps being tuned and answers do not improve</td><td data-label="Cause">The right document section was never retrieved</td><td data-label="Fix">Measure retrieval first, on your own corpus.</td></tr>
         <tr><td data-label="Symptom">Branch protection is unavailable on a private repository</td><td data-label="Cause">It needs a paid plan for private repositories</td><td data-label="Fix">Budget for it, or use the organization's plan.</td></tr>
         <tr><td data-label="Symptom">A team of one cannot merge under required reviews</td><td data-label="Cause">Nobody else can approve</td><td data-label="Fix">An admin merge once every check is green; turn bypassing off when a second person joins.</td></tr>
+        <tr><td data-label="Symptom">The agent's first feature ignored half the conventions</td><td data-label="Cause">The contract was written after the feature, or runs to pages</td><td data-label="Fix">Under forty lines on day one: commands, the non-obvious, the prohibitions; the rest in hooks.</td></tr>
+        <tr><td data-label="Symptom">An unattended agent run edited the pipeline</td><td data-label="Cause">No protected paths, no turn limit, broad credentials</td><td data-label="Fix">A hook denying edits to configuration and pipelines; a turn budget; a sandbox with an allowlist.</td></tr>
       </tbody>
     </table>
   </div>
